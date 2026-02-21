@@ -22,8 +22,20 @@ def create_app():
     # Register Blueprints — each Blueprint is a group of related routes
     from app.routes.main import main_bp
     from app.routes.campaigns import campaigns_bp
+    from app.routes.locations import locations_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(campaigns_bp)
+    app.register_blueprint(locations_bp)
+
+    # Context processor — makes active_campaign available in EVERY template
+    # automatically, so we don't have to pass it in every route
+    @app.context_processor
+    def inject_active_campaign():
+        from flask import session as flask_session
+        from app.models import Campaign
+        active_campaign_id = flask_session.get('active_campaign_id')
+        active_campaign = Campaign.query.get(active_campaign_id) if active_campaign_id else None
+        return dict(active_campaign=active_campaign)
 
     return app

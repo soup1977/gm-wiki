@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ location.name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('locations.list_locations') }}">Locations</a></li>
+        {% if location.parent_location %}
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('locations.location_detail', location_id=location.parent_location.id) }}">{{ location.parent_location.name }}</a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ location.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2>{{ location.name }}</h2>
+        {% if location.type %}
+        <p class="text-muted">{{ location.type }}</p>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('locations.edit_location', location_id=location.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('locations.delete_location', location_id=location.id) }}"
+              onsubmit="return confirm('Delete this location? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if location.description %}
+<div class="mb-4">
+    <h5>Description</h5>
+    <p>{{ location.description }}</p>
+</div>
+{% endif %}
+
+{% if location.notes %}
+<div class="mb-4">
+    <h5>Notes</h5>
+    <p>{{ location.notes }}</p>
+</div>
+{% endif %}
+
+{% if location.gm_notes %}
+<div class="mb-4">
+    <h5><i class="bi bi-eye-slash"></i> GM Only Notes</h5>
+    <div class="card bg-dark border-warning">
+        <div class="card-body">
+            <p class="mb-0">{{ location.gm_notes }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Parent Location -->
+{% if location.parent_location %}
+<div class="mb-4">
+    <h5>Part of</h5>
+    <a href="{{ url_for('locations.location_detail', location_id=location.parent_location.id) }}" class="btn btn-sm btn-outline-light">
+        <i class="bi bi-geo-alt"></i> {{ location.parent_location.name }}
+    </a>
+</div>
+{% endif %}
+
+<!-- Child Locations -->
+{% if location.child_locations %}
+<div class="mb-4">
+    <h5>Contains</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for child in location.child_locations %}
+        <a href="{{ url_for('locations.location_detail', location_id=child.id) }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ child.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
