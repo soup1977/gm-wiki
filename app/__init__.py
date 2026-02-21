@@ -23,10 +23,12 @@ def create_app():
     from app.routes.main import main_bp
     from app.routes.campaigns import campaigns_bp
     from app.routes.locations import locations_bp
+    from app.routes.npcs import npcs_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(campaigns_bp)
     app.register_blueprint(locations_bp)
+    app.register_blueprint(npcs_bp)
 
     # Context processor — makes active_campaign available in EVERY template
     # automatically, so we don't have to pass it in every route

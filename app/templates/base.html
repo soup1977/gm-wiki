@@ -21,7 +21,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 {% if active_campaign %}
-                <li class="nav-item"><a class="nav-link" href="#">NPCs</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('locations.list_locations') }}">Locations</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Quests</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Sessions</a></li>

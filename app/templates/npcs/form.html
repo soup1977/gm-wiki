@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if npc else 'New' }} NPC — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
+                {% if npc %}
+                <li class="breadcrumb-item"><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+                {% else %}
+                <li class="breadcrumb-item active">New</li>
+                {% endif %}
+            </ol>
+        </nav>
+
+        <h2 class="mb-4">{{ 'Edit' if npc else 'New' }} NPC</h2>
+
+        <form method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="{{ npc.name if npc else '' }}" required autofocus>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="role" class="form-label">Role</label>
+                    <input type="text" class="form-control" id="role" name="role"
+                           value="{{ npc.role if npc else '' }}"
+                           placeholder="e.g. Blacksmith, Villain, Merchant...">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        {% for choice in status_choices %}
+                        <option value="{{ choice }}"
+                                {% if npc and npc.status == choice %}selected{% endif %}>
+                            {{ choice|capitalize }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="faction" class="form-label">Faction</label>
+                    <input type="text" class="form-control" id="faction" name="faction"
+                           value="{{ npc.faction if npc else '' }}"
+                           placeholder="e.g. Thieves Guild, Royal Guard...">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="home_location_id" class="form-label">Home Location</label>
+                    <select class="form-select" id="home_location_id" name="home_location_id">
+                        <option value="">None</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}"
+                                {% if npc and npc.home_location_id == loc.id %}selected{% endif %}>
+                            {{ loc.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="physical_description" class="form-label">Physical Description</label>
+                <textarea class="form-control" id="physical_description" name="physical_description" rows="3">{{ npc.physical_description if npc else '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="personality" class="form-label">Personality</label>
+                <textarea class="form-control" id="personality" name="personality" rows="3">{{ npc.personality if npc else '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3">{{ npc.notes if npc else '' }}</textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="secrets" class="form-label">
+                    <i class="bi bi-eye-slash"></i> Secrets (GM Only)
+                </label>
+                <textarea class="form-control border-warning" id="secrets" name="secrets" rows="3">{{ npc.secrets if npc else '' }}</textarea>
+                <div class="form-text text-warning">These secrets will never be shown to players.</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> {{ 'Save Changes' if npc else 'Create NPC' }}
+                </button>
+                {% if npc %}
+                <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                {% else %}
+                <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-outline-secondary">Cancel</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

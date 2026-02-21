@@ -83,4 +83,18 @@
     </div>
 </div>
 {% endif %}
+
+<!-- NPCs Living Here -->
+{% if location.npcs_living_here %}
+<div class="mb-4">
+    <h5>NPCs Living Here</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for npc in location.npcs_living_here %}
+        <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-person"></i> {{ npc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}
