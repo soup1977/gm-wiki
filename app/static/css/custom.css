@@ -1,0 +1,22 @@
+/* Minor tweaks on top of Bootstrap dark theme */
+body {
+    background-color: #1a1a2e;
+}
+
+.navbar-brand {
+    font-size: 1.3rem;
+    letter-spacing: 0.03em;
+}
+
+.card {
+    background-color: #16213e;
+    border-color: #0f3460;
+}
+
+a {
+    color: #e94560;
+}
+
+a:hover {
+    color: #ff6b6b;
+}

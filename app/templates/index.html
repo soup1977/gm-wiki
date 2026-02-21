@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}GM Wiki — Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-1">GM Wiki</h1>
+        <p class="text-muted mb-4">Your campaign management tool.</p>
+    </div>
+</div>
+
+{% if not active_campaign %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    No active campaign selected. 
+    {% if campaigns %}
+        Choose one below, or <a href="{{ url_for('campaigns.create_campaign') }}">create a new campaign</a>.
+    {% else %}
+        <a href="{{ url_for('campaigns.create_campaign') }}">Create your first campaign</a> to get started.
+    {% endif %}
+</div>
+{% endif %}
+
+{% if campaigns %}
+<h5 class="mb-3">Your Campaigns</h5>
+<div class="row row-cols-1 row-cols-md-3 g-3">
+    {% for campaign in campaigns %}
+    <div class="col">
+        <div class="card h-100 {% if active_campaign and active_campaign.id == campaign.id %}border-primary{% endif %}">
+            <div class="card-body">
+                <h5 class="card-title">
+                    {{ campaign.name }}
+                    {% if active_campaign and active_campaign.id == campaign.id %}
+                    <span class="badge bg-primary ms-1">Active</span>
+                    {% endif %}
+                </h5>
+                <p class="card-text text-muted small">
+                    {{ campaign.system or 'No system set' }} &mdash;
+                    <span class="badge bg-secondary">{{ campaign.status }}</span>
+                </p>
+                {% if campaign.description %}
+                <p class="card-text small">{{ campaign.description[:120] }}{% if campaign.description|length > 120 %}…{% endif %}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex gap-2">
+                <a href="{{ url_for('main.switch_campaign', campaign_id=campaign.id) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-play-fill"></i> Set Active
+                </a>
+                <a href="{{ url_for('campaigns.campaign_detail', campaign_id=campaign.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-eye"></i> View
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('campaigns.create_campaign') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Campaign
+    </a>
+</div>
+{% endblock %}
