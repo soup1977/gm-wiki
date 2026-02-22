@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{% if quest %}Edit {{ quest.name }}{% else %}New Quest{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('quests.list_quests') }}">Quests</a></li>
+        {% if quest %}
+            <li class="breadcrumb-item"><a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+            <li class="breadcrumb-item active">New</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if quest %}Edit Quest{% else %}New Quest{% endif %}</h2>
+
+<form method="POST" style="max-width: 800px;">
+    <div class="mb-3">
+        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="name" name="name"
+               value="{{ quest.name if quest else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="status" class="form-label">Status</label>
+        <select class="form-select" id="status" name="status">
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if quest and quest.status == s %}selected{% elif not quest and s == 'active' %}selected{% endif %}>
+                {{ s | replace('_', ' ') | title }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="hook" class="form-label">Hook</label>
+        <textarea class="form-control" id="hook" name="hook" rows="2">{{ quest.hook if quest else '' }}</textarea>
+        <div class="form-text">How did the party get involved?</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4">{{ quest.description if quest else '' }}</textarea>
+    </div>
+
+    <div class="mb-3">
+        <label for="outcome" class="form-label">Outcome</label>
+        <textarea class="form-control" id="outcome" name="outcome" rows="3">{{ quest.outcome if quest else '' }}</textarea>
+        <div class="form-text">Fill in when the quest is resolved.</div>
+    </div>
+
+    <div class="mb-3 p-3 border border-warning rounded">
+        <label for="gm_notes" class="form-label text-warning">
+            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
+        </label>
+        <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ quest.gm_notes if quest else '' }}</textarea>
+    </div>
+
+    {% if npcs %}
+    <div class="mb-3">
+        <label for="involved_npcs" class="form-label">Involved NPCs</label>
+        <select class="form-select" id="involved_npcs" name="involved_npcs" multiple size="6">
+            {% for npc in npcs %}
+            <option value="{{ npc.id }}"
+                {% if quest and npc in quest.involved_npcs %}selected{% endif %}>
+                {{ npc.name }}
+            </option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
+    </div>
+    {% endif %}
+
+    {% if locations %}
+    <div class="mb-3">
+        <label for="involved_locations" class="form-label">Involved Locations</label>
+        <select class="form-select" id="involved_locations" name="involved_locations" multiple size="6">
+            {% for location in locations %}
+            <option value="{{ location.id }}"
+                {% if quest and location in quest.involved_locations %}selected{% endif %}>
+                {{ location.name }}
+            </option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if quest %}Save Changes{% else %}Create Quest{% endif %}
+        </button>
+        <a href="{% if quest %}{{ url_for('quests.quest_detail', quest_id=quest.id) }}{% else %}{{ url_for('quests.list_quests') }}{% endif %}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

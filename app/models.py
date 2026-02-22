@@ -102,3 +102,37 @@ class NPC(db.Model):
 
     def __repr__(self):
         return f'<NPC {self.name}>'
+
+
+# Association table: Quest ↔ NPC (many-to-many)
+quest_npc_link = db.Table('quest_npc_link',
+    db.Column('quest_id', db.Integer, db.ForeignKey('quests.id'), primary_key=True),
+    db.Column('npc_id', db.Integer, db.ForeignKey('npcs.id'), primary_key=True)
+)
+
+# Association table: Quest ↔ Location (many-to-many)
+quest_location_link = db.Table('quest_location_link',
+    db.Column('quest_id', db.Integer, db.ForeignKey('quests.id'), primary_key=True),
+    db.Column('location_id', db.Integer, db.ForeignKey('locations.id'), primary_key=True)
+)
+
+
+class Quest(db.Model):
+    __tablename__ = 'quests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    status = db.Column(db.String(50), default='active')  # active / completed / failed / on_hold
+    hook = db.Column(db.Text)          # How the party got involved
+    description = db.Column(db.Text)   # Full quest description
+    outcome = db.Column(db.Text)       # What happened (fill in when resolved)
+    gm_notes = db.Column(db.Text)      # GM-only, never shown to players
+    is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
+
+    campaign = db.relationship('Campaign', backref='quests')
+    involved_npcs = db.relationship('NPC', secondary=quest_npc_link, backref='quests')
+    involved_locations = db.relationship('Location', secondary=quest_location_link, backref='quests')
+
+    def __repr__(self):
+        return f'<Quest {self.name}>'
