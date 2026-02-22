@@ -136,3 +136,28 @@ class Quest(db.Model):
 
     def __repr__(self):
         return f'<Quest {self.name}>'
+
+
+class Item(db.Model):
+    __tablename__ = 'items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    type = db.Column(db.String(100))      # weapon / armor / consumable / misc (free text)
+    rarity = db.Column(db.String(50))     # common / uncommon / rare / very rare / legendary / unique
+    description = db.Column(db.Text)
+    gm_notes = db.Column(db.Text)         # GM-only, never shown to players
+    is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
+
+    # Who owns it — null means the party owns it
+    owner_npc_id = db.Column(db.Integer, db.ForeignKey('npcs.id'), nullable=True)
+    # Where it came from — null means unknown
+    origin_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+
+    campaign = db.relationship('Campaign', backref='items')
+    owner_npc = db.relationship('NPC', backref='items_owned', foreign_keys=[owner_npc_id])
+    origin_location = db.relationship('Location', backref='items_found_here', foreign_keys=[origin_location_id])
+
+    def __repr__(self):
+        return f'<Item {self.name}>'
