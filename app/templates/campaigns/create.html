@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}New Campaign — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="mb-4">New Campaign</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Campaign Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label for="system" class="form-label">System</label>
+                <input type="text" class="form-control" id="system" name="system" placeholder="e.g. D&D 5e, ICRPG, Pathfinder…">
+            </div>
+            <div class="mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="active">Active</option>
+                    <option value="on hiatus">On Hiatus</option>
+                    <option value="complete">Complete</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Create Campaign
+                </button>
+                <a href="{{ url_for('campaigns.list_campaigns') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

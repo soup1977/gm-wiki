@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Locations — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Locations</h2>
+    <a href="{{ url_for('locations.create_location') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Location
+    </a>
+</div>
+
+{% if locations %}
+<table class="table table-dark table-hover">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Parent Location</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for location in locations %}
+        <tr>
+            <td><a href="{{ url_for('locations.location_detail', location_id=location.id) }}">{{ location.name }}</a></td>
+            <td>{{ location.type or '—' }}</td>
+            <td>
+                {% if location.parent_location %}
+                    <a href="{{ url_for('locations.location_detail', location_id=location.parent_location.id) }}">{{ location.parent_location.name }}</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No locations yet. <a href="{{ url_for('locations.create_location') }}">Create your first one.</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2>{{ campaign.name }}</h2>
+        <p class="text-muted">
+            {{ campaign.system or 'No system set' }} &mdash;
+            <span class="badge bg-secondary">{{ campaign.status }}</span>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('main.switch_campaign', campaign_id=campaign.id) }}" class="btn btn-primary">
+            <i class="bi bi-play-fill"></i> Set Active
+        </a>
+        <form method="POST" action="{{ url_for('campaigns.delete_campaign', campaign_id=campaign.id) }}"
+              onsubmit="return confirm('Delete this campaign? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if campaign.description %}
+<p>{{ campaign.description }}</p>
+{% endif %}
+
+<hr class="border-secondary">
+<p class="text-muted small">Created {{ campaign.created_at.strftime('%Y-%m-%d') }}</p>
+
+<!-- Future phases will add NPC/Location/Quest counts here -->
+{% endblock %}

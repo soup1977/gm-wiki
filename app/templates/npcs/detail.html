@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ npc.name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
+        <li class="breadcrumb-item active">{{ npc.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2>{{ npc.name }}</h2>
+        <p class="text-muted mb-0">
+            {% if npc.role %}{{ npc.role }}{% endif %}
+            {% if npc.role and npc.faction %} &mdash; {% endif %}
+            {% if npc.faction %}{{ npc.faction }}{% endif %}
+        </p>
+    </div>
+    <div class="d-flex gap-2 align-items-start">
+        {% if npc.status == 'alive' %}
+            <span class="badge bg-success fs-6">{{ npc.status }}</span>
+        {% elif npc.status == 'dead' %}
+            <span class="badge bg-danger fs-6">{{ npc.status }}</span>
+        {% elif npc.status == 'missing' %}
+            <span class="badge bg-warning text-dark fs-6">{{ npc.status }}</span>
+        {% else %}
+            <span class="badge bg-secondary fs-6">{{ npc.status }}</span>
+        {% endif %}
+        <a href="{{ url_for('npcs.edit_npc', npc_id=npc.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('npcs.delete_npc', npc_id=npc.id) }}"
+              onsubmit="return confirm('Delete this NPC? This cannot be undone.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if npc.physical_description %}
+<div class="mb-4">
+    <h5>Physical Description</h5>
+    <p>{{ npc.physical_description }}</p>
+</div>
+{% endif %}
+
+{% if npc.personality %}
+<div class="mb-4">
+    <h5>Personality</h5>
+    <p>{{ npc.personality }}</p>
+</div>
+{% endif %}
+
+{% if npc.notes %}
+<div class="mb-4">
+    <h5>Notes</h5>
+    <p>{{ npc.notes }}</p>
+</div>
+{% endif %}
+
+{% if npc.secrets %}
+<div class="mb-4">
+    <h5><i class="bi bi-eye-slash"></i> Secrets (GM Only)</h5>
+    <div class="card bg-dark border-warning">
+        <div class="card-body">
+            <p class="mb-0">{{ npc.secrets }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Home Location -->
+{% if npc.home_location %}
+<div class="mb-4">
+    <h5>Home Location</h5>
+    <a href="{{ url_for('locations.location_detail', location_id=npc.home_location.id) }}" class="btn btn-sm btn-outline-light">
+        <i class="bi bi-geo-alt"></i> {{ npc.home_location.name }}
+    </a>
+</div>
+{% endif %}
+
+<!-- Connected Locations -->
+{% if npc.connected_locations %}
+<div class="mb-4">
+    <h5>Also Found At</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for loc in npc.connected_locations %}
+        <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ loc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
