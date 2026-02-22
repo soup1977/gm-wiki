@@ -19,6 +19,9 @@
             {% if sess.number %}<span class="text-muted">#{{ sess.number }}</span> {% endif %}
             {{ sess.title or 'Untitled Session' }}
         </h2>
+        <p class="text-muted small mb-0">
+            Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=sess.campaign.id) }}">{{ sess.campaign.name }}</a>
+        </p>
         {% if sess.date_played %}
             <p class="text-muted mb-0">{{ sess.date_played.strftime('%B %d, %Y') }}</p>
         {% endif %}

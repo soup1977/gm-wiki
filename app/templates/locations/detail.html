@@ -19,8 +19,11 @@
     <div>
         <h2>{{ location.name }}</h2>
         {% if location.type %}
-        <p class="text-muted">{{ location.type }}</p>
+        <p class="text-muted mb-0">{{ location.type }}</p>
         {% endif %}
+        <p class="text-muted small mb-0">
+            Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=location.campaign.id) }}">{{ location.campaign.name }}</a>
+        </p>
     </div>
     <div class="d-flex gap-2">
         <a href="{{ url_for('locations.edit_location', location_id=location.id) }}" class="btn btn-primary">

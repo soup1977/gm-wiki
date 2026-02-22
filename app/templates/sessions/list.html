@@ -16,6 +16,7 @@
             <th>#</th>
             <th>Title</th>
             <th>Date Played</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -28,6 +29,14 @@
                 </a>
             </td>
             <td>{{ sess.date_played.strftime('%b %d, %Y') if sess.date_played else '—' }}</td>
+            <td class="text-end">
+                <form method="POST" action="{{ url_for('sessions.delete_session', session_id=sess.id) }}"
+                      onsubmit="return confirm('Delete this session? This cannot be undone.')" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

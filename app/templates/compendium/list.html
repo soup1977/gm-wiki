@@ -28,6 +28,14 @@
                     <span class="badge bg-warning text-dark"><i class="bi bi-eye-slash"></i> GM Only</span>
                 {% endif %}
             </td>
+            <td class="text-end">
+                <form method="POST" action="{{ url_for('compendium.delete_entry', entry_id=entry.id) }}"
+                      onsubmit="return confirm('Delete {{ entry.title }}? This cannot be undone.')" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

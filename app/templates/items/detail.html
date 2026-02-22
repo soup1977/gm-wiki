@@ -12,6 +12,9 @@
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
         <h2>{{ item.name }}</h2>
+        <p class="text-muted small mb-1">
+            Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=item.campaign.id) }}">{{ item.campaign.name }}</a>
+        </p>
         <div class="d-flex gap-2 mt-1">
             {% if item.type %}
                 <span class="badge bg-secondary">{{ item.type }}</span>

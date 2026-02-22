@@ -17,6 +17,7 @@
             <th>Type</th>
             <th>Rarity</th>
             <th>Owner</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -51,6 +52,14 @@
                 {% else %}
                     <span class="text-muted">Party</span>
                 {% endif %}
+            </td>
+            <td class="text-end">
+                <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}"
+                      onsubmit="return confirm('Delete {{ item.name }}? This cannot be undone.')" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
             </td>
         </tr>
         {% endfor %}

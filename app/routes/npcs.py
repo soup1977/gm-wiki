@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db
-from app.models import NPC, Location
+from app.models import NPC, Location, Item
 
 npcs_bp = Blueprint('npcs', __name__, url_prefix='/npcs')
 
@@ -132,6 +132,13 @@ def delete_npc(npc_id):
         return redirect(url_for('npcs.list_npcs'))
 
     name = npc.name
+
+    # Items owned by this NPC have a nullable FK — set to party-owned before deleting.
+    for item in list(npc.items_owned):
+        item.owner_npc_id = None
+
+    # SQLAlchemy handles the many-to-many link tables (npc_location_link,
+    # quest_npc_link, session_npc_link) automatically when the NPC is deleted.
     db.session.delete(npc)
     db.session.commit()
 

@@ -15,6 +15,7 @@
         <tr>
             <th>Name</th>
             <th>Status</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -33,6 +34,14 @@
                 {% else %}
                     <span class="badge bg-secondary">{{ quest.status }}</span>
                 {% endif %}
+            </td>
+            <td class="text-end">
+                <form method="POST" action="{{ url_for('quests.delete_quest', quest_id=quest.id) }}"
+                      onsubmit="return confirm('Delete {{ quest.name }}? This cannot be undone.')" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
             </td>
         </tr>
         {% endfor %}
