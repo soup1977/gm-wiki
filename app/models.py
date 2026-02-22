@@ -161,3 +161,19 @@ class Item(db.Model):
 
     def __repr__(self):
         return f'<Item {self.name}>'
+
+
+class CompendiumEntry(db.Model):
+    __tablename__ = 'compendium_entries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100))   # free text: "Combat", "Magic", "House Rules", etc.
+    content = db.Column(db.Text)
+    is_gm_only = db.Column(db.Boolean, default=False)  # hides entry in player view (Phase 6)
+
+    campaign = db.relationship('Campaign', backref='compendium_entries')
+
+    def __repr__(self):
+        return f'<CompendiumEntry {self.title}>'

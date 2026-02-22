@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{% if entry %}Edit {{ entry.title }}{% else %}New Entry{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('compendium.list_compendium') }}">Compendium</a></li>
+        {% if entry %}
+            <li class="breadcrumb-item"><a href="{{ url_for('compendium.entry_detail', entry_id=entry.id) }}">{{ entry.title }}</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+            <li class="breadcrumb-item active">New</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if entry %}Edit Entry{% else %}New Entry{% endif %}</h2>
+
+<form method="POST" style="max-width: 800px;">
+    <div class="mb-3">
+        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="title" name="title"
+               value="{{ entry.title if entry else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="category" class="form-label">Category</label>
+        <input type="text" class="form-control" id="category" name="category"
+               value="{{ entry.category if entry else '' }}"
+               placeholder="e.g. Combat, Magic, House Rules">
+        <div class="form-text">Free text — used to group entries on the list.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="content" class="form-label">Content</label>
+        <textarea class="form-control" id="content" name="content" rows="12">{{ entry.content if entry else '' }}</textarea>
+    </div>
+
+    <div class="mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="is_gm_only" name="is_gm_only"
+                   {% if entry and entry.is_gm_only %}checked{% endif %}>
+            <label class="form-check-label text-warning" for="is_gm_only">
+                <i class="bi bi-eye-slash"></i> GM Only — hide this entry in the player wiki view
+            </label>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if entry %}Save Changes{% else %}Create Entry{% endif %}
+        </button>
+        <a href="{% if entry %}{{ url_for('compendium.entry_detail', entry_id=entry.id) }}{% else %}{{ url_for('compendium.list_compendium') }}{% endif %}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

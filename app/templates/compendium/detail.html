@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ entry.title }} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('compendium.list_compendium') }}">Compendium</a></li>
+        <li class="breadcrumb-item active">{{ entry.title }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2>{{ entry.title }}</h2>
+        <div class="d-flex gap-2 mt-1">
+            {% if entry.category %}
+                <span class="badge bg-secondary">{{ entry.category }}</span>
+            {% endif %}
+            {% if entry.is_gm_only %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-eye-slash"></i> GM Only</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('compendium.edit_entry', entry_id=entry.id) }}" class="btn btn-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('compendium.delete_entry', entry_id=entry.id) }}"
+              onsubmit="return confirm('Delete entry \'{{ entry.title }}\'? This cannot be undone.')">
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if entry.content %}
+<div class="mt-3">
+    <p style="white-space: pre-wrap;">{{ entry.content }}</p>
+</div>
+{% else %}
+<p class="text-muted">No content yet. <a href="{{ url_for('compendium.edit_entry', entry_id=entry.id) }}">Add some.</a></p>
+{% endif %}
+{% endblock %}
