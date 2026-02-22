@@ -1,6 +1,23 @@
 from app import db
 from datetime import datetime
 
+# Association table: NPC ↔ Location (many-to-many "notable" appearances)
+# Separate from home_location, which is a single FK.
+# This lets an NPC be linked to multiple locations they frequent.
+npc_location_link = db.Table('npc_location_link',
+    db.Column('npc_id', db.Integer, db.ForeignKey('npcs.id'), primary_key=True),
+    db.Column('location_id', db.Integer, db.ForeignKey('locations.id'), primary_key=True)
+)
+
+# Association table: Location ↔ Location (many-to-many connections)
+# e.g. a road between two towns. Stored one direction only (a_id < b_id
+# is not enforced, so we query both sides when displaying).
+location_connection = db.Table('location_connection',
+    db.Column('location_a_id', db.Integer, db.ForeignKey('locations.id'), primary_key=True),
+    db.Column('location_b_id', db.Integer, db.ForeignKey('locations.id'), primary_key=True)
+)
+
+
 class Campaign(db.Model):
     __tablename__ = 'campaigns'
 
@@ -38,6 +55,21 @@ class Location(db.Model):
         backref='child_locations',
         foreign_keys=[parent_location_id]
     )
+    # Locations connected to this one (e.g. roads, passages).
+    # primaryjoin/secondaryjoin tell SQLAlchemy which column is "this side".
+    # connected_from is the backref for the other direction.
+    connected_locations = db.relationship(
+        'Location',
+        secondary=location_connection,
+        primaryjoin='Location.id == location_connection.c.location_a_id',
+        secondaryjoin='Location.id == location_connection.c.location_b_id',
+        backref='connected_from'
+    )
+
+    @property
+    def all_connected_locations(self):
+        """Return all connected locations regardless of which side of the link they're on."""
+        return list(self.connected_locations) + list(self.connected_from)
 
     def __repr__(self):
         return f'<Location {self.name}>'
@@ -64,6 +96,9 @@ class NPC(db.Model):
     # Relationships
     campaign = db.relationship('Campaign', backref='npcs')
     home_location = db.relationship('Location', backref='npcs_living_here', foreign_keys=[home_location_id])
+    # Locations this NPC is associated with (separate from home)
+    connected_locations = db.relationship('Location', secondary=npc_location_link,
+                                          backref='notable_npcs')
 
     def __repr__(self):
         return f'<NPC {self.name}>'

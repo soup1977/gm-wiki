@@ -82,4 +82,18 @@
     </a>
 </div>
 {% endif %}
+
+<!-- Connected Locations -->
+{% if npc.connected_locations %}
+<div class="mb-4">
+    <h5>Also Found At</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for loc in npc.connected_locations %}
+        <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ loc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -47,6 +47,10 @@ def create_location():
             parent_location_id=parent_id
         )
         db.session.add(location)
+
+        connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
+        location.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
+
         db.session.commit()
 
         flash(f'Location "{location.name}" created!', 'success')
@@ -100,6 +104,13 @@ def edit_location(location_id):
         location.gm_notes = request.form.get('gm_notes', '').strip()
         location.notes = request.form.get('notes', '').strip()
         location.parent_location_id = parent_id
+
+        connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
+        # Exclude self just in case
+        location.connected_locations = Location.query.filter(
+            Location.id.in_(connected_ids), Location.id != location.id
+        ).all()
+
         db.session.commit()
 
         flash(f'Location "{location.name}" updated!', 'success')

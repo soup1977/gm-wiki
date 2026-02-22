@@ -52,6 +52,11 @@ def create_npc():
             home_location_id=home_id
         )
         db.session.add(npc)
+
+        # getlist returns all selected values from a multi-select field
+        connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
+        npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
+
         db.session.commit()
 
         flash(f'NPC "{npc.name}" created!', 'success')
@@ -102,6 +107,10 @@ def edit_npc(npc_id):
         npc.secrets = request.form.get('secrets', '').strip()
         npc.notes = request.form.get('notes', '').strip()
         npc.home_location_id = home_id
+
+        connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
+        npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
+
         db.session.commit()
 
         flash(f'NPC "{npc.name}" updated!', 'success')

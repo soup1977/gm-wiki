@@ -68,6 +68,19 @@
             </div>
 
             <div class="mb-3">
+                <label for="connected_location_ids" class="form-label">Connected Locations</label>
+                <select class="form-select" id="connected_location_ids" name="connected_location_ids" multiple size="5">
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}"
+                            {% if npc and loc in npc.connected_locations %}selected{% endif %}>
+                        {{ loc.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple. Locations this NPC is associated with beyond their home.</div>
+            </div>
+
+            <div class="mb-3">
                 <label for="physical_description" class="form-label">Physical Description</label>
                 <textarea class="form-control" id="physical_description" name="physical_description" rows="3">{{ npc.physical_description if npc else '' }}</textarea>
             </div>

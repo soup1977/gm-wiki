@@ -48,6 +48,19 @@
             </div>
 
             <div class="mb-3">
+                <label for="connected_location_ids" class="form-label">Connected Locations</label>
+                <select class="form-select" id="connected_location_ids" name="connected_location_ids" multiple size="5">
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}"
+                            {% if location and loc in location.connected_locations %}selected{% endif %}>
+                        {{ loc.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple. E.g. a road or passage between locations.</div>
+            </div>
+
+            <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
                 <textarea class="form-control" id="description" name="description" rows="4">{{ location.description if location else '' }}</textarea>
             </div>

@@ -97,4 +97,33 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Notable NPCs (from many-to-many link) -->
+{% if location.notable_npcs %}
+<div class="mb-4">
+    <h5>Notable NPCs</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for npc in location.notable_npcs %}
+        <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-person"></i> {{ npc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Connected Locations (both sides of the link) -->
+{% set all_connected = location.all_connected_locations %}
+{% if all_connected %}
+<div class="mb-4">
+    <h5>Connected Locations</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for loc in all_connected %}
+        <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-arrow-left-right"></i> {{ loc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}
