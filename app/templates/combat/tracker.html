@@ -112,6 +112,51 @@
                 <hr class="border-secondary">
                 {% endif %}
 
+                {# Quick-add from session monsters #}
+                {% if session_monsters %}
+                <div class="mb-3">
+                    <label class="form-label text-muted small">
+                        <i class="bi bi-bug"></i> Session monsters
+                        <span class="text-muted fw-normal">(linked to current session)</span>
+                    </label>
+                    <select class="form-select bg-dark text-light border-secondary" id="session-monster-quickadd"
+                            onchange="prefillFromSessionMonster(this.value)">
+                        <option value="">— Select monster instance —</option>
+                        {% for monster in session_monsters %}
+                        <option value="{{ loop.index0 }}"
+                            {% if monster.status == 'dead' %}disabled{% endif %}>
+                            {{ monster.instance_name }}
+                            {% if monster.cr_level %} ({{ monster.cr_level }}){% endif %}
+                            {% if monster.status != 'alive' %} [{{ monster.status }}]{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Loads the stat block into Monster Notes.</div>
+                </div>
+                <hr class="border-secondary">
+                {% endif %}
+
+                {# Quick-add from Bestiary #}
+                {% if bestiary_data %}
+                <div class="mb-3">
+                    <label class="form-label text-muted small">
+                        <i class="bi bi-book-dead"></i> Bestiary
+                        <span class="text-muted fw-normal">(all creature types)</span>
+                    </label>
+                    <select class="form-select bg-dark text-light border-secondary" id="bestiary-quickadd"
+                            onchange="prefillFromBestiary(this.value)">
+                        <option value="">— Select creature type —</option>
+                        {% for entry in bestiary_data %}
+                        <option value="{{ loop.index0 }}">
+                            {{ entry.name }}{% if entry.cr_level %} ({{ entry.cr_level }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Auto-names and loads the stat block into Monster Notes.</div>
+                </div>
+                <hr class="border-secondary">
+                {% endif %}
+
                 <div class="mb-3">
                     <label for="add-name" class="form-label">Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control bg-dark text-light border-secondary"
@@ -161,6 +206,12 @@ const STATUS_EFFECTS = [
 
 // PC data passed from the server (PCs attending the current session)
 const SESSION_PCS = {{ session_pcs | tojson }};
+
+// Bestiary entries passed from the server (global, all campaigns)
+const BESTIARY_ENTRIES = {{ bestiary_data | tojson }};
+
+// Monster Instances linked to the current session
+const SESSION_MONSTERS = {{ session_monsters | tojson }};
 
 // ── State ─────────────────────────────────────────────────────────────────────
 // The single source of truth. Saved to sessionStorage on every change.
@@ -381,6 +432,78 @@ function submitAddCombatant() {
     document.getElementById('add-name').value = '';
     document.getElementById('add-initiative').value = '';
     document.getElementById('add-max-hp').value = '';
+    if (pcSelect) pcSelect.value = '';
+    const bestiarySelect = document.getElementById('bestiary-quickadd');
+    if (bestiarySelect) bestiarySelect.value = '';
+    const sessionMonsterSelect = document.getElementById('session-monster-quickadd');
+    if (sessionMonsterSelect) sessionMonsterSelect.value = '';
+}
+
+// Pre-fill the modal from a Session Monster Instance (already linked to current session)
+function prefillFromSessionMonster(indexStr) {
+    if (indexStr === '') {
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-max-hp').value = '';
+        return;
+    }
+    const monster = SESSION_MONSTERS[parseInt(indexStr)];
+    if (!monster) return;
+
+    // Use the instance name exactly (it's already named, e.g. "Goblin 1")
+    document.getElementById('add-name').value = monster.instance_name;
+    document.getElementById('add-initiative').value = '';
+    document.getElementById('add-max-hp').value = '';
+
+    // Load stat block into Monster Notes
+    if (monster.stat_block) {
+        const notesEl = document.getElementById('monster-notes');
+        const separator = state.monsterNotes ? '\n\n---\n\n' : '';
+        const header = `## ${monster.instance_name} (${monster.entry_name}${monster.cr_level ? ', ' + monster.cr_level : ''})\n\n`;
+        state.monsterNotes = state.monsterNotes + separator + header + monster.stat_block;
+        notesEl.value = state.monsterNotes;
+        saveState();
+    }
+
+    // Reset other dropdowns so they don't conflict
+    const bestiarySelect = document.getElementById('bestiary-quickadd');
+    if (bestiarySelect) bestiarySelect.value = '';
+    const pcSelect = document.getElementById('pc-quickadd');
+    if (pcSelect) pcSelect.value = '';
+}
+
+// Pre-fill the modal from a Bestiary entry
+function prefillFromBestiary(indexStr) {
+    if (indexStr === '') {
+        // Reset name/hp (initiative always needs manual entry)
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-max-hp').value = '';
+        return;
+    }
+    const entry = BESTIARY_ENTRIES[parseInt(indexStr)];
+    if (!entry) return;
+
+    // Auto-number: count existing combatants whose name starts with this entry's name
+    const base = entry.name;
+    const existing = state.combatants.filter(c => c.name.startsWith(base));
+    const num = existing.length + 1;
+    document.getElementById('add-name').value = `${base} ${num}`;
+    document.getElementById('add-initiative').value = '';
+    document.getElementById('add-max-hp').value = '';
+
+    // Load stat block into Monster Notes so the GM can reference it
+    if (entry.stat_block) {
+        const notesEl = document.getElementById('monster-notes');
+        const separator = state.monsterNotes ? '\n\n---\n\n' : '';
+        const header = `## ${base}${entry.cr_level ? ' (' + entry.cr_level + ')' : ''}\n\n`;
+        state.monsterNotes = state.monsterNotes + separator + header + entry.stat_block;
+        notesEl.value = state.monsterNotes;
+        saveState();
+    }
+
+    // Reset other dropdowns so they don't conflict
+    const sessionMonsterSelect = document.getElementById('session-monster-quickadd');
+    if (sessionMonsterSelect) sessionMonsterSelect.value = '';
+    const pcSelect = document.getElementById('pc-quickadd');
     if (pcSelect) pcSelect.value = '';
 }
 
