@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Edit Entry — {{ table.name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('tables.table_detail', table_id=table.id) }}"
+       class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left"></i> {{ table.name }}
+    </a>
+</div>
+
+<h2 class="mb-4">Edit Entry</h2>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Entry Text <span class="text-danger">*</span></label>
+                        <input type="text" name="content"
+                               class="form-control bg-dark text-light border-secondary"
+                               value="{{ row.content }}" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Weight</label>
+                        <input type="number" name="weight"
+                               class="form-control bg-dark text-light border-secondary"
+                               value="{{ row.weight }}" min="1" max="99" style="max-width:100px">
+                        <div class="form-text text-muted">
+                            A weight of 2 makes this result appear twice as often as weight 1.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Save
+                        </button>
+                        <a href="{{ url_for('tables.table_detail', table_id=table.id) }}"
+                           class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
