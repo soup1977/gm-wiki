@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+{% block title %}Combat Tracker — GM Wiki{% endblock %}
+
+{% block content %}
+
+{# ── Top bar: title + round controls ────────────────────────────────────── #}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h2 class="mb-0"><i class="bi bi-sword"></i> Combat Tracker</h2>
+    <div class="d-flex align-items-center gap-3">
+        <span id="round-counter" class="fs-5 fw-bold text-warning">Round 1</span>
+        <button class="btn btn-primary btn-lg" onclick="nextTurn()" id="next-turn-btn" disabled>
+            <i class="bi bi-skip-end-fill"></i> Next Turn
+        </button>
+        <button class="btn btn-outline-danger" onclick="endCombat()">
+            <i class="bi bi-x-circle"></i> End Combat
+        </button>
+    </div>
+</div>
+
+{# ── Session context picker ──────────────────────────────────────────────── #}
+{% if active_campaign %}
+<div class="card bg-dark border-secondary mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <span class="text-muted small text-nowrap">Running session:</span>
+            <form method="POST" action="{{ url_for('combat.set_session') }}"
+                  class="d-flex gap-2 align-items-center flex-grow-1" style="max-width:400px;">
+                <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                        name="session_id" onchange="this.form.submit()">
+                    <option value="">— None selected —</option>
+                    {% for s in all_sessions %}
+                    <option value="{{ s.id }}"
+                            {% if s.id == current_session_id %}selected{% endif %}>
+                        {% if s.number %}#{{ s.number }} {% endif %}{{ s.title or 'Untitled' }}
+                        {% if s.date_played %} ({{ s.date_played.strftime('%Y-%m-%d') }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            {% if session_pcs %}
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">{{ session_pcs|length }} PC(s) in session.</span>
+                <button class="btn btn-sm btn-success" onclick="autoAddAllPCs()">
+                    <i class="bi bi-people-fill"></i> Add All PCs
+                </button>
+            </div>
+            {% elif current_session_name %}
+            <span class="text-muted small">No PCs marked as attending for this session.</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Main layout: initiative list + monster notes ────────────────────────── #}
+<div class="row g-3">
+
+    {# Initiative order #}
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Initiative Order</h5>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCombatantModal">
+                <i class="bi bi-plus-circle"></i> Add Combatant
+            </button>
+        </div>
+        <div id="combatant-list">
+            <p class="text-muted text-center py-5">
+                <i class="bi bi-sword fs-1 d-block mb-2"></i>
+                No combatants yet. Add some to start!
+            </p>
+        </div>
+    </div>
+
+    {# Monster stat block notes #}
+    <div class="col-lg-4">
+        <h5 class="mb-2">Monster Notes</h5>
+        <p class="text-muted small mb-2">Paste a stat block or jot quick reference notes here. Cleared when you close the browser.</p>
+        <textarea id="monster-notes"
+                  class="form-control bg-dark text-light border-secondary"
+                  rows="12"
+                  placeholder="Paste monster stat blocks or quick reference notes here…"
+                  oninput="saveMonsterNotes()"></textarea>
+    </div>
+
+</div>
+
+{# ── Add Combatant Modal ──────────────────────────────────────────────────── #}
+<div class="modal fade" id="addCombatantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Add Combatant</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                {# Quick-add from session PCs #}
+                {% if session_pcs %}
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Quick-add from session PCs</label>
+                    <select class="form-select bg-dark text-light border-secondary" id="pc-quickadd"
+                            onchange="prefillFromPC(this.value)">
+                        <option value="">— Manual entry —</option>
+                        {% for pc in session_pcs %}
+                        <option value="{{ loop.index0 }}">
+                            {{ pc.character_name }} ({{ pc.player_name }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <hr class="border-secondary">
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="add-name" class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control bg-dark text-light border-secondary"
+                           id="add-name" placeholder="e.g. Goblin 1, Thorin">
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label for="add-initiative" class="form-label">Initiative <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                               id="add-initiative" placeholder="e.g. 18">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label for="add-max-hp" class="form-label">Max HP</label>
+                        <input type="number" class="form-control bg-dark text-light border-secondary"
+                               id="add-max-hp" placeholder="e.g. 52" min="0">
+                    </div>
+                </div>
+                <p id="add-error" class="text-danger small mb-0" style="display:none;"></p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitAddCombatant()">
+                    <i class="bi bi-plus-circle"></i> Add
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── JavaScript ──────────────────────────────────────────────────────────── #}
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// GM Wiki — Combat Tracker
+// All combat state lives in sessionStorage so it survives page refreshes but
+// is automatically cleared when the browser tab/window is closed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The key we use to store combat state in sessionStorage
+const STORAGE_KEY = 'gm_wiki_combat';
+
+// All possible status effects (toggle on/off per combatant)
+const STATUS_EFFECTS = [
+    'Poisoned', 'Stunned', 'Prone', 'Restrained', 'Blinded',
+    'Deafened', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible',
+    'Paralyzed', 'Petrified', 'Charmed', 'Unconscious'
+];
+
+// PC data passed from the server (PCs attending the current session)
+const SESSION_PCS = {{ session_pcs | tojson }};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+// The single source of truth. Saved to sessionStorage on every change.
+let state = {
+    round: 1,
+    currentTurnIndex: 0,
+    combatants: [],
+    monsterNotes: ''
+};
+
+// ── Persistence ───────────────────────────────────────────────────────────────
+
+function saveState() {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    try {
+        const parsed = JSON.parse(saved);
+        // Merge with defaults in case keys are missing in old saved state
+        state = Object.assign({ round: 1, currentTurnIndex: 0, combatants: [], monsterNotes: '' }, parsed);
+    } catch (e) {
+        console.warn('Could not parse saved combat state:', e);
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Generate a short unique ID for each combatant
+function makeId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+// Sort combatants by initiative (highest first)
+function sortByInitiative() {
+    state.combatants.sort((a, b) => b.initiative - a.initiative);
+}
+
+// Safely escape HTML so combatant names can't inject markup
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+}
+
+// Try to find an HP stat value in a stats dict.
+// Checks for keys containing 'hp', 'hit point', or 'heart' (case-insensitive).
+function findHpValue(stats) {
+    const keys = Object.keys(stats || {});
+    const key = keys.find(k => /hp|hit\s*point|hearts/i.test(k));
+    return key ? (parseInt(stats[key]) || 0) : 0;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+function nextTurn() {
+    if (state.combatants.length === 0) return;
+    state.currentTurnIndex = (state.currentTurnIndex + 1) % state.combatants.length;
+    // When we wrap back to the top, advance the round counter
+    if (state.currentTurnIndex === 0) {
+        state.round++;
+    }
+    saveState();
+    render();
+}
+
+function endCombat() {
+    if (!confirm('End combat and clear all combatants? This cannot be undone.')) return;
+    // Keep monster notes but reset everything else
+    const notes = state.monsterNotes;
+    state = { round: 1, currentTurnIndex: 0, combatants: [], monsterNotes: notes };
+    saveState();
+    render();
+}
+
+function addCombatant(data) {
+    const maxHp = parseInt(data.maxHp) || 0;
+    state.combatants.push({
+        id: makeId(),
+        name: data.name,
+        initiative: parseInt(data.initiative) || 0,
+        currentHp: data.currentHp !== undefined ? parseInt(data.currentHp) : maxHp,
+        maxHp: maxHp,
+        statusEffects: [],
+        isPC: data.isPC || false,
+        characterId: data.characterId || null
+    });
+    sortByInitiative();
+    saveState();
+    render();
+}
+
+function removeCombatant(id) {
+    const idx = state.combatants.findIndex(c => c.id === id);
+    if (idx === -1) return;
+    state.combatants.splice(idx, 1);
+    // Keep currentTurnIndex in bounds
+    if (state.combatants.length > 0 && state.currentTurnIndex >= state.combatants.length) {
+        state.currentTurnIndex = state.combatants.length - 1;
+    }
+    saveState();
+    render();
+}
+
+function setHp(id, newHp) {
+    const c = state.combatants.find(c => c.id === id);
+    if (!c) return;
+    c.currentHp = Math.max(0, c.maxHp > 0 ? Math.min(newHp, c.maxHp) : newHp);
+    saveState();
+    render();
+}
+
+function adjustHp(id, delta) {
+    const c = state.combatants.find(c => c.id === id);
+    if (!c) return;
+    setHp(id, c.currentHp + delta);
+}
+
+function toggleStatus(id, effect) {
+    const c = state.combatants.find(c => c.id === id);
+    if (!c) return;
+    const idx = c.statusEffects.indexOf(effect);
+    if (idx === -1) {
+        c.statusEffects.push(effect);
+    } else {
+        c.statusEffects.splice(idx, 1);
+    }
+    saveState();
+    render();
+}
+
+function saveMonsterNotes() {
+    state.monsterNotes = document.getElementById('monster-notes').value;
+    saveState();
+}
+
+// Auto-add all PCs from the current session context
+function autoAddAllPCs() {
+    let added = 0;
+    SESSION_PCS.forEach(pc => {
+        // Skip if this PC is already in the initiative list
+        if (state.combatants.some(c => c.characterId === pc.id)) return;
+        const hp = findHpValue(pc.stats);
+        addCombatant({
+            name: pc.character_name,
+            initiative: 0,  // GM will set initiative for each PC
+            maxHp: hp,
+            isPC: true,
+            characterId: pc.id
+        });
+        added++;
+    });
+    if (added === 0) {
+        alert('All session PCs are already in the tracker.');
+    }
+}
+
+// ── Modal: Add Combatant ──────────────────────────────────────────────────────
+
+// Pre-fill the modal form from a session PC when the GM picks one from the dropdown
+function prefillFromPC(indexStr) {
+    if (indexStr === '') {
+        // Manual mode — clear form
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-initiative').value = '';
+        document.getElementById('add-max-hp').value = '';
+        return;
+    }
+    const pc = SESSION_PCS[parseInt(indexStr)];
+    if (!pc) return;
+    document.getElementById('add-name').value = pc.character_name;
+    document.getElementById('add-initiative').value = '';  // GM enters initiative
+    document.getElementById('add-max-hp').value = findHpValue(pc.stats) || '';
+}
+
+// Handle the "Add" button in the modal
+function submitAddCombatant() {
+    const name = document.getElementById('add-name').value.trim();
+    const initiative = document.getElementById('add-initiative').value.trim();
+    const errorEl = document.getElementById('add-error');
+
+    if (!name) {
+        errorEl.textContent = 'Name is required.';
+        errorEl.style.display = 'block';
+        return;
+    }
+    if (initiative === '' || isNaN(parseInt(initiative))) {
+        errorEl.textContent = 'Initiative is required (enter a number).';
+        errorEl.style.display = 'block';
+        return;
+    }
+    errorEl.style.display = 'none';
+
+    // Check if this was a quick-add PC
+    const pcSelect = document.getElementById('pc-quickadd');
+    let isPC = false;
+    let characterId = null;
+    if (pcSelect && pcSelect.value !== '') {
+        const pc = SESSION_PCS[parseInt(pcSelect.value)];
+        if (pc) {
+            isPC = true;
+            characterId = pc.id;
+        }
+    }
+
+    addCombatant({
+        name,
+        initiative: parseInt(initiative),
+        maxHp: parseInt(document.getElementById('add-max-hp').value) || 0,
+        isPC,
+        characterId
+    });
+
+    // Close the modal and reset the form
+    bootstrap.Modal.getInstance(document.getElementById('addCombatantModal')).hide();
+    document.getElementById('add-name').value = '';
+    document.getElementById('add-initiative').value = '';
+    document.getElementById('add-max-hp').value = '';
+    if (pcSelect) pcSelect.value = '';
+}
+
+// Allow pressing Enter in the modal to submit
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('addCombatantModal').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') submitAddCombatant();
+    });
+});
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function hpBarHtml(current, max) {
+    if (max <= 0) return '';
+    const pct = Math.max(0, Math.min(100, Math.round((current / max) * 100)));
+    let color = 'bg-success';
+    if (pct <= 50) color = 'bg-warning';
+    if (pct <= 25) color = 'bg-danger';
+    return `<div class="progress bg-secondary mt-1" style="height:6px;">
+                <div class="progress-bar ${color}" style="width:${pct}%"></div>
+            </div>`;
+}
+
+function render() {
+    // Update round counter
+    document.getElementById('round-counter').textContent = `Round ${state.round}`;
+
+    // Enable/disable Next Turn button
+    document.getElementById('next-turn-btn').disabled = state.combatants.length === 0;
+
+    // Restore monster notes text (only on first render to avoid cursor jumping)
+    const notesEl = document.getElementById('monster-notes');
+    if (notesEl && notesEl.value !== state.monsterNotes) {
+        notesEl.value = state.monsterNotes;
+    }
+
+    const list = document.getElementById('combatant-list');
+
+    if (state.combatants.length === 0) {
+        list.innerHTML = `<p class="text-muted text-center py-5">
+            <i class="bi bi-sword fs-1 d-block mb-2"></i>
+            No combatants yet. Add some to start!
+        </p>`;
+        return;
+    }
+
+    list.innerHTML = state.combatants.map((c, idx) => {
+        const isActive = idx === state.currentTurnIndex;
+        const borderClass = isActive ? 'border-warning' : 'border-secondary';
+        const bgClass = isActive ? 'bg-dark shadow' : 'bg-dark';
+
+        const activeIndicator = isActive
+            ? '<span class="badge bg-warning text-dark ms-2"><i class="bi bi-caret-right-fill"></i> Active</span>'
+            : '';
+
+        const pcBadge = c.isPC
+            ? '<span class="badge bg-primary ms-1">PC</span>'
+            : '';
+
+        // HP display
+        const hpBar = hpBarHtml(c.currentHp, c.maxHp);
+        const hpDisplay = c.maxHp > 0
+            ? `<input type="number" class="form-control form-control-sm d-inline-block text-center bg-secondary text-light border-secondary"
+                      style="width:60px;" value="${c.currentHp}" min="0" max="${c.maxHp}"
+                      onchange="setHp('${c.id}', parseInt(this.value) || 0)"
+                      onclick="this.select()">
+               <span class="text-muted small"> / ${c.maxHp}</span>`
+            : `<input type="number" class="form-control form-control-sm d-inline-block text-center bg-secondary text-light border-secondary"
+                      style="width:60px;" value="${c.currentHp}" min="0"
+                      onchange="setHp('${c.id}', parseInt(this.value) || 0)"
+                      onclick="this.select()">`;
+
+        // Status effect badges (active ones highlighted in danger, inactive ones subtle)
+        const statusBadges = STATUS_EFFECTS.map(effect => {
+            const active = c.statusEffects.includes(effect);
+            const cls = active
+                ? 'badge bg-danger me-1 mb-1'
+                : 'badge bg-secondary bg-opacity-25 text-secondary me-1 mb-1';
+            return `<span class="${cls}" style="cursor:pointer;"
+                         onclick="toggleStatus('${c.id}', '${effect}')">${effect}</span>`;
+        }).join('');
+
+        return `
+        <div class="card ${bgClass} ${borderClass} mb-2" id="combatant-${c.id}">
+            <div class="card-body py-2 px-3">
+
+                {# Name row #}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <span class="fw-bold">${escHtml(c.name)}</span>
+                        ${pcBadge}
+                        ${activeIndicator}
+                        <span class="text-muted small ms-2">Initiative: ${c.initiative}</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2"
+                            onclick="removeCombatant('${c.id}')" title="Remove from combat">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                {# HP row #}
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                    <span class="text-muted small">HP</span>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2"
+                            onclick="adjustHp('${c.id}', -5)" title="−5">−5</button>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2"
+                            onclick="adjustHp('${c.id}', -1)" title="−1">−1</button>
+                    ${hpDisplay}
+                    <button class="btn btn-sm btn-outline-success py-0 px-2"
+                            onclick="adjustHp('${c.id}', 1)" title="+1">+1</button>
+                    <button class="btn btn-sm btn-outline-success py-0 px-2"
+                            onclick="adjustHp('${c.id}', 5)" title="+5">+5</button>
+                    <div class="flex-grow-1" style="min-width:80px;">${hpBar}</div>
+                </div>
+
+                {# Status effects #}
+                <details class="mt-1">
+                    <summary class="text-muted small" style="cursor:pointer;">
+                        Status effects
+                        ${c.statusEffects.length > 0
+                            ? `<span class="badge bg-danger ms-1">${c.statusEffects.length} active</span>`
+                            : ''}
+                    </summary>
+                    <div class="mt-2">${statusBadges}</div>
+                </details>
+
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+// Load saved state and render on page load
+loadState();
+render();
+</script>
+{% endblock %}
