@@ -19,7 +19,7 @@
 
         <h2 class="mb-4">{{ 'Edit' if npc else 'New' }} NPC</h2>
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="name" name="name"
@@ -78,6 +78,19 @@
                     {% endfor %}
                 </select>
                 <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple. Locations this NPC is associated with beyond their home.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="portrait" class="form-label">Portrait Image</label>
+                {% if npc and npc.portrait_filename %}
+                <div class="mb-2">
+                    <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
+                         alt="Current portrait" class="img-thumbnail" style="max-height: 150px;">
+                    <div class="form-text">Upload a new image below to replace this one.</div>
+                </div>
+                {% endif %}
+                <input type="file" class="form-control" id="portrait" name="portrait" accept="image/*">
+                <div class="form-text">Accepted formats: JPG, PNG, GIF, WebP. Leave blank to keep the existing image.</div>
             </div>
 
             <div class="mb-3">

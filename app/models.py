@@ -84,6 +84,7 @@ class Location(db.Model):
     description = db.Column(db.Text)
     gm_notes = db.Column(db.Text)                 # GM-only — never shown to players
     notes = db.Column(db.Text)                    # General notes (markdown in Phase 4)
+    map_filename = db.Column(db.String(255))       # stored filename in static/uploads/
     is_player_visible = db.Column(db.Boolean, default=False)  # Used in Phase 6
 
     # Self-referencing parent (region > city > district)
@@ -132,6 +133,8 @@ class NPC(db.Model):
     secrets = db.Column(db.Text)                  # GM-only — never shown to players
     notes = db.Column(db.Text)                    # General notes (markdown in Phase 4)
     is_player_visible = db.Column(db.Boolean, default=False)  # Used in Phase 6
+
+    portrait_filename = db.Column(db.String(255))  # stored filename in static/uploads/
 
     # Foreign key to Location (NPC's home)
     home_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)

@@ -52,6 +52,13 @@
 </div>
 {% endif %}
 
+{% if npc.portrait_filename %}
+<div class="mb-4">
+    <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
+         alt="{{ npc.name }}" class="img-fluid rounded" style="max-height: 350px;">
+</div>
+{% endif %}
+
 {% if npc.physical_description %}
 <div class="mb-4">
     <h5>Physical Description</h5>

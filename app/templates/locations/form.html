@@ -19,7 +19,7 @@
 
         <h2 class="mb-4">{{ 'Edit' if location else 'New' }} Location</h2>
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="name" name="name"
@@ -58,6 +58,19 @@
                     {% endfor %}
                 </select>
                 <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple. E.g. a road or passage between locations.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="map_image" class="form-label">Map / Scene Image</label>
+                {% if location and location.map_filename %}
+                <div class="mb-2">
+                    <img src="{{ url_for('static', filename='uploads/' + location.map_filename) }}"
+                         alt="Current map" class="img-thumbnail" style="max-height: 150px;">
+                    <div class="form-text">Upload a new image below to replace this one.</div>
+                </div>
+                {% endif %}
+                <input type="file" class="form-control" id="map_image" name="map_image" accept="image/*">
+                <div class="form-text">Accepted formats: JPG, PNG, GIF, WebP. Leave blank to keep the existing image.</div>
             </div>
 
             <div class="mb-3">
