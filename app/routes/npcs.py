@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from app import db
+from app import db, save_upload
 from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags
 
 npcs_bp = Blueprint('npcs', __name__, url_prefix='/npcs')
@@ -67,6 +67,11 @@ def create_npc():
         npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
         npc.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
 
+        portrait_file = request.files.get('portrait')
+        filename = save_upload(portrait_file)
+        if filename:
+            npc.portrait_filename = filename
+
         db.session.commit()
 
         flash(f'NPC "{npc.name}" created!', 'success')
@@ -121,6 +126,11 @@ def edit_npc(npc_id):
         connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
         npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
         npc.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+
+        portrait_file = request.files.get('portrait')
+        filename = save_upload(portrait_file)
+        if filename:
+            npc.portrait_filename = filename
 
         db.session.commit()
 

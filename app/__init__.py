@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
 import markdown as _md
+import os
+import uuid
 
 # Create the database object here, but don't attach it to an app yet
 db = SQLAlchemy()
@@ -12,6 +14,27 @@ db = SQLAlchemy()
 # and applies them incrementally (like Git for your database schema)
 migrate = Migrate()
 
+
+def save_upload(file):
+    """Save an uploaded image file to the uploads folder.
+
+    Validates the file extension, generates a unique filename (UUID + original
+    extension) to avoid collisions, then writes the file to UPLOAD_FOLDER.
+    Returns the new filename string, or None if the file is missing/invalid.
+    """
+    from flask import current_app
+    if not file or not file.filename:
+        return None
+    if '.' not in file.filename:
+        return None
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    if ext not in current_app.config.get('ALLOWED_EXTENSIONS', set()):
+        return None
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+    return filename
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -19,6 +42,9 @@ def create_app():
     # Attach the database and migration engine to this app instance
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # Ensure the uploads directory exists when the app starts
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     # Register the 'md' Jinja2 filter — converts Markdown text to HTML
     # Usage in templates: {{ some_field | md | safe }}

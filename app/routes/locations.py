@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from app import db
+from app import db, save_upload
 from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags
 
 locations_bp = Blueprint('locations', __name__, url_prefix='/locations')
@@ -61,6 +61,11 @@ def create_location():
         location.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
         location.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
 
+        map_file = request.files.get('map_image')
+        filename = save_upload(map_file)
+        if filename:
+            location.map_filename = filename
+
         db.session.commit()
 
         flash(f'Location "{location.name}" created!', 'success')
@@ -121,6 +126,11 @@ def edit_location(location_id):
             Location.id.in_(connected_ids), Location.id != location.id
         ).all()
         location.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+
+        map_file = request.files.get('map_image')
+        filename = save_upload(map_file)
+        if filename:
+            location.map_filename = filename
 
         db.session.commit()
 

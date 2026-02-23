@@ -46,6 +46,13 @@
 </div>
 {% endif %}
 
+{% if location.map_filename %}
+<div class="mb-4">
+    <img src="{{ url_for('static', filename='uploads/' + location.map_filename) }}"
+         alt="{{ location.name }} map" class="img-fluid rounded" style="max-height: 400px;">
+</div>
+{% endif %}
+
 {% if location.description %}
 <div class="mb-4">
     <h5>Description</h5>
