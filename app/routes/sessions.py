@@ -1,13 +1,26 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
-from app.models import Session, NPC, Location, Item, Quest, Tag, session_tags, get_or_create_tags
+from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
+                        get_or_create_tags, PlayerCharacter, SessionAttendance)
 
 sessions_bp = Blueprint('sessions', __name__)
 
 
 def get_active_campaign_id():
     return session.get('active_campaign_id')
+
+
+def _save_attendance(sess, campaign_id):
+    """Clear existing attendance records for this session and recreate from
+    the 'attended_pc_ids' checkbox list in the current request form."""
+    for att in list(sess.attendances):
+        db.session.delete(att)
+    db.session.flush()
+
+    attended_ids = {int(i) for i in request.form.getlist('attended_pc_ids')}
+    for pc_id in attended_ids:
+        db.session.add(SessionAttendance(session_id=sess.id, character_id=pc_id))
 
 
 @sessions_bp.route('/sessions')
@@ -41,6 +54,8 @@ def create_session():
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     items = Item.query.filter_by(campaign_id=campaign_id).order_by(Item.name).all()
     quests = Quest.query.filter_by(campaign_id=campaign_id).order_by(Quest.name).all()
+    pcs = PlayerCharacter.query.filter_by(campaign_id=campaign_id)\
+        .order_by(PlayerCharacter.character_name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -52,7 +67,7 @@ def create_session():
                 flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
                 return render_template('sessions/form.html', sess=None,
                                        npcs=npcs, locations=locations,
-                                       items=items, quests=quests)
+                                       items=items, quests=quests, pcs=pcs)
 
         sess = Session(
             campaign_id=campaign_id,
@@ -82,6 +97,10 @@ def create_session():
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(sess)
+        db.session.flush()  # Need sess.id before creating attendance rows
+
+        _save_attendance(sess, campaign_id)
+
         db.session.commit()
         label = f'Session {sess.number}' if sess.number else 'Session'
         flash(f'{label} created.', 'success')
@@ -89,7 +108,7 @@ def create_session():
 
     return render_template('sessions/form.html', sess=None,
                            npcs=npcs, locations=locations,
-                           items=items, quests=quests)
+                           items=items, quests=quests, pcs=pcs)
 
 
 @sessions_bp.route('/sessions/<int:session_id>')
@@ -108,6 +127,8 @@ def edit_session(session_id):
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     items = Item.query.filter_by(campaign_id=campaign_id).order_by(Item.name).all()
     quests = Quest.query.filter_by(campaign_id=campaign_id).order_by(Quest.name).all()
+    pcs = PlayerCharacter.query.filter_by(campaign_id=campaign_id)\
+        .order_by(PlayerCharacter.character_name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -119,7 +140,7 @@ def edit_session(session_id):
                 flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
                 return render_template('sessions/form.html', sess=sess,
                                        npcs=npcs, locations=locations,
-                                       items=items, quests=quests)
+                                       items=items, quests=quests, pcs=pcs)
 
         sess.number = request.form.get('number') or None
         sess.title = request.form.get('title', '').strip() or None
@@ -145,13 +166,14 @@ def edit_session(session_id):
         ).all()
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+        _save_attendance(sess, campaign_id)
         db.session.commit()
         flash('Session updated.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))
 
     return render_template('sessions/form.html', sess=sess,
                            npcs=npcs, locations=locations,
-                           items=items, quests=quests)
+                           items=items, quests=quests, pcs=pcs)
 
 
 @sessions_bp.route('/sessions/<int:session_id>/delete', methods=['POST'])

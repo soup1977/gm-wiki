@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if pc else 'New' }} Player Character — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('pcs.list_pcs') }}">Player Characters</a></li>
+                {% if pc %}
+                <li class="breadcrumb-item"><a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}">{{ pc.character_name }}</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+                {% else %}
+                <li class="breadcrumb-item active">New</li>
+                {% endif %}
+            </ol>
+        </nav>
+
+        <h2 class="mb-4">{{ 'Edit' if pc else 'New' }} Player Character</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+
+            {# Basic info #}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="character_name" class="form-label">Character Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="character_name" name="character_name"
+                           value="{{ pc.character_name if pc else '' }}" required autofocus>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="player_name" class="form-label">Player Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="player_name" name="player_name"
+                           value="{{ pc.player_name if pc else '' }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="class_or_role" class="form-label">Class / Role</label>
+                    <input type="text" class="form-control" id="class_or_role" name="class_or_role"
+                           value="{{ pc.class_or_role if pc else '' }}"
+                           placeholder="e.g. Fighter, Hacker, Pilot">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="level_or_rank" class="form-label">Level / Rank</label>
+                    <input type="text" class="form-control" id="level_or_rank" name="level_or_rank"
+                           value="{{ pc.level_or_rank if pc else '' }}"
+                           placeholder="e.g. Level 5, Veteran">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        {% for choice in status_choices %}
+                        <option value="{{ choice }}"
+                                {% if pc and pc.status == choice %}selected
+                                {% elif not pc and choice == 'active' %}selected
+                                {% endif %}>
+                            {{ choice|capitalize }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            {# Portrait #}
+            <div class="mb-3">
+                <label for="portrait" class="form-label">Portrait Image</label>
+                {% if pc and pc.portrait_filename %}
+                <div class="mb-2">
+                    <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
+                         alt="Current portrait" class="img-thumbnail" style="max-height: 150px;">
+                    <div class="form-text">Upload a new image below to replace this one.</div>
+                </div>
+                {% endif %}
+                <input type="file" class="form-control" id="portrait" name="portrait" accept="image/*">
+                <div class="form-text">Accepted formats: JPG, PNG, GIF, WebP.</div>
+            </div>
+
+            {# Stat fields from the campaign template #}
+            {% if template_fields %}
+            <hr class="border-secondary my-4">
+            <h5 class="mb-3">Stats</h5>
+            <div class="row">
+                {% for field in template_fields %}
+                <div class="col-md-4 mb-3">
+                    <label for="stat_{{ field.id }}" class="form-label">{{ field.stat_name }}</label>
+                    <input type="text" class="form-control" id="stat_{{ field.id }}" name="stat_{{ field.id }}"
+                           value="{{ stat_values.get(field.id, '') if stat_values else '' }}">
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted small mt-3">
+                No stat fields defined for this campaign yet.
+                <a href="{{ url_for('campaigns.edit_campaign', campaign_id=active_campaign.id) }}#stat-template">Add stat fields</a> in Campaign Settings.
+            </p>
+            {% endif %}
+
+            {# Notes #}
+            <hr class="border-secondary my-4">
+            <div class="mb-4">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="5">{{ pc.notes if pc else '' }}</textarea>
+                <div class="form-text">Markdown supported.</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> {{ 'Save Changes' if pc else 'Create PC' }}
+                </button>
+                {% if pc %}
+                <a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                {% else %}
+                <a href="{{ url_for('pcs.list_pcs') }}" class="btn btn-outline-secondary">Cancel</a>
+                {% endif %}
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}

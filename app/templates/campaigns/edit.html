@@ -48,4 +48,77 @@
            class="btn btn-outline-secondary">Cancel</a>
     </div>
 </form>
+
+{# ── Stat Template Section ──────────────────────────────────────────────── #}
+<hr class="border-secondary mt-5 mb-4" id="stat-template">
+<h4 class="mb-1">Player Character Stat Fields</h4>
+<p class="text-muted small mb-3">
+    These are the stat fields shown on every Player Character in this campaign.
+    Changes apply to new PCs immediately; existing PC stat values are preserved when you rename a field.
+</p>
+
+{% if stat_fields %}
+<ul class="list-group mb-3" style="max-width: 600px;">
+    {% for field in stat_fields %}
+    <li class="list-group-item bg-dark border-secondary d-flex align-items-center gap-2">
+
+        {# Rename form — the field name is editable inline #}
+        <form method="POST"
+              action="{{ url_for('campaigns.rename_stat_field', campaign_id=campaign.id, stat_id=field.id) }}"
+              class="d-flex align-items-center gap-2 flex-grow-1">
+            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                   name="stat_name" value="{{ field.stat_name }}" required>
+            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Save name">
+                <i class="bi bi-check-lg"></i>
+            </button>
+        </form>
+
+        {# Move up #}
+        <form method="POST"
+              action="{{ url_for('campaigns.move_stat_field', campaign_id=campaign.id, stat_id=field.id) }}">
+            <input type="hidden" name="direction" value="up">
+            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                    title="Move up" {% if loop.first %}disabled{% endif %}>
+                <i class="bi bi-arrow-up"></i>
+            </button>
+        </form>
+
+        {# Move down #}
+        <form method="POST"
+              action="{{ url_for('campaigns.move_stat_field', campaign_id=campaign.id, stat_id=field.id) }}">
+            <input type="hidden" name="direction" value="down">
+            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                    title="Move down" {% if loop.last %}disabled{% endif %}>
+                <i class="bi bi-arrow-down"></i>
+            </button>
+        </form>
+
+        {# Delete #}
+        <form method="POST"
+              action="{{ url_for('campaigns.delete_stat_field', campaign_id=campaign.id, stat_id=field.id) }}"
+              onsubmit="return confirm('Delete stat field &quot;{{ field.stat_name }}&quot;? This will remove all saved values for this stat on every PC in this campaign.')">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete field">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted small mb-3">No stat fields yet. Add one below.</p>
+{% endif %}
+
+{# Add new field #}
+<form method="POST"
+      action="{{ url_for('campaigns.add_stat_field', campaign_id=campaign.id) }}"
+      class="d-flex gap-2 align-items-center"
+      style="max-width: 600px;">
+    <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+           name="stat_name" placeholder="New stat field name (e.g. Armor Class)" required>
+    <button type="submit" class="btn btn-sm btn-success text-nowrap">
+        <i class="bi bi-plus-circle"></i> Add Field
+    </button>
+</form>
+
 {% endblock %}

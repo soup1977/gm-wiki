@@ -65,11 +65,13 @@ def create_app():
     from app.routes.compendium import compendium_bp
     from app.routes.sessions import sessions_bp
     from app.routes.tags import tags_bp
+    from app.routes.pcs import pcs_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(campaigns_bp)
     app.register_blueprint(locations_bp)
     app.register_blueprint(npcs_bp)
+    app.register_blueprint(pcs_bp)
     app.register_blueprint(quests_bp)
     app.register_blueprint(items_bp)
     app.register_blueprint(compendium_bp)

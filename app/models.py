@@ -58,6 +58,71 @@ class Campaign(db.Model):
         return f'<Campaign {self.name}>'
 
 
+class CampaignStatTemplate(db.Model):
+    """Defines what PC stats are tracked in this campaign.
+    Each row is one stat field (e.g. "Armor Class", "Max HP").
+    The GM picks a preset when creating the campaign and can edit fields later."""
+    __tablename__ = 'campaign_stat_template'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    stat_name = db.Column(db.String(100), nullable=False)
+    display_order = db.Column(db.Integer, default=0)
+
+    campaign = db.relationship('Campaign', backref='stat_template_fields')
+
+    def __repr__(self):
+        return f'<CampaignStatTemplate {self.stat_name}>'
+
+
+class PlayerCharacter(db.Model):
+    """A player character in a campaign. Separate from NPCs — different fields,
+    different visibility rules, used by the Combat Tracker and Session Mode."""
+    __tablename__ = 'player_characters'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+
+    character_name = db.Column(db.String(200), nullable=False)
+    player_name = db.Column(db.String(200), nullable=False)
+    level_or_rank = db.Column(db.String(100))   # "Level 5", "CR 3", "Veteran"
+    class_or_role = db.Column(db.String(200))   # "Fighter", "Hacker", "Pilot"
+    status = db.Column(db.String(50), default='active')
+    # Status values: active, inactive, retired, dead, npc
+
+    notes = db.Column(db.Text)                   # Markdown GM notes
+    portrait_filename = db.Column(db.String(255))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    campaign = db.relationship('Campaign', backref='player_characters')
+    stats = db.relationship('PlayerCharacterStat', backref='character',
+                            cascade='all, delete-orphan')
+    session_attendances = db.relationship('SessionAttendance', backref='character',
+                                          cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<PlayerCharacter {self.character_name}>'
+
+
+class PlayerCharacterStat(db.Model):
+    """Stores one stat value for a PC, linked to a CampaignStatTemplate field.
+    E.g. template_field='Armor Class (AC)', stat_value='16'."""
+    __tablename__ = 'player_character_stats'
+
+    id = db.Column(db.Integer, primary_key=True)
+    character_id = db.Column(db.Integer, db.ForeignKey('player_characters.id'), nullable=False)
+    template_field_id = db.Column(db.Integer, db.ForeignKey('campaign_stat_template.id'),
+                                  nullable=False)
+    stat_value = db.Column(db.String(100))  # Stored as string: "16", "45", "1d8+3"
+
+    template_field = db.relationship('CampaignStatTemplate')
+
+    def __repr__(self):
+        return f'<PlayerCharacterStat {self.template_field_id}={self.stat_value}>'
+
+
 class Tag(db.Model):
     __tablename__ = 'tags'
 
@@ -262,15 +327,42 @@ class Session(db.Model):
     gm_notes = db.Column(db.Text)            # GM-only notes
     is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
 
+    # Phase 5 — Session Mode fields
+    pinned_npc_ids = db.Column(db.JSON)      # Array of NPC IDs pinned for this session
+    active_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+
     campaign = db.relationship('Campaign', backref='sessions')
     npcs_featured = db.relationship('NPC', secondary=session_npc_link, backref='sessions')
     locations_visited = db.relationship('Location', secondary=session_location_link, backref='sessions')
     items_mentioned = db.relationship('Item', secondary=session_item_link, backref='sessions')
     quests_touched = db.relationship('Quest', secondary=session_quest_link, backref='sessions')
     tags = db.relationship('Tag', secondary=session_tags)
+    active_location = db.relationship('Location', foreign_keys=[active_location_id])
+
+    @property
+    def attending_pcs(self):
+        """Convenience property — returns the PlayerCharacter objects for this session."""
+        return [a.character for a in self.attendances if a.character]
 
     def __repr__(self):
         return f'<Session {self.number}: {self.title}>'
+
+
+class SessionAttendance(db.Model):
+    """Records which Player Characters attended a given session."""
+    __tablename__ = 'session_attendance'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    character_id = db.Column(db.Integer, db.ForeignKey('player_characters.id'), nullable=False)
+
+    # backref 'attendances' on Session; cascade so deleting a session cleans up rows
+    session = db.relationship('Session',
+                              backref=db.backref('attendances', cascade='all, delete-orphan'))
+    # 'character' backref defined on PlayerCharacter.session_attendances above
+
+    def __repr__(self):
+        return f'<SessionAttendance session={self.session_id} char={self.character_id}>'
 
 
 def get_or_create_tags(campaign_id, tag_string):

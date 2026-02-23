@@ -67,6 +67,41 @@
 
     <!-- Linked entities sidebar -->
     <div class="col-md-4">
+
+        {# Attending PCs #}
+        {% set attending = sess.attending_pcs %}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Players</span>
+                {% if attending %}
+                <span class="badge bg-secondary">{{ attending | length }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if attending %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for pc in attending %}
+                    <a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}"
+                       class="d-flex align-items-center gap-2 text-decoration-none text-light">
+                        {% if pc.portrait_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
+                             class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" alt="">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                             style="width:32px;height:32px;flex-shrink:0;">
+                            <i class="bi bi-person small"></i>
+                        </div>
+                        {% endif %}
+                        <span class="small">{{ pc.character_name }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0 small">No players marked.</p>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="card bg-dark border-secondary mb-3">
             <div class="card-header">Featured NPCs</div>
             <div class="card-body">
