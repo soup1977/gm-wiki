@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %}Session Mode — GM Wiki{% endblock %}
+
+{% block content %}
+
+{# ── Page header + session picker ────────────────────────────────────────── #}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h2 class="mb-0"><i class="bi bi-broadcast me-2 text-success"></i>Session Mode</h2>
+
+    <form method="POST" action="{{ url_for('session_mode.set_session') }}"
+          class="d-flex gap-2 align-items-center">
+        <select name="session_id"
+                class="form-select form-select-sm bg-dark text-light border-secondary"
+                style="max-width:240px;"
+                onchange="this.form.submit()">
+            <option value="">— Select session —</option>
+            {% for s in all_sessions %}
+            <option value="{{ s.id }}"
+                    {% if current_session_id == s.id %}selected{% endif %}>
+                {% if s.number %}#{{ s.number }} {% endif %}{{ s.title or 'Untitled' }}
+                {% if s.date_played %} · {{ s.date_played.strftime('%b %d') }}{% endif %}
+            </option>
+            {% endfor %}
+        </select>
+        {% if game_session %}
+        <button type="submit" name="session_id" value=""
+                class="btn btn-sm btn-outline-secondary text-nowrap">
+            Clear
+        </button>
+        {% endif %}
+    </form>
+</div>
+
+{% if not game_session %}
+{# ── No session selected ─────────────────────────────────────────────────── #}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-broadcast fs-1 d-block mb-3"></i>
+    <p class="fs-5">Select a session above to start live play mode.</p>
+    <a href="{{ url_for('sessions.create_session') }}" class="btn btn-outline-success mt-2">
+        <i class="bi bi-plus-circle"></i> Create a new session
+    </a>
+</div>
+
+{# Still show active quests even without a session #}
+{% if active_quests %}
+<hr class="border-secondary mt-4">
+<h5 class="text-muted mb-3">Active Quests in Campaign</h5>
+<ul class="list-group list-group-flush">
+    {% for quest in active_quests %}
+    <li class="list-group-item bg-dark border-secondary">
+        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}"
+           class="text-decoration-none text-light">{{ quest.name }}</a>
+        {% if quest.hook %}
+        <span class="text-muted small ms-2">— {{ quest.hook | truncate(60) }}</span>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% else %}
+{# ── Session selected ─────────────────────────────────────────────────────── #}
+
+{# Session info banner #}
+<div class="card bg-dark border-success mb-4">
+    <div class="card-body py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <span class="fs-5 fw-bold text-light">
+                {% if game_session.number %}#{{ game_session.number }} — {% endif %}
+                {{ game_session.title or 'Untitled Session' }}
+            </span>
+            {% if game_session.date_played %}
+            <span class="text-muted ms-2 small">{{ game_session.date_played.strftime('%B %d, %Y') }}</span>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('sessions.edit_session', session_id=game_session.id) }}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit Session
+        </a>
+    </div>
+</div>
+
+{# Quick launch buttons #}
+<div class="d-flex flex-wrap gap-3 mb-4">
+    <a href="{{ url_for('combat.tracker') }}"
+       class="btn btn-lg btn-primary flex-fill" style="min-width:180px;">
+        <i class="bi bi-sword fs-5 d-block mb-1"></i>
+        Combat Tracker
+    </a>
+    <a href="{{ url_for('tables.list_tables') }}"
+       class="btn btn-lg btn-secondary flex-fill" style="min-width:180px;">
+        <i class="bi bi-dice-5 fs-5 d-block mb-1"></i>
+        Random Tables
+    </a>
+    <a href="{{ url_for('sessions.session_detail', session_id=game_session.id) }}"
+       class="btn btn-lg btn-outline-secondary flex-fill" style="min-width:180px;">
+        <i class="bi bi-journal-text fs-5 d-block mb-1"></i>
+        Session Notes
+    </a>
+</div>
+
+{# ── 3-column info grid ───────────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+
+    {# Column 1: Active Quests #}
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-map me-1"></i> Active Quests</h6>
+                <span class="badge bg-secondary">{{ active_quests | length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if active_quests %}
+                <ul class="list-group list-group-flush">
+                    {% for quest in active_quests %}
+                    <li class="list-group-item bg-dark border-secondary py-2">
+                        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}"
+                           class="text-decoration-none text-light fw-bold">{{ quest.name }}</a>
+                        {% if quest.hook %}
+                        <div class="text-muted small mt-1">{{ quest.hook | truncate(70) }}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-muted small p-3">No active quests.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Column 2: Active Location #}
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header border-secondary">
+                <h6 class="mb-0"><i class="bi bi-geo-alt me-1"></i> Active Location</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('session_mode.set_location') }}" class="mb-3">
+                    <select name="location_id"
+                            class="form-select form-select-sm bg-dark text-light border-secondary mb-2"
+                            onchange="this.form.submit()">
+                        <option value="">— No location set —</option>
+                        {% for loc in all_locations %}
+                        <option value="{{ loc.id }}"
+                                {% if game_session.active_location_id == loc.id %}selected{% endif %}>
+                            {{ loc.name }}{% if loc.type %} ({{ loc.type }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
+
+                {% if game_session.active_location %}
+                {% set loc = game_session.active_location %}
+                {% if loc.map_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + loc.map_filename) }}"
+                     class="img-fluid rounded mb-2" style="max-height:140px; object-fit:cover; width:100%;"
+                     alt="{{ loc.name }}">
+                {% endif %}
+                {% if loc.description %}
+                <p class="text-muted small mb-2">{{ loc.description | truncate(150) }}</p>
+                {% endif %}
+                <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-right-circle"></i> View full location
+                </a>
+                {% else %}
+                <p class="text-muted small">Select a location above to set the scene.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Column 3: Attending PCs #}
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-people me-1"></i> Attending PCs</h6>
+                <span class="badge bg-secondary">{{ game_session.attending_pcs | length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% set pcs = game_session.attending_pcs %}
+                {% if pcs %}
+                <ul class="list-group list-group-flush">
+                    {% for pc in pcs %}
+                    <li class="list-group-item bg-dark border-secondary py-2 d-flex align-items-center gap-2">
+                        {% if pc.portrait_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
+                             class="rounded-circle" width="32" height="32"
+                             style="object-fit:cover;" alt="{{ pc.character_name }}">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:32px;height:32px;">
+                            <i class="bi bi-person small"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}"
+                               class="text-decoration-none text-light fw-bold small">{{ pc.character_name }}</a>
+                            <div class="text-muted" style="font-size:.75rem;">{{ pc.player_name }}</div>
+                        </div>
+                        {% if pc.class_or_role %}
+                        <span class="badge bg-secondary ms-auto">{{ pc.class_or_role }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-3">
+                    <p class="text-muted small mb-2">No PCs marked as attending.</p>
+                    <a href="{{ url_for('sessions.edit_session', session_id=game_session.id) }}"
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i> Edit attendance
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Pinned NPCs ──────────────────────────────────────────────────────────── #}
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-pin-angle me-1"></i> Pinned NPCs
+            {% if pinned_npcs %}
+            <span class="badge bg-secondary ms-1">{{ pinned_npcs | length }}</span>
+            {% endif %}
+        </h6>
+        <button class="btn btn-sm btn-outline-secondary"
+                onclick="togglePinManager()"
+                id="pin-manager-toggle">
+            <i class="bi bi-pencil"></i> Manage
+        </button>
+    </div>
+
+    {# Pinned NPC display row #}
+    {% if pinned_npcs %}
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap gap-3">
+            {% for npc in pinned_npcs %}
+            <div class="d-flex align-items-center gap-2">
+                {% if npc.portrait_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
+                     class="rounded-circle" width="40" height="40"
+                     style="object-fit:cover;" alt="{{ npc.name }}">
+                {% else %}
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:40px;height:40px;">
+                    <i class="bi bi-person"></i>
+                </div>
+                {% endif %}
+                <div>
+                    <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}"
+                       class="text-decoration-none text-light fw-bold small">{{ npc.name }}</a>
+                    {% if npc.role %}
+                    <div class="text-muted" style="font-size:.75rem;">{{ npc.role }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="card-body py-2">
+        <p class="text-muted small mb-0">No NPCs pinned. Click Manage to pin NPCs for quick reference.</p>
+    </div>
+    {% endif %}
+
+    {# Pin manager — hidden by default, shown inline (no Bootstrap modal) #}
+    {% set pinned_ids = game_session.pinned_npc_ids or [] %}
+    <div id="pin-manager" style="display:none;" class="border-top border-secondary">
+        <form method="POST" action="{{ url_for('session_mode.pin_npcs') }}" class="p-3">
+            <p class="text-muted small mb-2">Check NPCs to keep pinned for quick reference during this session:</p>
+            <div class="row g-2 mb-3">
+                {% for npc in all_npcs %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               name="pinned_npc_ids" value="{{ npc.id }}"
+                               id="pin-npc-{{ npc.id }}"
+                               {% if npc.id in pinned_ids %}checked{% endif %}>
+                        <label class="form-check-label small" for="pin-npc-{{ npc.id }}">
+                            {{ npc.name }}
+                            {% if npc.role %}<span class="text-muted">({{ npc.role }})</span>{% endif %}
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not all_npcs %}
+                <div class="col-12 text-muted small">No NPCs in this campaign yet.</div>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-sm btn-success">
+                <i class="bi bi-check-circle"></i> Save Pinned NPCs
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                    onclick="togglePinManager()">Cancel</button>
+        </form>
+    </div>
+</div>
+
+{# ── Quick note ───────────────────────────────────────────────────────────── #}
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-header border-secondary">
+        <h6 class="mb-0"><i class="bi bi-pencil-square me-1"></i> Quick Note</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('session_mode.add_note') }}">
+            <div class="d-flex gap-2 align-items-start">
+                <textarea name="note" rows="2"
+                          class="form-control bg-dark text-light border-secondary flex-fill"
+                          placeholder="Type a quick note… it will be appended to the session's GM notes with a timestamp."
+                          style="resize:vertical;"></textarea>
+                <button type="submit" class="btn btn-success text-nowrap">
+                    <i class="bi bi-plus-circle"></i> Add Note
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Previous session summary ─────────────────────────────────────────────── #}
+{% if prev_session %}
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-clock-history me-1"></i>
+            Last Session{% if prev_session.number %} (#{{ prev_session.number }}){% endif %}:
+            {{ prev_session.title or 'Untitled' }}
+        </h6>
+        <a href="{{ url_for('sessions.session_detail', session_id=prev_session.id) }}"
+           class="btn btn-sm btn-outline-secondary">View</a>
+    </div>
+    {% if prev_session.summary %}
+    <div class="card-body">
+        <div class="text-light" style="font-size:.9rem;">
+            {{ prev_session.summary | md | safe }}
+        </div>
+    </div>
+    {% else %}
+    <div class="card-body">
+        <p class="text-muted small mb-0">No summary written yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endif %}{# end if game_session #}
+
+<script>
+function togglePinManager() {
+    const mgr = document.getElementById('pin-manager');
+    const btn = document.getElementById('pin-manager-toggle');
+    if (mgr.style.display === 'none') {
+        mgr.style.display = '';
+        btn.textContent = '✕ Close';
+    } else {
+        mgr.style.display = 'none';
+        btn.innerHTML = '<i class="bi bi-pencil"></i> Manage';
+    }
+}
+</script>
+{% endblock %}
