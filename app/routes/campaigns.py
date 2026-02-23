@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db
-from app.models import Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location, CampaignStatTemplate
+from app.models import Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location, CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat
 
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/campaigns')
 
@@ -144,6 +144,16 @@ def add_stat_field(campaign_id):
         display_order=next_order
     )
     db.session.add(field)
+    db.session.flush()  # Assigns field.id before we create PC stat rows
+
+    # Backfill a blank stat row for every existing PC in this campaign
+    for pc in PlayerCharacter.query.filter_by(campaign_id=campaign_id).all():
+        db.session.add(PlayerCharacterStat(
+            character_id=pc.id,
+            template_field_id=field.id,
+            stat_value=''
+        ))
+
     db.session.commit()
     flash(f'Stat field "{stat_name}" added.', 'success')
     return redirect(url_for('campaigns.edit_campaign', campaign_id=campaign_id) + '#stat-template')

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Player Characters — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Player Characters</h2>
+    <a href="{{ url_for('pcs.create_pc') }}" class="btn btn-success">
+        <i class="bi bi-person-plus"></i> New PC
+    </a>
+</div>
+
+{# Status filter tabs #}
+<ul class="nav nav-tabs mb-4 border-secondary">
+    <li class="nav-item">
+        <a class="nav-link {% if status_filter == 'all' %}active{% endif %}"
+           href="{{ url_for('pcs.list_pcs') }}">All</a>
+    </li>
+    {% for s in status_choices %}
+    <li class="nav-item">
+        <a class="nav-link {% if status_filter == s %}active{% endif %}"
+           href="{{ url_for('pcs.list_pcs', status=s) }}">{{ s|capitalize }}</a>
+    </li>
+    {% endfor %}
+</ul>
+
+{% if pcs %}
+<div class="row g-3">
+    {% for pc in pcs %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body d-flex gap-3">
+
+                {# Portrait thumbnail #}
+                {% if pc.portrait_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
+                     alt="{{ pc.character_name }}"
+                     class="rounded flex-shrink-0"
+                     style="width:64px; height:64px; object-fit:cover;">
+                {% else %}
+                <div class="rounded flex-shrink-0 bg-secondary d-flex align-items-center justify-content-center"
+                     style="width:64px; height:64px;">
+                    <i class="bi bi-person fs-3 text-muted"></i>
+                </div>
+                {% endif %}
+
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}"
+                           class="fw-bold text-decoration-none text-light">{{ pc.character_name }}</a>
+                        {# Status badge #}
+                        {% if pc.status == 'active' %}
+                            <span class="badge bg-success">active</span>
+                        {% elif pc.status == 'dead' %}
+                            <span class="badge bg-danger">dead</span>
+                        {% elif pc.status == 'retired' %}
+                            <span class="badge bg-secondary">retired</span>
+                        {% elif pc.status == 'inactive' %}
+                            <span class="badge bg-warning text-dark">inactive</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ pc.status }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-muted small">
+                        {{ pc.player_name }}
+                        {% if pc.class_or_role %} &mdash; {{ pc.class_or_role }}{% endif %}
+                        {% if pc.level_or_rank %} ({{ pc.level_or_rank }}){% endif %}
+                    </div>
+
+                    {# Quick stat preview — first 3 template fields #}
+                    {% if preview_fields %}
+                    {% set stat_lookup = {} %}
+                    {% for s in pc.stats %}{% set _ = stat_lookup.update({s.template_field_id: s.stat_value}) %}{% endfor %}
+                    <div class="mt-2 d-flex flex-wrap gap-2">
+                        {% for field in preview_fields %}
+                        {% set val = stat_lookup.get(field.id, '') %}
+                        {% if val %}
+                        <span class="badge bg-secondary bg-opacity-50 text-light border border-secondary small">
+                            {{ field.stat_name }}: {{ val }}
+                        </span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-footer d-flex gap-2 justify-content-end">
+                <a href="{{ url_for('pcs.edit_pc', pc_id=pc.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <form method="POST" action="{{ url_for('pcs.delete_pc', pc_id=pc.id) }}"
+                      onsubmit="return confirm('Delete {{ pc.character_name }}? This cannot be undone.')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-people fs-1 d-block mb-3"></i>
+    {% if status_filter != 'all' %}
+    <p>No {{ status_filter }} player characters.</p>
+    <a href="{{ url_for('pcs.list_pcs') }}" class="btn btn-outline-secondary btn-sm">Show all</a>
+    {% else %}
+    <p>No player characters yet.</p>
+    <a href="{{ url_for('pcs.create_pc') }}" class="btn btn-success">Create your first PC</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

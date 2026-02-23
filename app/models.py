@@ -75,6 +75,52 @@ class CampaignStatTemplate(db.Model):
         return f'<CampaignStatTemplate {self.stat_name}>'
 
 
+class PlayerCharacter(db.Model):
+    """A player character in a campaign. Separate from NPCs — different fields,
+    different visibility rules, used by the Combat Tracker and Session Mode."""
+    __tablename__ = 'player_characters'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+
+    character_name = db.Column(db.String(200), nullable=False)
+    player_name = db.Column(db.String(200), nullable=False)
+    level_or_rank = db.Column(db.String(100))   # "Level 5", "CR 3", "Veteran"
+    class_or_role = db.Column(db.String(200))   # "Fighter", "Hacker", "Pilot"
+    status = db.Column(db.String(50), default='active')
+    # Status values: active, inactive, retired, dead, npc
+
+    notes = db.Column(db.Text)                   # Markdown GM notes
+    portrait_filename = db.Column(db.String(255))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    campaign = db.relationship('Campaign', backref='player_characters')
+    stats = db.relationship('PlayerCharacterStat', backref='character',
+                            cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<PlayerCharacter {self.character_name}>'
+
+
+class PlayerCharacterStat(db.Model):
+    """Stores one stat value for a PC, linked to a CampaignStatTemplate field.
+    E.g. template_field='Armor Class (AC)', stat_value='16'."""
+    __tablename__ = 'player_character_stats'
+
+    id = db.Column(db.Integer, primary_key=True)
+    character_id = db.Column(db.Integer, db.ForeignKey('player_characters.id'), nullable=False)
+    template_field_id = db.Column(db.Integer, db.ForeignKey('campaign_stat_template.id'),
+                                  nullable=False)
+    stat_value = db.Column(db.String(100))  # Stored as string: "16", "45", "1d8+3"
+
+    template_field = db.relationship('CampaignStatTemplate')
+
+    def __repr__(self):
+        return f'<PlayerCharacterStat {self.template_field_id}={self.stat_value}>'
+
+
 class Tag(db.Model):
     __tablename__ = 'tags'
 
