@@ -40,7 +40,7 @@
 
                     <!-- Delete button -->
                     <form method="POST" action="{{ url_for('tags.delete_tag', tag_id=tag.id) }}"
-                          onsubmit="return confirm('Delete tag \'{{ tag.name }}\'? It will be removed from all {{ usage[tag.id] }} {{ \"entry\" if usage[tag.id] == 1 else \"entries\" }}. This cannot be undone.')">
+                          onsubmit="return confirm('Delete tag \'{{ tag.name }}\'? It will be removed from all {{ usage[tag.id] }} linked entries. This cannot be undone.')">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
