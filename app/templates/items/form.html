@@ -46,6 +46,7 @@
     <div class="mb-3">
         <label for="description" class="form-label">Description</label>
         <textarea class="form-control" id="description" name="description" rows="4">{{ item.description if item else '' }}</textarea>
+        <div class="form-text">Markdown supported.</div>
     </div>
 
     <div class="mb-3 p-3 border border-warning rounded">
@@ -53,6 +54,7 @@
             <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
         </label>
         <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ item.gm_notes if item else '' }}</textarea>
+        <div class="form-text">Markdown supported.</div>
     </div>
 
     <div class="row">

@@ -41,14 +41,14 @@
 {% if location.description %}
 <div class="mb-4">
     <h5>Description</h5>
-    <p>{{ location.description }}</p>
+    <div>{{ location.description | md | safe }}</div>
 </div>
 {% endif %}
 
 {% if location.notes %}
 <div class="mb-4">
     <h5>Notes</h5>
-    <p>{{ location.notes }}</p>
+    <div>{{ location.notes | md | safe }}</div>
 </div>
 {% endif %}
 
@@ -57,7 +57,7 @@
     <h5><i class="bi bi-eye-slash"></i> GM Only Notes</h5>
     <div class="card bg-dark border-warning">
         <div class="card-body">
-            <p class="mb-0">{{ location.gm_notes }}</p>
+            <div class="mb-0">{{ location.gm_notes | md | safe }}</div>
         </div>
     </div>
 </div>

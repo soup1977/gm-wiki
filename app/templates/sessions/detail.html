@@ -45,14 +45,14 @@
         {% if sess.summary %}
         <div class="mb-4">
             <h5 class="text-secondary">Summary</h5>
-            <p style="white-space: pre-wrap;">{{ sess.summary }}</p>
+            <div>{{ sess.summary | md | safe }}</div>
         </div>
         {% endif %}
 
         {% if sess.gm_notes %}
         <div class="mb-4 p-3 border border-warning rounded">
             <h5 class="text-warning"><i class="bi bi-eye-slash"></i> GM Notes</h5>
-            <p class="mb-0" style="white-space: pre-wrap;">{{ sess.gm_notes }}</p>
+            <div class="mb-0">{{ sess.gm_notes | md | safe }}</div>
         </div>
         {% endif %}
     </div>

@@ -47,21 +47,21 @@
 {% if npc.physical_description %}
 <div class="mb-4">
     <h5>Physical Description</h5>
-    <p>{{ npc.physical_description }}</p>
+    <div>{{ npc.physical_description | md | safe }}</div>
 </div>
 {% endif %}
 
 {% if npc.personality %}
 <div class="mb-4">
     <h5>Personality</h5>
-    <p>{{ npc.personality }}</p>
+    <div>{{ npc.personality | md | safe }}</div>
 </div>
 {% endif %}
 
 {% if npc.notes %}
 <div class="mb-4">
     <h5>Notes</h5>
-    <p>{{ npc.notes }}</p>
+    <div>{{ npc.notes | md | safe }}</div>
 </div>
 {% endif %}
 
@@ -70,7 +70,7 @@
     <h5><i class="bi bi-eye-slash"></i> Secrets (GM Only)</h5>
     <div class="card bg-dark border-warning">
         <div class="card-body">
-            <p class="mb-0">{{ npc.secrets }}</p>
+            <div class="mb-0">{{ npc.secrets | md | safe }}</div>
         </div>
     </div>
 </div>
