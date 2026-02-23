@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+instance/
+*.db
+.git/
+.gitignore
+phase-*.md
+CLAUDE.md
+README.md
+uploads/
