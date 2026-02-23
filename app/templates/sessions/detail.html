@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}
+    {% if sess.number %}Session {{ sess.number }}{% if sess.title %} — {{ sess.title }}{% endif %}{% else %}{{ sess.title or 'Session' }}{% endif %} — GM Wiki
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+        <li class="breadcrumb-item active">
+            {% if sess.number %}#{{ sess.number }}{% if sess.title %} — {{ sess.title }}{% endif %}{% else %}{{ sess.title or 'Untitled' }}{% endif %}
+        </li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2>
+            {% if sess.number %}<span class="text-muted">#{{ sess.number }}</span> {% endif %}
+            {{ sess.title or 'Untitled Session' }}
+        </h2>
+        <p class="text-muted small mb-0">
+            Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=sess.campaign.id) }}">{{ sess.campaign.name }}</a>
+        </p>
+        {% if sess.date_played %}
+            <p class="text-muted mb-0">{{ sess.date_played.strftime('%B %d, %Y') }}</p>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('sessions.edit_session', session_id=sess.id) }}" class="btn btn-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('sessions.delete_session', session_id=sess.id) }}"
+              onsubmit="return confirm('Delete this session? This cannot be undone.')">
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Summary and GM notes -->
+    <div class="col-md-8">
+        {% if sess.summary %}
+        <div class="mb-4">
+            <h5 class="text-secondary">Summary</h5>
+            <p style="white-space: pre-wrap;">{{ sess.summary }}</p>
+        </div>
+        {% endif %}
+
+        {% if sess.gm_notes %}
+        <div class="mb-4 p-3 border border-warning rounded">
+            <h5 class="text-warning"><i class="bi bi-eye-slash"></i> GM Notes</h5>
+            <p class="mb-0" style="white-space: pre-wrap;">{{ sess.gm_notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Linked entities sidebar -->
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header">Featured NPCs</div>
+            <div class="card-body">
+                {% if sess.npcs_featured %}
+                <ul class="list-unstyled mb-0">
+                    {% for npc in sess.npcs_featured %}
+                    <li><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None linked.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header">Locations Visited</div>
+            <div class="card-body">
+                {% if sess.locations_visited %}
+                <ul class="list-unstyled mb-0">
+                    {% for loc in sess.locations_visited %}
+                    <li><a href="{{ url_for('locations.location_detail', location_id=loc.id) }}">{{ loc.name }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None linked.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header">Quests Touched</div>
+            <div class="card-body">
+                {% if sess.quests_touched %}
+                <ul class="list-unstyled mb-0">
+                    {% for quest in sess.quests_touched %}
+                    <li><a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None linked.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Items Mentioned</div>
+            <div class="card-body">
+                {% if sess.items_mentioned %}
+                <ul class="list-unstyled mb-0">
+                    {% for item in sess.items_mentioned %}
+                    <li><a href="{{ url_for('items.item_detail', item_id=item.id) }}">{{ item.name }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None linked.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

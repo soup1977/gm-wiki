@@ -14,8 +14,11 @@
         <a href="{{ url_for('main.switch_campaign', campaign_id=campaign.id) }}" class="btn btn-primary">
             <i class="bi bi-play-fill"></i> Set Active
         </a>
+        <a href="{{ url_for('campaigns.edit_campaign', campaign_id=campaign.id) }}" class="btn btn-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
         <form method="POST" action="{{ url_for('campaigns.delete_campaign', campaign_id=campaign.id) }}"
-              onsubmit="return confirm('Delete this campaign? This cannot be undone.')">
+              onsubmit="return confirm('Delete {{ campaign.name }} and ALL its content? This cannot be undone.')">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
@@ -24,11 +27,161 @@
 </div>
 
 {% if campaign.description %}
-<p>{{ campaign.description }}</p>
+<p class="mb-4">{{ campaign.description }}</p>
 {% endif %}
 
-<hr class="border-secondary">
-<p class="text-muted small">Created {{ campaign.created_at.strftime('%Y-%m-%d') }}</p>
+<hr class="border-secondary mb-4">
 
-<!-- Future phases will add NPC/Location/Quest counts here -->
+<!-- Entity summary grid -->
+<div class="row g-3">
+
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>NPCs</span>
+                <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if campaign.npcs %}
+                <ul class="list-unstyled mb-0">
+                    {% for npc in campaign.npcs[:8] %}
+                    <li class="mb-1"><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a>
+                        <span class="text-muted small">{{ '— ' + npc.role if npc.role }}</span></li>
+                    {% endfor %}
+                    {% if campaign.npcs|length > 8 %}
+                    <li class="text-muted small mt-1">…and {{ campaign.npcs|length - 8 }} more</li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Locations</span>
+                <a href="{{ url_for('locations.list_locations') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if campaign.locations %}
+                <ul class="list-unstyled mb-0">
+                    {% for loc in campaign.locations[:8] %}
+                    <li class="mb-1"><a href="{{ url_for('locations.location_detail', location_id=loc.id) }}">{{ loc.name }}</a>
+                        <span class="text-muted small">{{ '— ' + loc.type if loc.type }}</span></li>
+                    {% endfor %}
+                    {% if campaign.locations|length > 8 %}
+                    <li class="text-muted small mt-1">…and {{ campaign.locations|length - 8 }} more</li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Quests</span>
+                <a href="{{ url_for('quests.list_quests') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if campaign.quests %}
+                <ul class="list-unstyled mb-0">
+                    {% for quest in campaign.quests[:8] %}
+                    <li class="mb-1"><a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a>
+                        <span class="text-muted small">— {{ quest.status | replace('_', ' ') }}</span></li>
+                    {% endfor %}
+                    {% if campaign.quests|length > 8 %}
+                    <li class="text-muted small mt-1">…and {{ campaign.quests|length - 8 }} more</li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Sessions</span>
+                <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if campaign.sessions %}
+                <ul class="list-unstyled mb-0">
+                    {% set sorted_sessions = campaign.sessions | sort(attribute='number', reverse=True) %}
+                    {% for sess in sorted_sessions[:8] %}
+                    <li class="mb-1"><a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}">
+                        {% if sess.number %}#{{ sess.number }} {% endif %}{{ sess.title or 'Untitled' }}</a></li>
+                    {% endfor %}
+                    {% if campaign.sessions|length > 8 %}
+                    <li class="text-muted small mt-1">…and {{ campaign.sessions|length - 8 }} more</li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Items</span>
+                <a href="{{ url_for('items.list_items') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if campaign.items %}
+                <ul class="list-unstyled mb-0">
+                    {% for item in campaign.items[:8] %}
+                    <li class="mb-1"><a href="{{ url_for('items.item_detail', item_id=item.id) }}">{{ item.name }}</a>
+                        <span class="text-muted small">{{ '— ' + item.type if item.type }}</span></li>
+                    {% endfor %}
+                    {% if campaign.items|length > 8 %}
+                    <li class="text-muted small mt-1">…and {{ campaign.items|length - 8 }} more</li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Compendium</span>
+                <a href="{{ url_for('compendium.list_compendium') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if campaign.compendium_entries %}
+                <ul class="list-unstyled mb-0">
+                    {% for entry in campaign.compendium_entries[:8] %}
+                    <li class="mb-1"><a href="{{ url_for('compendium.entry_detail', entry_id=entry.id) }}">{{ entry.title }}</a>
+                        {% if entry.is_gm_only %}<span class="badge bg-warning text-dark ms-1 small">GM</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                    {% if campaign.compendium_entries|length > 8 %}
+                    <li class="text-muted small mt-1">…and {{ campaign.compendium_entries|length - 8 }} more</li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 small">None yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<p class="text-muted small mt-4">Created {{ campaign.created_at.strftime('%Y-%m-%d') }}</p>
 {% endblock %}

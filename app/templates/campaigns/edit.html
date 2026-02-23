@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ campaign.name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('campaigns.list_campaigns') }}">Campaigns</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('campaigns.campaign_detail', campaign_id=campaign.id) }}">{{ campaign.name }}</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4">Edit Campaign</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="mb-3">
+        <label for="name" class="form-label">Campaign Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="name" name="name"
+               value="{{ campaign.name }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="system" class="form-label">System</label>
+        <input type="text" class="form-control" id="system" name="system"
+               value="{{ campaign.system or '' }}"
+               placeholder="e.g. D&D 5e, ICRPG, Shadowrun">
+    </div>
+
+    <div class="mb-3">
+        <label for="status" class="form-label">Status</label>
+        <select class="form-select" id="status" name="status">
+            <option value="active" {% if campaign.status == 'active' %}selected{% endif %}>Active</option>
+            <option value="on hiatus" {% if campaign.status == 'on hiatus' %}selected{% endif %}>On Hiatus</option>
+            <option value="complete" {% if campaign.status == 'complete' %}selected{% endif %}>Complete</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4">{{ campaign.description or '' }}</textarea>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Save Changes
+        </button>
+        <a href="{{ url_for('campaigns.campaign_detail', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

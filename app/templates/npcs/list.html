@@ -17,6 +17,7 @@
             <th>Role</th>
             <th>Status</th>
             <th>Home Location</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -41,6 +42,14 @@
                 {% else %}
                     —
                 {% endif %}
+            </td>
+            <td class="text-end">
+                <form method="POST" action="{{ url_for('npcs.delete_npc', npc_id=npc.id) }}"
+                      onsubmit="return confirm('Delete {{ npc.name }}? This cannot be undone.')" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
             </td>
         </tr>
         {% endfor %}

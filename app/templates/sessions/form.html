@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{% if sess %}Edit Session{% else %}New Session{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+        {% if sess %}
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}">
+                    {% if sess.number %}#{{ sess.number }}{% if sess.title %} — {{ sess.title }}{% endif %}{% else %}{{ sess.title or 'Untitled' }}{% endif %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+            <li class="breadcrumb-item active">New</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if sess %}Edit Session{% else %}New Session{% endif %}</h2>
+
+<form method="POST" style="max-width: 800px;">
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <label for="number" class="form-label">Session #</label>
+            <input type="number" class="form-control" id="number" name="number" min="1"
+                   value="{{ sess.number if sess and sess.number else '' }}">
+        </div>
+        <div class="col-md-5 mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" class="form-control" id="title" name="title"
+                   value="{{ sess.title if sess else '' }}"
+                   placeholder="optional short title">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="date_played" class="form-label">Date Played</label>
+            <input type="date" class="form-control" id="date_played" name="date_played"
+                   value="{{ sess.date_played.isoformat() if sess and sess.date_played else '' }}">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="summary" class="form-label">Summary</label>
+        <textarea class="form-control" id="summary" name="summary" rows="6">{{ sess.summary if sess else '' }}</textarea>
+        <div class="form-text">What happened this session?</div>
+    </div>
+
+    <div class="mb-3 p-3 border border-warning rounded">
+        <label for="gm_notes" class="form-label text-warning">
+            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
+        </label>
+        <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ sess.gm_notes if sess else '' }}</textarea>
+    </div>
+
+    <div class="row g-3 mb-3">
+        {% if npcs %}
+        <div class="col-md-6">
+            <label for="npcs_featured" class="form-label">Featured NPCs</label>
+            <select class="form-select" id="npcs_featured" name="npcs_featured" multiple size="6">
+                {% for npc in npcs %}
+                <option value="{{ npc.id }}"
+                    {% if sess and npc in sess.npcs_featured %}selected{% endif %}>
+                    {{ npc.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {% if locations %}
+        <div class="col-md-6">
+            <label for="locations_visited" class="form-label">Locations Visited</label>
+            <select class="form-select" id="locations_visited" name="locations_visited" multiple size="6">
+                {% for loc in locations %}
+                <option value="{{ loc.id }}"
+                    {% if sess and loc in sess.locations_visited %}selected{% endif %}>
+                    {{ loc.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {% if quests %}
+        <div class="col-md-6">
+            <label for="quests_touched" class="form-label">Quests Touched</label>
+            <select class="form-select" id="quests_touched" name="quests_touched" multiple size="6">
+                {% for quest in quests %}
+                <option value="{{ quest.id }}"
+                    {% if sess and quest in sess.quests_touched %}selected{% endif %}>
+                    {{ quest.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {% if items %}
+        <div class="col-md-6">
+            <label for="items_mentioned" class="form-label">Items Mentioned</label>
+            <select class="form-select" id="items_mentioned" name="items_mentioned" multiple size="6">
+                {% for item in items %}
+                <option value="{{ item.id }}"
+                    {% if sess and item in sess.items_mentioned %}selected{% endif %}>
+                    {{ item.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="form-text mb-3">Hold Ctrl (Windows) or Cmd (Mac) to select multiple in each list.</div>
+
+    <div class="d-flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if sess %}Save Changes{% else %}Create Session{% endif %}
+        </button>
+        <a href="{% if sess %}{{ url_for('sessions.session_detail', session_id=sess.id) }}{% else %}{{ url_for('sessions.list_sessions') }}{% endif %}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

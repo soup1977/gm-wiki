@@ -18,6 +18,9 @@
             {% if npc.role and npc.faction %} &mdash; {% endif %}
             {% if npc.faction %}{{ npc.faction }}{% endif %}
         </p>
+        <p class="text-muted small mb-0">
+            Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=npc.campaign.id) }}">{{ npc.campaign.name }}</a>
+        </p>
     </div>
     <div class="d-flex gap-2 align-items-start">
         {% if npc.status == 'alive' %}

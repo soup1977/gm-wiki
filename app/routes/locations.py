@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db
-from app.models import Location
+from app.models import Location, NPC, Item
 
 locations_bp = Blueprint('locations', __name__, url_prefix='/locations')
 
@@ -134,6 +134,27 @@ def delete_location(location_id):
         return redirect(url_for('locations.list_locations'))
 
     name = location.name
+
+    # Nullify nullable FKs that point to this location before deleting.
+    # NPCs whose home is here — clear their home location.
+    for npc in list(location.npcs_living_here):
+        npc.home_location_id = None
+
+    # Child locations (parent_location_id points here) — detach them.
+    for child in list(location.child_locations):
+        child.parent_location_id = None
+
+    # Items that originated here — clear their origin.
+    for item in list(location.items_found_here):
+        item.origin_location_id = None
+
+    # The self-referential location_connection table stores links in one direction.
+    # Clear both sides explicitly so no orphaned rows remain.
+    location.connected_locations = []
+    location.connected_from = []
+
+    # SQLAlchemy handles the many-to-many link tables (npc_location_link,
+    # quest_location_link, session_location_link) automatically.
     db.session.delete(location)
     db.session.commit()
 

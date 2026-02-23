@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}{% if item %}Edit {{ item.name }}{% else %}New Item{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('items.list_items') }}">Items</a></li>
+        {% if item %}
+            <li class="breadcrumb-item"><a href="{{ url_for('items.item_detail', item_id=item.id) }}">{{ item.name }}</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+            <li class="breadcrumb-item active">New</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if item %}Edit Item{% else %}New Item{% endif %}</h2>
+
+<form method="POST" style="max-width: 800px;">
+    <div class="mb-3">
+        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="name" name="name"
+               value="{{ item.name if item else '' }}" required>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="type" class="form-label">Type</label>
+            <input type="text" class="form-control" id="type" name="type"
+                   value="{{ item.type if item else '' }}"
+                   placeholder="e.g. weapon, armor, consumable">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="rarity" class="form-label">Rarity</label>
+            <select class="form-select" id="rarity" name="rarity">
+                <option value="">— None —</option>
+                {% for r in rarities %}
+                <option value="{{ r }}" {% if item and item.rarity == r %}selected{% endif %}>
+                    {{ r | title }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4">{{ item.description if item else '' }}</textarea>
+    </div>
+
+    <div class="mb-3 p-3 border border-warning rounded">
+        <label for="gm_notes" class="form-label text-warning">
+            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
+        </label>
+        <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ item.gm_notes if item else '' }}</textarea>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="owner_npc_id" class="form-label">Owner</label>
+            <select class="form-select" id="owner_npc_id" name="owner_npc_id">
+                <option value="">— Party —</option>
+                {% for npc in npcs %}
+                <option value="{{ npc.id }}" {% if item and item.owner_npc_id == npc.id %}selected{% endif %}>
+                    {{ npc.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Leave blank if the party owns this item.</div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="origin_location_id" class="form-label">Origin Location</label>
+            <select class="form-select" id="origin_location_id" name="origin_location_id">
+                <option value="">— Unknown —</option>
+                {% for location in locations %}
+                <option value="{{ location.id }}" {% if item and item.origin_location_id == location.id %}selected{% endif %}>
+                    {{ location.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Where was this item found or acquired?</div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if item %}Save Changes{% else %}Create Item{% endif %}
+        </button>
+        <a href="{% if item %}{{ url_for('items.item_detail', item_id=item.id) }}{% else %}{{ url_for('items.list_items') }}{% endif %}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
