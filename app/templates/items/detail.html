@@ -51,6 +51,14 @@
     </div>
 </div>
 
+{% if item.tags %}
+<div class="mb-3">
+    {% for tag in item.tags | sort(attribute='name') %}
+    <a href="{{ url_for('items.list_items', tag=tag.name) }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="row g-4">
     <!-- Main info -->
     <div class="col-md-8">

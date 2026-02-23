@@ -17,6 +17,32 @@ location_connection = db.Table('location_connection',
     db.Column('location_b_id', db.Integer, db.ForeignKey('locations.id'), primary_key=True)
 )
 
+# Tag association tables — one per entity type that supports tagging
+npc_tags = db.Table('npc_tags',
+    db.Column('npc_id', db.Integer, db.ForeignKey('npcs.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
+location_tags = db.Table('location_tags',
+    db.Column('location_id', db.Integer, db.ForeignKey('locations.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
+quest_tags = db.Table('quest_tags',
+    db.Column('quest_id', db.Integer, db.ForeignKey('quests.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
+item_tags = db.Table('item_tags',
+    db.Column('item_id', db.Integer, db.ForeignKey('items.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
+session_tags = db.Table('session_tags',
+    db.Column('session_id', db.Integer, db.ForeignKey('sessions.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
 
 class Campaign(db.Model):
     __tablename__ = 'campaigns'
@@ -30,6 +56,22 @@ class Campaign(db.Model):
 
     def __repr__(self):
         return f'<Campaign {self.name}>'
+
+
+class Tag(db.Model):
+    __tablename__ = 'tags'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+
+    campaign = db.relationship('Campaign', backref='tags')
+
+    # Tag names are unique within a campaign
+    __table_args__ = (db.UniqueConstraint('name', 'campaign_id', name='uq_tag_name_campaign'),)
+
+    def __repr__(self):
+        return f'<Tag {self.name}>'
 
 
 class Location(db.Model):
@@ -65,6 +107,7 @@ class Location(db.Model):
         secondaryjoin='Location.id == location_connection.c.location_b_id',
         backref='connected_from'
     )
+    tags = db.relationship('Tag', secondary=location_tags)
 
     @property
     def all_connected_locations(self):
@@ -99,6 +142,7 @@ class NPC(db.Model):
     # Locations this NPC is associated with (separate from home)
     connected_locations = db.relationship('Location', secondary=npc_location_link,
                                           backref='notable_npcs')
+    tags = db.relationship('Tag', secondary=npc_tags)
 
     def __repr__(self):
         return f'<NPC {self.name}>'
@@ -133,6 +177,7 @@ class Quest(db.Model):
     campaign = db.relationship('Campaign', backref='quests')
     involved_npcs = db.relationship('NPC', secondary=quest_npc_link, backref='quests')
     involved_locations = db.relationship('Location', secondary=quest_location_link, backref='quests')
+    tags = db.relationship('Tag', secondary=quest_tags)
 
     def __repr__(self):
         return f'<Quest {self.name}>'
@@ -158,6 +203,7 @@ class Item(db.Model):
     campaign = db.relationship('Campaign', backref='items')
     owner_npc = db.relationship('NPC', backref='items_owned', foreign_keys=[owner_npc_id])
     origin_location = db.relationship('Location', backref='items_found_here', foreign_keys=[origin_location_id])
+    tags = db.relationship('Tag', secondary=item_tags)
 
     def __repr__(self):
         return f'<Item {self.name}>'
@@ -218,6 +264,21 @@ class Session(db.Model):
     locations_visited = db.relationship('Location', secondary=session_location_link, backref='sessions')
     items_mentioned = db.relationship('Item', secondary=session_item_link, backref='sessions')
     quests_touched = db.relationship('Quest', secondary=session_quest_link, backref='sessions')
+    tags = db.relationship('Tag', secondary=session_tags)
 
     def __repr__(self):
         return f'<Session {self.number}: {self.title}>'
+
+
+def get_or_create_tags(campaign_id, tag_string):
+    """Parse a comma-separated tag string and return a list of Tag objects.
+    Creates new Tag records as needed. Tags are stored lowercase and trimmed."""
+    names = [t.strip().lower() for t in tag_string.split(',') if t.strip()]
+    tags = []
+    for name in names:
+        tag = Tag.query.filter_by(name=name, campaign_id=campaign_id).first()
+        if not tag:
+            tag = Tag(name=name, campaign_id=campaign_id)
+            db.session.add(tag)
+        tags.append(tag)
+    return tags

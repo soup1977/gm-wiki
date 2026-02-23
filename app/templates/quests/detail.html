@@ -38,6 +38,14 @@
     </div>
 </div>
 
+{% if quest.tags %}
+<div class="mb-3">
+    {% for tag in quest.tags | sort(attribute='name') %}
+    <a href="{{ url_for('quests.list_quests', tag=tag.name) }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="row g-4">
     <!-- Main info -->
     <div class="col-md-8">

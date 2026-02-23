@@ -61,6 +61,14 @@
             </div>
 
             <div class="mb-3">
+                <label for="tags" class="form-label">Tags</label>
+                <input type="text" class="form-control" id="tags" name="tags"
+                       value="{{ ', '.join(tag.name for tag in location.tags) if location else '' }}"
+                       placeholder="e.g. dungeon, city, hostile">
+                <div class="form-text">Comma-separated. Used to filter and group entries.</div>
+            </div>
+
+            <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
                 <textarea class="form-control" id="description" name="description" rows="4">{{ location.description if location else '' }}</textarea>
                 <div class="form-text">Markdown supported.</div>

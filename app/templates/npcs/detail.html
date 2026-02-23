@@ -44,6 +44,14 @@
     </div>
 </div>
 
+{% if npc.tags %}
+<div class="mb-3">
+    {% for tag in npc.tags | sort(attribute='name') %}
+    <a href="{{ url_for('npcs.list_npcs', tag=tag.name) }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% if npc.physical_description %}
 <div class="mb-4">
     <h5>Physical Description</h5>

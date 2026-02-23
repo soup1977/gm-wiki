@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
-from app.models import Quest, NPC, Location
+from app.models import Quest, NPC, Location, Tag, quest_tags, get_or_create_tags
 
 quests_bp = Blueprint('quests', __name__)
 
@@ -17,8 +17,18 @@ def list_quests():
     if not campaign_id:
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
-    quests = Quest.query.filter_by(campaign_id=campaign_id).order_by(Quest.name).all()
-    return render_template('quests/list.html', quests=quests)
+
+    active_tag = request.args.get('tag', '').strip().lower() or None
+    query = Quest.query.filter_by(campaign_id=campaign_id)
+    if active_tag:
+        query = query.join(Quest.tags).filter(Tag.name == active_tag)
+    quests = query.order_by(Quest.name).all()
+
+    all_tags = sorted(
+        {tag for q in Quest.query.filter_by(campaign_id=campaign_id).all() for tag in q.tags},
+        key=lambda t: t.name
+    )
+    return render_template('quests/list.html', quests=quests, all_tags=all_tags, active_tag=active_tag)
 
 
 @quests_bp.route('/quests/new', methods=['GET', 'POST'])
@@ -61,6 +71,7 @@ def create_quest():
             Location.id.in_(selected_location_ids), Location.campaign_id == campaign_id
         ).all()
 
+        quest.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(quest)
         db.session.commit()
         flash(f'Quest "{quest.name}" created.', 'success')
@@ -111,6 +122,7 @@ def edit_quest(quest_id):
             Location.id.in_(selected_location_ids), Location.campaign_id == campaign_id
         ).all()
 
+        quest.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.commit()
         flash(f'Quest "{quest.name}" updated.', 'success')
         return redirect(url_for('quests.quest_detail', quest_id=quest.id))

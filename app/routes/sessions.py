@@ -1,7 +1,7 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
-from app.models import Session, NPC, Location, Item, Quest
+from app.models import Session, NPC, Location, Item, Quest, Tag, session_tags, get_or_create_tags
 
 sessions_bp = Blueprint('sessions', __name__)
 
@@ -16,11 +16,18 @@ def list_sessions():
     if not campaign_id:
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
-    sessions_list = (Session.query
-                     .filter_by(campaign_id=campaign_id)
-                     .order_by(Session.number.desc())
-                     .all())
-    return render_template('sessions/list.html', sessions=sessions_list)
+
+    active_tag = request.args.get('tag', '').strip().lower() or None
+    query = Session.query.filter_by(campaign_id=campaign_id)
+    if active_tag:
+        query = query.join(Session.tags).filter(Tag.name == active_tag)
+    sessions_list = query.order_by(Session.number.desc()).all()
+
+    all_tags = sorted(
+        {tag for s in Session.query.filter_by(campaign_id=campaign_id).all() for tag in s.tags},
+        key=lambda t: t.name
+    )
+    return render_template('sessions/list.html', sessions=sessions_list, all_tags=all_tags, active_tag=active_tag)
 
 
 @sessions_bp.route('/sessions/new', methods=['GET', 'POST'])
@@ -73,6 +80,7 @@ def create_session():
             Quest.campaign_id == campaign_id
         ).all()
 
+        sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(sess)
         db.session.commit()
         label = f'Session {sess.number}' if sess.number else 'Session'
@@ -136,6 +144,7 @@ def edit_session(session_id):
             Quest.campaign_id == campaign_id
         ).all()
 
+        sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.commit()
         flash('Session updated.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))
