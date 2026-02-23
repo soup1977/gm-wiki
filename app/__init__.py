@@ -68,6 +68,7 @@ def create_app():
     from app.routes.pcs import pcs_bp
     from app.routes.combat import combat_bp
     from app.routes.tables import tables_bp
+    from app.routes.session_mode import session_mode_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(campaigns_bp)
@@ -81,6 +82,7 @@ def create_app():
     app.register_blueprint(tags_bp)
     app.register_blueprint(combat_bp)
     app.register_blueprint(tables_bp)
+    app.register_blueprint(session_mode_bp)
 
     # Context processor — makes active_campaign available in EVERY template
     # automatically, so we don't have to pass it in every route
