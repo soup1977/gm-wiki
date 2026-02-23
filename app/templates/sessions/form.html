@@ -118,6 +118,20 @@
             </select>
         </div>
         {% endif %}
+
+        {% if monsters %}
+        <div class="col-md-6">
+            <label for="monsters_encountered" class="form-label">Monsters Encountered</label>
+            <select class="form-select" id="monsters_encountered" name="monsters_encountered" multiple size="6">
+                {% for monster in monsters %}
+                <option value="{{ monster.id }}"
+                    {% if sess and monster in sess.monsters_encountered %}selected{% endif %}>
+                    {{ monster.instance_name }} ({{ monster.bestiary_entry.name }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
     </div>
 
     <div class="form-text mb-3">Hold Ctrl (Windows) or Cmd (Mac) to select multiple in each list.</div>

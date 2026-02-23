@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}{{ instance.instance_name }} — Monster Instance{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('monsters.list_instances', campaign_id=campaign.id) }}">Monster Instances</a>
+        </li>
+        <li class="breadcrumb-item active">{{ instance.instance_name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Main -->
+    <div class="col-md-8">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            {% if instance.bestiary_entry.image_path %}
+            <img src="{{ url_for('static', filename='uploads/' + instance.bestiary_entry.image_path) }}"
+                 alt="{{ instance.bestiary_entry.name }}"
+                 style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
+            {% endif %}
+            <div>
+                <h2 class="mb-1">{{ instance.instance_name }}</h2>
+                <p class="text-muted mb-0">
+                    Type: <a href="{{ url_for('bestiary.entry_detail', entry_id=instance.bestiary_entry.id) }}"
+                              class="text-decoration-none">{{ instance.bestiary_entry.name }}</a>
+                    {% if instance.bestiary_entry.cr_level %}
+                    &nbsp;·&nbsp; {{ instance.bestiary_entry.cr_level }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Status badge -->
+        <div class="mb-3">
+            <span class="badge fs-6
+                {% if instance.status == 'alive' %}bg-success
+                {% elif instance.status == 'dead' %}bg-danger
+                {% elif instance.status == 'fled' %}bg-warning text-dark
+                {% else %}bg-secondary{% endif %}">
+                {{ instance.status | capitalize }}
+            </span>
+            {% if instance.promoted_npc %}
+            <span class="ms-2">
+                Promoted to NPC:
+                <a href="{{ url_for('npcs.npc_detail', npc_id=instance.promoted_npc.id) }}"
+                   class="badge bg-info text-dark text-decoration-none">
+                    {{ instance.promoted_npc.name }}
+                </a>
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- GM Notes -->
+        {% if instance.notes %}
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header text-muted small">GM Notes</div>
+            <div class="card-body">{{ instance.notes | md | safe }}</div>
+        </div>
+        {% else %}
+        <p class="text-muted mb-4"><em>No GM notes.</em></p>
+        {% endif %}
+
+        <!-- Sessions appeared in -->
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Sessions Appeared In</strong>
+                <span class="badge bg-secondary">{{ instance.sessions | length }}</span>
+            </div>
+            <div class="card-body p-2">
+                {% if instance.sessions %}
+                <ul class="list-group list-group-flush">
+                    {% for sess in instance.sessions | sort(attribute='number') %}
+                    <li class="list-group-item bg-transparent border-secondary py-1 px-2">
+                        <a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}"
+                           class="text-decoration-none text-light">
+                            Session {{ sess.number }}{% if sess.title %}: {{ sess.title }}{% endif %}
+                        </a>
+                        {% if sess.date_played %}
+                        <span class="text-muted small ms-2">{{ sess.date_played.strftime('%Y-%m-%d') }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small mb-0 px-2 py-2">Not linked to any sessions yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Add to session quick-link -->
+        {% if all_sessions %}
+        <form method="post"
+              action="{{ url_for('monsters.add_to_session', campaign_id=campaign.id, instance_id=instance.id) }}"
+              class="row g-2 mb-4">
+            <div class="col">
+                <select name="session_id" class="form-select">
+                    <option value="">Add to a session...</option>
+                    {% for sess in all_sessions %}
+                    <option value="{{ sess.id }}">
+                        Session {{ sess.number }}{% if sess.title %}: {{ sess.title }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary">Link</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Actions -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="{{ url_for('monsters.edit_instance', campaign_id=campaign.id, instance_id=instance.id) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            {% if not instance.promoted_npc %}
+            <a href="{{ url_for('monsters.promote_to_npc', campaign_id=campaign.id, instance_id=instance.id) }}"
+               class="btn btn-outline-info btn-sm">
+                <i class="bi bi-person-badge"></i> Promote to NPC
+            </a>
+            {% endif %}
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </div>
+
+        <!-- Stat Block (reference) -->
+        <div class="card bg-dark border-secondary">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Stat Block</strong>
+                <a href="{{ url_for('bestiary.entry_detail', entry_id=instance.bestiary_entry.id) }}"
+                   class="small text-muted text-decoration-none">Full entry →</a>
+            </div>
+            <div class="card-body small">
+                {{ instance.bestiary_entry.stat_block | md | safe }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-danger">
+            <div class="modal-header border-danger">
+                <h5 class="modal-title text-danger">Delete Instance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Delete <strong>{{ instance.instance_name }}</strong>?
+                This removes the instance record but does not affect the Bestiary Entry.
+            </div>
+            <div class="modal-footer border-danger">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post"
+                      action="{{ url_for('monsters.delete_instance', campaign_id=campaign.id, instance_id=instance.id) }}">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Promote {{ instance.instance_name }} to NPC{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('monsters.list_instances', campaign_id=campaign.id) }}">Monster Instances</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('monsters.instance_detail', campaign_id=campaign.id, instance_id=instance.id) }}">
+                {{ instance.instance_name }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active">Promote to NPC</li>
+    </ol>
+</nav>
+
+<div class="alert alert-info mb-4">
+    <strong><i class="bi bi-person-badge"></i> Promoting to NPC:</strong>
+    You're turning <strong>{{ instance.instance_name }}</strong> ({{ instance.bestiary_entry.name }})
+    into a full NPC. Fill in the details below. The original monster instance record will be preserved
+    for historical reference.
+</div>
+
+<form method="post">
+    <div class="row g-3">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-header">Core Info</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">NPC Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control"
+                               value="{{ instance.instance_name }}" required>
+                        <div class="form-text">Change from "{{ instance.instance_name }}" if this creature has a proper name.</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Role</label>
+                            <input type="text" name="role" class="form-control"
+                                   placeholder="e.g. Lieutenant, Spy, Merchant">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                {% for s in status_choices %}
+                                <option value="{{ s }}"
+                                    {% if s == instance.status %}selected{% endif %}>
+                                    {{ s | capitalize }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Faction</label>
+                        <input type="text" name="faction" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Home Location</label>
+                        <select name="home_location_id" class="form-select">
+                            <option value="">— None —</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}">{{ loc.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-header">Description</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Physical Description</label>
+                        <textarea name="physical_description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Personality</label>
+                        <textarea name="personality" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes
+                            <span class="text-muted fw-normal small">(Markdown supported)</span>
+                        </label>
+                        <textarea name="notes" class="form-control" rows="5"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-danger mb-3">
+                <div class="card-header text-danger">GM-Only Secrets</div>
+                <div class="card-body">
+                    <textarea name="secrets" class="form-control" rows="4"
+                              placeholder="Hidden motivations, true identity, etc."></textarea>
+                    <div class="form-text text-danger">Never shown in player-facing views.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar context -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-header">Origin</div>
+                <div class="card-body small">
+                    <p class="mb-1"><strong>Instance:</strong> {{ instance.instance_name }}</p>
+                    <p class="mb-1"><strong>Type:</strong>
+                        <a href="{{ url_for('bestiary.entry_detail', entry_id=instance.bestiary_entry.id) }}"
+                           class="text-decoration-none">{{ instance.bestiary_entry.name }}</a>
+                    </p>
+                    {% if instance.bestiary_entry.cr_level %}
+                    <p class="mb-1"><strong>CR/Level:</strong> {{ instance.bestiary_entry.cr_level }}</p>
+                    {% endif %}
+                    {% if instance.sessions %}
+                    <p class="mb-1"><strong>Sessions:</strong>
+                        {% for sess in instance.sessions | sort(attribute='number') %}
+                        <a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}"
+                           class="badge bg-secondary text-decoration-none me-1">
+                            #{{ sess.number }}
+                        </a>
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    {% if instance.bestiary_entry.image_path %}
+                    <p class="mb-2"><strong>Portrait:</strong> Copied from Bestiary Entry image.</p>
+                    <img src="{{ url_for('static', filename='uploads/' + instance.bestiary_entry.image_path) }}"
+                         alt="{{ instance.bestiary_entry.name }}"
+                         style="width:80px;height:80px;object-fit:cover;border-radius:4px;">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-2">
+        <button type="submit" class="btn btn-info text-dark fw-semibold">
+            <i class="bi bi-person-badge"></i> Create NPC
+        </button>
+        <a href="{{ url_for('monsters.instance_detail', campaign_id=campaign.id, instance_id=instance.id) }}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

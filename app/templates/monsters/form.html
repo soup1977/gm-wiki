@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Edit {{ instance.instance_name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('monsters.list_instances', campaign_id=campaign.id) }}">Monster Instances</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('monsters.instance_detail', campaign_id=campaign.id, instance_id=instance.id) }}">
+                {{ instance.instance_name }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4">Edit: {{ instance.instance_name }}</h2>
+
+<form method="post">
+    <div class="row g-3">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Instance Name <span class="text-danger">*</span></label>
+                        <input type="text" name="instance_name" class="form-control"
+                               value="{{ instance.instance_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            {% for s in status_choices %}
+                            <option value="{{ s }}" {% if instance.status == s %}selected{% endif %}>
+                                {{ s | capitalize }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">GM Notes
+                            <span class="text-muted fw-normal small">(Markdown supported)</span>
+                        </label>
+                        <textarea name="notes" class="form-control" rows="6">{{ instance.notes or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session links -->
+            {% if all_sessions %}
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-body">
+                    <label class="form-label">Sessions Appeared In</label>
+                    <div style="max-height:200px; overflow-y:auto;">
+                        {% for sess in all_sessions %}
+                        <div class="form-check">
+                            <input type="checkbox" name="session_ids" value="{{ sess.id }}"
+                                   id="sess_{{ sess.id }}" class="form-check-input"
+                                   {% if sess in instance.sessions %}checked{% endif %}>
+                            <label class="form-check-label" for="sess_{{ sess.id }}">
+                                Session {{ sess.number }}{% if sess.title %}: {{ sess.title }}{% endif %}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Creature Type</p>
+                    <a href="{{ url_for('bestiary.entry_detail', entry_id=instance.bestiary_entry.id) }}"
+                       class="text-decoration-none">{{ instance.bestiary_entry.name }}</a>
+                    {% if instance.bestiary_entry.cr_level %}
+                    <span class="text-muted small ms-2">{{ instance.bestiary_entry.cr_level }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('monsters.instance_detail', campaign_id=campaign.id, instance_id=instance.id) }}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

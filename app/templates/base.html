@@ -29,6 +29,11 @@
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('items.list_items') }}">Items</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('compendium.list_compendium') }}">Compendium</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('tags.list_tags') }}">Tags</a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('monsters.list_instances', campaign_id=active_campaign.id) }}">
+                        <i class="bi bi-bug"></i> Monsters
+                    </a>
+                </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
@@ -45,6 +50,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('tables.list_tables') }}">
                         <i class="bi bi-dice-5"></i> Tables
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('bestiary.list_bestiary') }}">
+                        <i class="bi bi-book-dead"></i> Bestiary
                     </a>
                 </li>
                 <li class="nav-item">

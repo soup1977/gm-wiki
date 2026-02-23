@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <div class="card bg-dark border-secondary">
+        <div class="card bg-dark border-secondary mb-3">
             <div class="card-header">Items Mentioned</div>
             <div class="card-body">
                 {% if sess.items_mentioned %}
@@ -161,6 +161,32 @@
                 {% endif %}
             </div>
         </div>
+
+        {% if sess.monsters_encountered %}
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Monsters Encountered
+                <span class="badge bg-secondary ms-1">{{ sess.monsters_encountered | length }}</span>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    {% for monster in sess.monsters_encountered | sort(attribute='instance_name') %}
+                    <li class="d-flex align-items-center gap-2 mb-1">
+                        <a href="{{ url_for('monsters.instance_detail', campaign_id=monster.campaign_id, instance_id=monster.id) }}"
+                           class="text-decoration-none text-light">{{ monster.instance_name }}</a>
+                        <span class="text-muted small">({{ monster.bestiary_entry.name }})</span>
+                        <span class="badge
+                            {% if monster.status == 'alive' %}bg-success
+                            {% elif monster.status == 'dead' %}bg-danger
+                            {% elif monster.status == 'fled' %}bg-warning text-dark
+                            {% else %}bg-secondary{% endif %} ms-auto">
+                            {{ monster.status }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

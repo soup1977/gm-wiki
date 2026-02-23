@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Bestiary — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-book-dead"></i> Bestiary</h2>
+    <a href="{{ url_for('bestiary.create_entry') }}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Add Entry
+    </a>
+</div>
+
+<!-- Search + tag filters -->
+<form class="row g-2 mb-4" method="get">
+    <div class="col-md-5">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" name="q" value="{{ search or '' }}"
+                   placeholder="Search by name...">
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Search</button>
+        {% if search or active_tag %}
+        <a href="{{ url_for('bestiary.list_bestiary') }}" class="btn btn-outline-secondary">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+<!-- Tag cloud -->
+{% if all_tags %}
+<div class="mb-4">
+    <span class="text-muted small me-2">Filter by tag:</span>
+    {% for tag in all_tags %}
+    <a href="{{ url_for('bestiary.list_bestiary', tag=tag, q=search) }}"
+       class="badge {% if active_tag == tag %}bg-primary{% else %}bg-secondary{% endif %} text-decoration-none me-1 mb-1"
+       style="font-size:0.85em;">{{ tag }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if entries %}
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for entry in entries %}
+    <div class="col">
+        <div class="card h-100 bg-dark border-secondary">
+            {% if entry.image_path %}
+            <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
+                 class="card-img-top" alt="{{ entry.name }}"
+                 style="max-height:200px; object-fit:contain; background:#1a1a1a;">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('bestiary.entry_detail', entry_id=entry.id) }}"
+                       class="text-decoration-none text-light">{{ entry.name }}</a>
+                </h5>
+                <p class="card-text small text-muted">
+                    {% if entry.cr_level %}<span class="me-2">{{ entry.cr_level }}</span>{% endif %}
+                    {% if entry.system %}<span class="badge bg-secondary">{{ entry.system }}</span>{% endif %}
+                </p>
+                {% if entry.get_tags_list() %}
+                <div>
+                    {% for tag in entry.get_tags_list() %}
+                    <a href="{{ url_for('bestiary.list_bestiary', tag=tag) }}"
+                       class="badge bg-secondary text-decoration-none me-1">{{ tag }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center small text-muted">
+                <span>{{ entry.instances | length }} instance(s)</span>
+                <a href="{{ url_for('bestiary.entry_detail', entry_id=entry.id) }}"
+                   class="btn btn-sm btn-outline-secondary">View</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">
+    {% if search or active_tag %}
+    No entries match your search.
+    <a href="{{ url_for('bestiary.list_bestiary') }}">Clear filters</a>
+    {% else %}
+    No Bestiary Entries yet. <a href="{{ url_for('bestiary.create_entry') }}">Add the first one.</a>
+    {% endif %}
+</p>
+{% endif %}
+{% endblock %}

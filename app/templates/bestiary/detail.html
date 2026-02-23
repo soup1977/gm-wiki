@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}{{ entry.name }} — Bestiary{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('bestiary.list_bestiary') }}">Bestiary</a></li>
+        <li class="breadcrumb-item active">{{ entry.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Main content -->
+    <div class="col-md-8">
+        <div class="d-flex align-items-start gap-3 mb-3">
+            {% if entry.image_path %}
+            <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
+                 alt="{{ entry.name }}"
+                 style="width:120px; height:120px; object-fit:cover; border-radius:8px;">
+            {% endif %}
+            <div>
+                <h2 class="mb-1">{{ entry.name }}</h2>
+                <div class="text-muted small">
+                    {% if entry.cr_level %}<span class="me-3"><strong>CR/Level:</strong> {{ entry.cr_level }}</span>{% endif %}
+                    {% if entry.system %}<span class="me-3"><strong>System:</strong> {{ entry.system }}</span>{% endif %}
+                    {% if entry.source %}<span><strong>Source:</strong> {{ entry.source }}</span>{% endif %}
+                </div>
+                {% if entry.get_tags_list() %}
+                <div class="mt-2">
+                    {% for tag in entry.get_tags_list() %}
+                    <a href="{{ url_for('bestiary.list_bestiary', tag=tag) }}"
+                       class="badge bg-secondary text-decoration-none me-1">{{ tag }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if entry.visible_to_players %}
+                <span class="badge bg-info mt-2">Visible to Players</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stat Block -->
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
+                <strong>Stat Block</strong>
+            </div>
+            <div class="card-body">
+                {{ entry.stat_block | md | safe }}
+            </div>
+        </div>
+
+        <!-- Spawn form -->
+        {% if active_campaign %}
+        <div class="card bg-dark border-success mb-4">
+            <div class="card-header text-success fw-bold">
+                <i class="bi bi-plus-circle"></i> Spawn Instance
+                <span class="fw-normal text-muted small ms-2">(in {{ active_campaign.name }})</span>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('bestiary.spawn_instance', entry_id=entry.id) }}"
+                      class="row g-2">
+                    <div class="col">
+                        <input type="text" name="instance_name" class="form-control"
+                               placeholder="Instance name (leave blank to auto-name)">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-success">Spawn</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-secondary">
+            <a href="{{ url_for('campaigns.list_campaigns') }}">Select a campaign</a> to spawn instances.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Action buttons -->
+        <div class="d-flex gap-2 mb-4">
+            <a href="{{ url_for('bestiary.edit_entry', entry_id=entry.id) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </div>
+
+        <!-- Instances by campaign -->
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">
+                <strong>Monster Instances</strong>
+                <span class="badge bg-secondary ms-2">{{ entry.instances | length }}</span>
+            </div>
+            <div class="card-body p-2">
+                {% if instances_by_campaign %}
+                    {% for campaign_name, instances in instances_by_campaign.items() %}
+                    <p class="text-muted small mb-1 mt-2 px-2">{{ campaign_name }}</p>
+                    <ul class="list-group list-group-flush">
+                        {% for inst in instances %}
+                        <li class="list-group-item bg-transparent border-secondary py-1 px-2">
+                            <a href="{{ url_for('monsters.instance_detail', campaign_id=inst.campaign_id, instance_id=inst.id) }}"
+                               class="text-decoration-none text-light">{{ inst.instance_name }}</a>
+                            <span class="badge
+                                {% if inst.status == 'alive' %}bg-success
+                                {% elif inst.status == 'dead' %}bg-danger
+                                {% elif inst.status == 'fled' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %} ms-1 float-end">
+                                {{ inst.status }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted small mb-0 px-2 py-2">No instances spawned yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-danger">
+            <div class="modal-header border-danger">
+                <h5 class="modal-title text-danger">Delete Bestiary Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Delete <strong>{{ entry.name }}</strong> from the Bestiary?</p>
+                {% if entry.instances %}
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> This will also delete
+                    <strong>{{ entry.instances | length }} monster instance(s)</strong> across all campaigns.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer border-danger">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{{ url_for('bestiary.delete_entry', entry_id=entry.id) }}">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
