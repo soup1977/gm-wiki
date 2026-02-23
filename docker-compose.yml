@@ -1,0 +1,13 @@
+services:
+  gm-wiki:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./instance:/app/instance          # SQLite database persists here
+      - ./uploads:/app/app/static/uploads  # Uploaded images/maps persist here
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=sqlite:////app/instance/gm_wiki.db
+      - FLASK_ENV=production
+    restart: unless-stopped
