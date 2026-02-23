@@ -4,9 +4,14 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2><i class="bi bi-book-dead"></i> Bestiary</h2>
-    <a href="{{ url_for('bestiary.create_entry') }}" class="btn btn-success">
-        <i class="bi bi-plus-lg"></i> Add Entry
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('bestiary_import.import_web') }}" class="btn btn-outline-info">
+            <i class="bi bi-cloud-download"></i> Import from Web
+        </a>
+        <a href="{{ url_for('bestiary.create_entry') }}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Add Entry
+        </a>
+    </div>
 </div>
 
 <!-- Search + tag filters -->

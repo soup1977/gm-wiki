@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Settings — GM Wiki{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-gear"></i> Settings</h2>
+
+<div class="row g-4">
+
+    <!-- AI Configuration -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header">
+                <i class="bi bi-cpu"></i> AI Smart Fill
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Smart Fill uses the Claude API to extract structured fields from your raw notes.
+                    Paste text into any create/edit form and Claude will pre-fill the fields for you.
+                </p>
+
+                <div class="mb-3">
+                    <strong>Status:</strong>
+                    {% if ai_enabled %}
+                    <span class="badge bg-success ms-2">
+                        <i class="bi bi-check-circle"></i> API Key Configured
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary ms-2">
+                        <i class="bi bi-x-circle"></i> Not Configured
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if ai_enabled %}
+                <button class="btn btn-outline-secondary btn-sm mb-3" id="test-ai-btn"
+                        onclick="testAiConnection()">
+                    <i class="bi bi-wifi"></i> Test Connection
+                </button>
+                <div id="test-ai-result" class="small mt-2"></div>
+                {% else %}
+                <div class="alert alert-secondary py-2 small">
+                    <strong>How to enable Smart Fill:</strong>
+                    <ol class="mb-0 mt-1 ps-3">
+                        <li>Get an API key at
+                            <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>
+                        </li>
+                        <li>Add it to your environment:<br>
+                            <code class="text-light">ANTHROPIC_API_KEY=sk-ant-...</code>
+                        </li>
+                        <li>Restart the app</li>
+                    </ol>
+                </div>
+                {% endif %}
+
+                <p class="text-muted small mb-0 mt-2">
+                    Smart Fill uses <strong>claude-haiku-4-5</strong> — the fastest and most
+                    affordable Claude model. A typical Smart Fill costs a fraction of a cent.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Stats -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Database Stats
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-dark table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted">Campaigns</td>
+                            <td class="text-end fw-bold">{{ stats.campaigns }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">NPCs</td>
+                            <td class="text-end fw-bold">{{ stats.npcs }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Locations</td>
+                            <td class="text-end fw-bold">{{ stats.locations }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Quests</td>
+                            <td class="text-end fw-bold">{{ stats.quests }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Sessions</td>
+                            <td class="text-end fw-bold">{{ stats.sessions }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Items</td>
+                            <td class="text-end fw-bold">{{ stats.item_count }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Bestiary Entries</td>
+                            <td class="text-end fw-bold">{{ stats.bestiary }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Compendium Entries</td>
+                            <td class="text-end fw-bold">{{ stats.compendium }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% if ai_enabled %}
+<script>
+function testAiConnection() {
+    const btn = document.getElementById('test-ai-btn');
+    const result = document.getElementById('test-ai-result');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing…';
+    result.innerHTML = '';
+
+    fetch('/settings/test-ai')
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                result.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> ' + data.message + '</span>';
+            } else {
+                result.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> ' + data.message + '</span>';
+            }
+        })
+        .catch(() => {
+            result.innerHTML = '<span class="text-danger">Request failed.</span>';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-wifi"></i> Test Connection';
+        });
+}
+</script>
+{% endif %}
+{% endblock %}

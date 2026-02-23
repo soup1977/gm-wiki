@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Import from Web — Bestiary{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('bestiary.list_bestiary') }}">Bestiary</a></li>
+        <li class="breadcrumb-item active">Import from Web</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2><i class="bi bi-cloud-download"></i> Import from Web</h2>
+</div>
+<p class="text-muted mb-4">
+    Search the <strong>Open5e SRD</strong> and import creatures directly into your Bestiary.
+    No account or API key required — this is free public data.
+</p>
+
+<div class="row g-4">
+
+    <!-- Left: search + results list -->
+    <div class="col-md-4">
+        <div class="input-group mb-3">
+            <span class="input-group-text bg-dark border-secondary text-muted">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="search-input" class="form-control bg-dark border-secondary text-light"
+                   placeholder="Search creatures…" autofocus autocomplete="off">
+        </div>
+        <ul class="list-group" id="results-list" style="max-height: 65vh; overflow-y: auto;">
+            <li class="list-group-item bg-transparent border-secondary text-muted small">
+                Type at least 2 characters to search…
+            </li>
+        </ul>
+    </div>
+
+    <!-- Right: preview panel -->
+    <div class="col-md-8">
+        <div id="preview-panel" class="text-muted text-center py-5">
+            <i class="bi bi-arrow-left-circle fs-1 d-block mb-2 text-secondary"></i>
+            Select a creature on the left to preview it
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/bestiary_import.js') }}"></script>
+{% endblock %}

@@ -16,3 +16,8 @@ class Config:
     # We store only the filename in the database, not the full path
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'static', 'uploads')
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+    # Claude API key for AI Smart Fill. Set ANTHROPIC_API_KEY in your environment
+    # or docker-compose.yml. If not set, Smart Fill features are hidden.
+    ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+    AI_ENABLED = bool(os.environ.get('ANTHROPIC_API_KEY'))

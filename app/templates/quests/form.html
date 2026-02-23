@@ -14,7 +14,15 @@
     </ol>
 </nav>
 
-<h2 class="mb-4">{% if quest %}Edit Quest{% else %}New Quest{% endif %}</h2>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="mb-0">{% if quest %}Edit Quest{% else %}New Quest{% endif %}</h2>
+    {% if config.AI_ENABLED %}
+    <button type="button" class="btn btn-outline-primary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#smartFillModal">
+        <i class="bi bi-stars"></i> Smart Fill
+    </button>
+    {% endif %}
+</div>
 
 <form method="POST" style="max-width: 800px;">
     <div class="mb-3">
@@ -116,4 +124,8 @@
            class="btn btn-outline-secondary">Cancel</a>
     </div>
 </form>
+{% if config.AI_ENABLED %}
+<script>window.SMART_FILL_ENTITY_TYPE = 'quest';</script>
+<script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+{% endif %}
 {% endblock %}

@@ -70,8 +70,11 @@ def create_app():
     from app.routes.tables import tables_bp
     from app.routes.session_mode import session_mode_bp
     from app.routes.bestiary import bestiary_bp
+    from app.routes.bestiary_import import bestiary_import_bp
     from app.routes.monsters import monsters_bp
     from app.routes.wiki import wiki_bp
+    from app.routes.settings import settings_bp
+    from app.routes.ai import ai_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(campaigns_bp)
@@ -87,8 +90,11 @@ def create_app():
     app.register_blueprint(tables_bp)
     app.register_blueprint(session_mode_bp)
     app.register_blueprint(bestiary_bp)
+    app.register_blueprint(bestiary_import_bp)
     app.register_blueprint(monsters_bp)
     app.register_blueprint(wiki_bp)
+    app.register_blueprint(settings_bp)
+    app.register_blueprint(ai_bp)
 
     # Context processor — makes active_campaign available in EVERY template
     # automatically, so we don't have to pass it in every route
