@@ -96,7 +96,7 @@
             <div class="mb-3">
                 <label for="tags" class="form-label">Tags</label>
                 <input type="text" class="form-control" id="tags" name="tags"
-                       value="{{ ', '.join(tag.name for tag in npc.tags) if npc else '' }}"
+                       value="{{ npc.tags | map(attribute='name') | join(', ') if npc else '' }}"
                        placeholder="e.g. villain, faction-guild, season-1">
                 <div class="form-text">Comma-separated. Used to filter and group entries.</div>
             </div>

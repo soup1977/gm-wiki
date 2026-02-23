@@ -46,7 +46,7 @@
     <div class="mb-3">
         <label for="tags" class="form-label">Tags</label>
         <input type="text" class="form-control" id="tags" name="tags"
-               value="{{ ', '.join(tag.name for tag in item.tags) if item else '' }}"
+               value="{{ item.tags | map(attribute='name') | join(', ') if item else '' }}"
                placeholder="e.g. magic, cursed, key-item">
         <div class="form-text">Comma-separated. Used to filter and group entries.</div>
     </div>

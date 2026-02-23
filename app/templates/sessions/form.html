@@ -43,7 +43,7 @@
     <div class="mb-3">
         <label for="tags" class="form-label">Tags</label>
         <input type="text" class="form-control" id="tags" name="tags"
-               value="{{ ', '.join(tag.name for tag in sess.tags) if sess else '' }}"
+               value="{{ sess.tags | map(attribute='name') | join(', ') if sess else '' }}"
                placeholder="e.g. combat-heavy, revelation, downtime">
         <div class="form-text">Comma-separated. Used to filter and group entries.</div>
     </div>
