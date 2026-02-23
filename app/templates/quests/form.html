@@ -35,6 +35,14 @@
     </div>
 
     <div class="mb-3">
+        <label for="tags" class="form-label">Tags</label>
+        <input type="text" class="form-control" id="tags" name="tags"
+               value="{{ ', '.join(tag.name for tag in quest.tags) if quest else '' }}"
+               placeholder="e.g. main-plot, side-quest, urgent">
+        <div class="form-text">Comma-separated. Used to filter and group entries.</div>
+    </div>
+
+    <div class="mb-3">
         <label for="hook" class="form-label">Hook</label>
         <textarea class="form-control" id="hook" name="hook" rows="2">{{ quest.hook if quest else '' }}</textarea>
         <div class="form-text">How did the party get involved? Markdown supported.</div>

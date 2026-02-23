@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db
-from app.models import NPC, Location, Item
+from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags
 
 npcs_bp = Blueprint('npcs', __name__, url_prefix='/npcs')
 
@@ -19,8 +19,17 @@ def list_npcs():
         flash('Please select a campaign first.', 'warning')
         return redirect(url_for('main.index'))
 
-    npcs = NPC.query.filter_by(campaign_id=campaign_id).order_by(NPC.name).all()
-    return render_template('npcs/list.html', npcs=npcs)
+    active_tag = request.args.get('tag', '').strip().lower() or None
+    query = NPC.query.filter_by(campaign_id=campaign_id)
+    if active_tag:
+        query = query.join(NPC.tags).filter(Tag.name == active_tag)
+    npcs = query.order_by(NPC.name).all()
+
+    all_tags = sorted(
+        {tag for npc in NPC.query.filter_by(campaign_id=campaign_id).all() for tag in npc.tags},
+        key=lambda t: t.name
+    )
+    return render_template('npcs/list.html', npcs=npcs, all_tags=all_tags, active_tag=active_tag)
 
 
 @npcs_bp.route('/new', methods=['GET', 'POST'])
@@ -56,6 +65,7 @@ def create_npc():
         # getlist returns all selected values from a multi-select field
         connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
         npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
+        npc.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
 
         db.session.commit()
 
@@ -110,6 +120,7 @@ def edit_npc(npc_id):
 
         connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
         npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
+        npc.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
 
         db.session.commit()
 

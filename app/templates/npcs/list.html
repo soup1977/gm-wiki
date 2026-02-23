@@ -9,6 +9,16 @@
     </a>
 </div>
 
+{% if all_tags %}
+<div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <span class="text-muted small">Filter by tag:</span>
+    <a href="{{ url_for('npcs.list_npcs') }}" class="badge text-decoration-none {% if not active_tag %}bg-primary{% else %}bg-secondary{% endif %}">All</a>
+    {% for tag in all_tags %}
+    <a href="{{ url_for('npcs.list_npcs', tag=tag.name) }}" class="badge text-decoration-none {% if active_tag == tag.name %}bg-primary{% else %}bg-secondary{% endif %}">{{ tag.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% if npcs %}
 <table class="table table-dark table-hover">
     <thead>

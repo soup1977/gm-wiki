@@ -38,6 +38,14 @@
     </div>
 </div>
 
+{% if location.tags %}
+<div class="mb-3">
+    {% for tag in location.tags | sort(attribute='name') %}
+    <a href="{{ url_for('locations.list_locations', tag=tag.name) }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% if location.description %}
 <div class="mb-4">
     <h5>Description</h5>

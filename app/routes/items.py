@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
-from app.models import Item, NPC, Location
+from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags
 
 items_bp = Blueprint('items', __name__)
 
@@ -17,8 +17,18 @@ def list_items():
     if not campaign_id:
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
-    items = Item.query.filter_by(campaign_id=campaign_id).order_by(Item.name).all()
-    return render_template('items/list.html', items=items)
+
+    active_tag = request.args.get('tag', '').strip().lower() or None
+    query = Item.query.filter_by(campaign_id=campaign_id)
+    if active_tag:
+        query = query.join(Item.tags).filter(Tag.name == active_tag)
+    items = query.order_by(Item.name).all()
+
+    all_tags = sorted(
+        {tag for item in Item.query.filter_by(campaign_id=campaign_id).all() for tag in item.tags},
+        key=lambda t: t.name
+    )
+    return render_template('items/list.html', items=items, all_tags=all_tags, active_tag=active_tag)
 
 
 @items_bp.route('/items/new', methods=['GET', 'POST'])
@@ -52,6 +62,7 @@ def create_item():
             owner_npc_id=int(owner_npc_id) if owner_npc_id else None,
             origin_location_id=int(origin_location_id) if origin_location_id else None,
         )
+        item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(item)
         db.session.commit()
         flash(f'Item "{item.name}" created.', 'success')
@@ -95,6 +106,7 @@ def edit_item(item_id):
         item.gm_notes = request.form.get('gm_notes', '').strip() or None
         item.owner_npc_id = int(owner_npc_id) if owner_npc_id else None
         item.origin_location_id = int(origin_location_id) if origin_location_id else None
+        item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
 
         db.session.commit()
         flash(f'Item "{item.name}" updated.', 'success')

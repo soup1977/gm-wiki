@@ -41,6 +41,14 @@
     </div>
 
     <div class="mb-3">
+        <label for="tags" class="form-label">Tags</label>
+        <input type="text" class="form-control" id="tags" name="tags"
+               value="{{ ', '.join(tag.name for tag in sess.tags) if sess else '' }}"
+               placeholder="e.g. combat-heavy, revelation, downtime">
+        <div class="form-text">Comma-separated. Used to filter and group entries.</div>
+    </div>
+
+    <div class="mb-3">
         <label for="summary" class="form-label">Summary</label>
         <textarea class="form-control" id="summary" name="summary" rows="6">{{ sess.summary if sess else '' }}</textarea>
         <div class="form-text">What happened this session? Markdown supported.</div>
