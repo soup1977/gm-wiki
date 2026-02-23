@@ -18,6 +18,10 @@ def list_items():
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     active_tag = request.args.get('tag', '').strip().lower() or None
     query = Item.query.filter_by(campaign_id=campaign_id)
     if active_tag:
@@ -63,6 +67,7 @@ def create_item():
             origin_location_id=int(origin_location_id) if origin_location_id else None,
         )
         item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+        item.is_player_visible = 'is_player_visible' in request.form
         db.session.add(item)
         db.session.commit()
         flash(f'Item "{item.name}" created.', 'success')
@@ -77,6 +82,12 @@ def create_item():
 def item_detail(item_id):
     campaign_id = get_active_campaign_id()
     item = Item.query.filter_by(id=item_id, campaign_id=campaign_id).first_or_404()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
+
     return render_template('items/detail.html', item=item)
 
 
@@ -107,6 +118,7 @@ def edit_item(item_id):
         item.owner_npc_id = int(owner_npc_id) if owner_npc_id else None
         item.origin_location_id = int(origin_location_id) if origin_location_id else None
         item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+        item.is_player_visible = 'is_player_visible' in request.form
 
         db.session.commit()
         flash(f'Item "{item.name}" updated.', 'success')

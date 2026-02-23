@@ -31,6 +31,10 @@ def list_sessions():
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     active_tag = request.args.get('tag', '').strip().lower() or None
     query = Session.query.filter_by(campaign_id=campaign_id)
     if active_tag:
@@ -108,6 +112,7 @@ def create_session():
         db.session.flush()  # Need sess.id before creating attendance rows
 
         _save_attendance(sess, campaign_id)
+        sess.is_player_visible = 'is_player_visible' in request.form
 
         db.session.commit()
         label = f'Session {sess.number}' if sess.number else 'Session'
@@ -123,6 +128,12 @@ def create_session():
 def session_detail(session_id):
     campaign_id = get_active_campaign_id()
     sess = Session.query.filter_by(id=session_id, campaign_id=campaign_id).first_or_404()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
+
     return render_template('sessions/detail.html', sess=sess)
 
 
@@ -182,6 +193,7 @@ def edit_session(session_id):
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         _save_attendance(sess, campaign_id)
+        sess.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
         flash('Session updated.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))

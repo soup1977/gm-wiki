@@ -5,8 +5,14 @@
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
+        {% if session.get('in_session_mode') %}
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('session_mode.dashboard') }}">Session Dashboard</a>
+        </li>
+        {% else %}
         <li class="breadcrumb-item"><a href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
-        <li class="breadcrumb-item active">{{ npc.name }}</li>
+        {% endif %}
+        <li class="breadcrumb-item active" aria-current="page">{{ npc.name }}</li>
     </ol>
 </nav>
 
@@ -23,6 +29,14 @@
         </p>
     </div>
     <div class="d-flex gap-2 align-items-start">
+        {% if npc.is_player_visible %}
+        <a href="{{ url_for('wiki.wiki_npc_detail', campaign_id=npc.campaign_id, npc_id=npc.id) }}"
+           class="badge bg-success text-decoration-none align-self-center">
+            <i class="bi bi-people"></i> Player Visible
+        </a>
+        {% else %}
+        <span class="badge bg-secondary align-self-center"><i class="bi bi-eye-slash"></i> Hidden from players</span>
+        {% endif %}
         {% if npc.status == 'alive' %}
             <span class="badge bg-success fs-6">{{ npc.status }}</span>
         {% elif npc.status == 'dead' %}

@@ -40,6 +40,10 @@ def list_pcs():
         flash('Please select a campaign first.', 'warning')
         return redirect(url_for('main.index'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     status_filter = request.args.get('status', 'all')
     query = PlayerCharacter.query.filter_by(campaign_id=campaign_id)
     if status_filter != 'all':
@@ -110,6 +114,11 @@ def pc_detail(pc_id):
     if pc.campaign_id != campaign_id:
         flash('Character not found in this campaign.', 'danger')
         return redirect(url_for('pcs.list_pcs'))
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
 
     # Build an ordered list of (field_name, value) for display
     template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\

@@ -1,0 +1,62 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}Items — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-bag"></i> Items</h2>
+
+{% if items %}
+<div class="table-responsive">
+    <table class="table table-dark table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Rarity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('wiki.wiki_item_detail', campaign_id=campaign.id, item_id=item.id) }}"
+                       class="text-light text-decoration-none">
+                        {{ item.name }}
+                    </a>
+                </td>
+                <td>
+                    {% if item.type %}
+                    <span class="badge bg-secondary">{{ item.type }}</span>
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.rarity %}
+                    {% if item.rarity == 'common' %}
+                        <span class="badge bg-secondary">{{ item.rarity | title }}</span>
+                    {% elif item.rarity == 'uncommon' %}
+                        <span class="badge bg-success">{{ item.rarity | title }}</span>
+                    {% elif item.rarity == 'rare' %}
+                        <span class="badge bg-primary">{{ item.rarity | title }}</span>
+                    {% elif item.rarity == 'very rare' %}
+                        <span class="badge bg-info text-dark">{{ item.rarity | title }}</span>
+                    {% elif item.rarity == 'legendary' %}
+                        <span class="badge bg-warning text-dark">{{ item.rarity | title }}</span>
+                    {% elif item.rarity == 'unique' %}
+                        <span class="badge bg-danger">{{ item.rarity | title }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ item.rarity | title }}</span>
+                    {% endif %}
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No items have been revealed yet.</p>
+{% endif %}
+{% endblock %}

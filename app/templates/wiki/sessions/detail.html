@@ -1,0 +1,66 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}
+    {% if sess.number %}Session {{ sess.number }}{% if sess.title %} — {{ sess.title }}{% endif %}{% else %}{{ sess.title or 'Session' }}{% endif %} — {{ campaign.name }}
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_sessions', campaign_id=campaign.id) }}">Sessions</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {% if sess.number %}#{{ sess.number }} {% endif %}{{ sess.title or 'Untitled Session' }}
+        </li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>
+        {% if sess.number %}<span class="text-muted">#{{ sess.number }}</span> {% endif %}
+        {{ sess.title or 'Untitled Session' }}
+    </h2>
+    {% if sess.date_played %}
+    <p class="text-muted mb-0">{{ sess.date_played.strftime('%B %d, %Y') }}</p>
+    {% endif %}
+</div>
+
+{% if sess.summary %}
+<div class="mb-4">
+    <h5>What Happened</h5>
+    <div>{{ sess.summary | md | safe }}</div>
+</div>
+{% else %}
+<p class="text-muted">No summary yet.</p>
+{% endif %}
+
+{% set visible_npcs = sess.npcs_featured | selectattr('is_player_visible') | list %}
+{% if visible_npcs %}
+<div class="mb-4">
+    <h5>NPCs Featured</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for npc in visible_npcs %}
+        <a href="{{ url_for('wiki.wiki_npc_detail', campaign_id=campaign.id, npc_id=npc.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-person"></i> {{ npc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% set visible_locations = sess.locations_visited | selectattr('is_player_visible') | list %}
+{% if visible_locations %}
+<div class="mb-4">
+    <h5>Locations Visited</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for loc in visible_locations %}
+        <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=loc.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ loc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

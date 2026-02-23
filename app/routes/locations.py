@@ -17,6 +17,10 @@ def list_locations():
         flash('Please select a campaign first.', 'warning')
         return redirect(url_for('main.index'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     active_tag = request.args.get('tag', '').strip().lower() or None
     query = Location.query.filter_by(campaign_id=campaign_id)
     if active_tag:
@@ -66,6 +70,7 @@ def create_location():
         if filename:
             location.map_filename = filename
 
+        location.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
 
         flash(f'Location "{location.name}" created!', 'success')
@@ -86,6 +91,11 @@ def location_detail(location_id):
     if location.campaign_id != campaign_id:
         flash('Location not found in this campaign.', 'danger')
         return redirect(url_for('locations.list_locations'))
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
 
     return render_template('locations/detail.html', location=location)
 
@@ -132,6 +142,7 @@ def edit_location(location_id):
         if filename:
             location.map_filename = filename
 
+        location.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
 
         flash(f'Location "{location.name}" updated!', 'success')

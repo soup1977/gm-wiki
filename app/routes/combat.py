@@ -11,6 +11,11 @@ def get_active_campaign_id():
 @combat_bp.route('/')
 def tracker():
     campaign_id = get_active_campaign_id()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('session_title', None)
+
     current_session_id = session.get('current_session_id')
 
     # Build list of sessions to populate the session picker dropdown
@@ -98,4 +103,6 @@ def set_session():
         session['current_session_id'] = int(sess_id)
     else:
         session.pop('current_session_id', None)
-    return redirect(url_for('combat.tracker'))
+    in_session = session.get('in_session_mode')
+    target = url_for('combat.tracker') + ('?from=session' if in_session else '')
+    return redirect(target)

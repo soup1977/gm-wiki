@@ -92,6 +92,16 @@
         </div>
     </div>
 
+    <div class="form-check mb-3">
+        <input type="checkbox" name="is_player_visible" id="is_player_visible"
+               class="form-check-input"
+               {% if item and item.is_player_visible %}checked{% endif %}>
+        <label class="form-check-label" for="is_player_visible">
+            <i class="bi bi-people"></i> Visible in Player Wiki
+        </label>
+        <div class="form-text">When checked, this item appears in the read-only player wiki.</div>
+    </div>
+
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-circle"></i> {% if item %}Save Changes{% else %}Create Item{% endif %}

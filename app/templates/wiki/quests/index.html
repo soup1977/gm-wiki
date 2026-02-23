@@ -1,0 +1,39 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}Quests — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-flag"></i> Quests</h2>
+
+{% if quests %}
+<div class="list-group">
+    {% for quest in quests %}
+    <a href="{{ url_for('wiki.wiki_quest_detail', campaign_id=campaign.id, quest_id=quest.id) }}"
+       class="list-group-item list-group-item-action bg-dark border-secondary">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <strong>{{ quest.name }}</strong>
+                {% if quest.hook %}
+                <p class="text-muted small mb-0 mt-1">{{ quest.hook | truncate(100, true) }}</p>
+                {% endif %}
+            </div>
+            <div class="ms-3 text-nowrap">
+                {% if quest.status == 'active' %}
+                    <span class="badge bg-success">Active</span>
+                {% elif quest.status == 'completed' %}
+                    <span class="badge bg-primary">Completed</span>
+                {% elif quest.status == 'failed' %}
+                    <span class="badge bg-danger">Failed</span>
+                {% elif quest.status == 'on_hold' %}
+                    <span class="badge bg-warning text-dark">On Hold</span>
+                {% else %}
+                    <span class="badge bg-secondary">{{ quest.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No quests have been revealed yet.</p>
+{% endif %}
+{% endblock %}

@@ -17,6 +17,8 @@ def dashboard():
         flash('Please select a campaign first.', 'warning')
         return redirect(url_for('main.index'))
 
+    session['in_session_mode'] = True
+
     current_session_id = session.get('current_session_id')
     game_session = None
     prev_session = None
@@ -40,6 +42,12 @@ def dashboard():
             current_session_id = None
 
     if game_session:
+        # Update the session title for the navbar indicator
+        title = f"Session #{game_session.number}" if game_session.number else ''
+        if game_session.title:
+            title = f"{title}: {game_session.title}" if title else game_session.title
+        session['session_title'] = title or 'Untitled Session'
+
         # Pinned NPCs — stored as a JSON list of NPC IDs on the session record
         if game_session.pinned_npc_ids:
             pinned_npcs = NPC.query.filter(

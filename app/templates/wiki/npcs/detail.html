@@ -1,0 +1,96 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ npc.name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_npcs', campaign_id=campaign.id) }}">NPCs</a>
+        </li>
+        <li class="breadcrumb-item active">{{ npc.name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>{{ npc.name }}</h2>
+    {% if npc.role or npc.faction %}
+    <p class="text-muted mb-0">
+        {% if npc.role %}{{ npc.role }}{% endif %}
+        {% if npc.role and npc.faction %} &mdash; {% endif %}
+        {% if npc.faction %}{{ npc.faction }}{% endif %}
+    </p>
+    {% endif %}
+    <div class="mt-2">
+        {% if npc.status == 'alive' %}
+            <span class="badge bg-success">{{ npc.status }}</span>
+        {% elif npc.status == 'dead' %}
+            <span class="badge bg-danger">{{ npc.status }}</span>
+        {% elif npc.status == 'missing' %}
+            <span class="badge bg-warning text-dark">{{ npc.status }}</span>
+        {% else %}
+            <span class="badge bg-secondary">{{ npc.status }}</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if npc.tags %}
+<div class="mb-3">
+    {% for tag in npc.tags | sort(attribute='name') %}
+    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if npc.portrait_filename %}
+<div class="mb-4">
+    <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
+         alt="{{ npc.name }}" class="img-fluid rounded" style="max-height: 350px;">
+</div>
+{% endif %}
+
+{% if npc.physical_description %}
+<div class="mb-4">
+    <h5>Physical Description</h5>
+    <div>{{ npc.physical_description | md | safe }}</div>
+</div>
+{% endif %}
+
+{% if npc.personality %}
+<div class="mb-4">
+    <h5>Personality</h5>
+    <div>{{ npc.personality | md | safe }}</div>
+</div>
+{% endif %}
+
+{% if npc.notes %}
+<div class="mb-4">
+    <h5>Notes</h5>
+    <div>{{ npc.notes | md | safe }}</div>
+</div>
+{% endif %}
+
+{% set visible_locations = npc.connected_locations | selectattr('is_player_visible') | list %}
+{% if npc.home_location and npc.home_location.is_player_visible %}
+<div class="mb-4">
+    <h5>Home Location</h5>
+    <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=npc.home_location.id) }}"
+       class="btn btn-sm btn-outline-light">
+        <i class="bi bi-geo-alt"></i> {{ npc.home_location.name }}
+    </a>
+</div>
+{% endif %}
+
+{% if visible_locations %}
+<div class="mb-4">
+    <h5>Also Found At</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for loc in visible_locations %}
+        <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=loc.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ loc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

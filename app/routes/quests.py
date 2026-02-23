@@ -18,6 +18,10 @@ def list_quests():
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     active_tag = request.args.get('tag', '').strip().lower() or None
     query = Quest.query.filter_by(campaign_id=campaign_id)
     if active_tag:
@@ -72,6 +76,7 @@ def create_quest():
         ).all()
 
         quest.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+        quest.is_player_visible = 'is_player_visible' in request.form
         db.session.add(quest)
         db.session.commit()
         flash(f'Quest "{quest.name}" created.', 'success')
@@ -86,6 +91,12 @@ def create_quest():
 def quest_detail(quest_id):
     campaign_id = get_active_campaign_id()
     quest = Quest.query.filter_by(id=quest_id, campaign_id=campaign_id).first_or_404()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
+
     return render_template('quests/detail.html', quest=quest)
 
 
@@ -123,6 +134,7 @@ def edit_quest(quest_id):
         ).all()
 
         quest.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
+        quest.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
         flash(f'Quest "{quest.name}" updated.', 'success')
         return redirect(url_for('quests.quest_detail', quest_id=quest.id))
