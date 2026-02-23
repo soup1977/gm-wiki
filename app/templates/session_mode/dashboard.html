@@ -48,7 +48,7 @@
 <ul class="list-group list-group-flush">
     {% for quest in active_quests %}
     <li class="list-group-item bg-dark border-secondary">
-        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}"
+        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}?from=session"
            class="text-decoration-none text-light">{{ quest.name }}</a>
         {% if quest.hook %}
         <span class="text-muted small ms-2">— {{ quest.hook | truncate(60) }}</span>
@@ -82,17 +82,17 @@
 
 {# Quick launch buttons #}
 <div class="d-flex flex-wrap gap-3 mb-4">
-    <a href="{{ url_for('combat.tracker') }}"
+    <a href="{{ url_for('combat.tracker') }}?from=session"
        class="btn btn-lg btn-primary flex-fill" style="min-width:180px;">
         <i class="bi bi-sword fs-5 d-block mb-1"></i>
         Combat Tracker
     </a>
-    <a href="{{ url_for('tables.list_tables') }}"
+    <a href="{{ url_for('tables.list_tables') }}?from=session"
        class="btn btn-lg btn-secondary flex-fill" style="min-width:180px;">
         <i class="bi bi-dice-5 fs-5 d-block mb-1"></i>
         Random Tables
     </a>
-    <a href="{{ url_for('sessions.session_detail', session_id=game_session.id) }}"
+    <a href="{{ url_for('sessions.session_detail', session_id=game_session.id) }}?from=session"
        class="btn btn-lg btn-outline-secondary flex-fill" style="min-width:180px;">
         <i class="bi bi-journal-text fs-5 d-block mb-1"></i>
         Session Notes
@@ -114,7 +114,7 @@
                 <ul class="list-group list-group-flush">
                     {% for quest in active_quests %}
                     <li class="list-group-item bg-dark border-secondary py-2">
-                        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}"
+                        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}?from=session"
                            class="text-decoration-none text-light fw-bold">{{ quest.name }}</a>
                         {% if quest.hook %}
                         <div class="text-muted small mt-1">{{ quest.hook | truncate(70) }}</div>
@@ -160,7 +160,7 @@
                 {% if loc.description %}
                 <p class="text-muted small mb-2">{{ loc.description | truncate(150) }}</p>
                 {% endif %}
-                <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}"
+                <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}?from=session"
                    class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-right-circle"></i> View full location
                 </a>
@@ -195,7 +195,7 @@
                         </div>
                         {% endif %}
                         <div>
-                            <a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}"
+                            <a href="{{ url_for('pcs.pc_detail', pc_id=pc.id) }}?from=session"
                                class="text-decoration-none text-light fw-bold small">{{ pc.character_name }}</a>
                             <div class="text-muted" style="font-size:.75rem;">{{ pc.player_name }}</div>
                         </div>
@@ -251,7 +251,7 @@
                 </div>
                 {% endif %}
                 <div>
-                    <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}"
+                    <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}?from=session"
                        class="text-decoration-none text-light fw-bold small">{{ npc.name }}</a>
                     {% if npc.role %}
                     <div class="text-muted" style="font-size:.75rem;">{{ npc.role }}</div>
@@ -329,7 +329,7 @@
             Last Session{% if prev_session.number %} (#{{ prev_session.number }}){% endif %}:
             {{ prev_session.title or 'Untitled' }}
         </h6>
-        <a href="{{ url_for('sessions.session_detail', session_id=prev_session.id) }}"
+        <a href="{{ url_for('sessions.session_detail', session_id=prev_session.id) }}?from=session"
            class="btn btn-sm btn-outline-secondary">View</a>
     </div>
     {% if prev_session.summary %}

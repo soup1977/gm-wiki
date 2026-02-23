@@ -1,0 +1,37 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}Bestiary — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-book-dead"></i> Bestiary</h2>
+
+{% if entries %}
+<div class="row g-3">
+    {% for entry in entries %}
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('wiki.wiki_bestiary_detail', campaign_id=campaign.id, entry_id=entry.id) }}"
+           class="text-decoration-none">
+            <div class="card bg-dark border-secondary h-100">
+                {% if entry.image_path %}
+                <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
+                     class="card-img-top" alt="{{ entry.name }}"
+                     style="height: 180px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title text-light mb-2">{{ entry.name }}</h5>
+                    {% if entry.get_tags_list() %}
+                    <div>
+                        {% for tag in entry.get_tags_list() %}
+                        <span class="badge bg-secondary me-1">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No bestiary entries are available yet.</p>
+{% endif %}
+{% endblock %}

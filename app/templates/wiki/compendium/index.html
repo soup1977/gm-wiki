@@ -1,0 +1,47 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}Compendium — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-book"></i> Compendium</h2>
+
+{% if entries %}
+{% set categories = entries | map(attribute='category') | select | unique | sort | list %}
+{% if categories %}
+{% for category in categories %}
+<h5 class="text-muted mt-4 mb-2">{{ category }}</h5>
+<div class="list-group mb-3">
+    {% for entry in entries if entry.category == category %}
+    <a href="{{ url_for('wiki.wiki_compendium_detail', campaign_id=campaign.id, entry_id=entry.id) }}"
+       class="list-group-item list-group-item-action bg-dark border-secondary">
+        {{ entry.title }}
+    </a>
+    {% endfor %}
+</div>
+{% endfor %}
+
+{% set uncategorized = entries | selectattr('category', 'none') | list %}
+{% if uncategorized %}
+<h5 class="text-muted mt-4 mb-2">Other</h5>
+<div class="list-group mb-3">
+    {% for entry in uncategorized %}
+    <a href="{{ url_for('wiki.wiki_compendium_detail', campaign_id=campaign.id, entry_id=entry.id) }}"
+       class="list-group-item list-group-item-action bg-dark border-secondary">
+        {{ entry.title }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+{% else %}
+<div class="list-group">
+    {% for entry in entries %}
+    <a href="{{ url_for('wiki.wiki_compendium_detail', campaign_id=campaign.id, entry_id=entry.id) }}"
+       class="list-group-item list-group-item-action bg-dark border-secondary">
+        {{ entry.title }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+{% else %}
+<p class="text-muted">No compendium entries available.</p>
+{% endif %}
+{% endblock %}

@@ -407,6 +407,74 @@ class TableRow(db.Model):
         return f'<TableRow {self.id}: {self.content[:40]}>'
 
 
+# Association table: Session ↔ MonsterInstance (many-to-many)
+# A session can feature many monster instances; an instance can appear in many sessions.
+session_monsters = db.Table('session_monsters',
+    db.Column('session_id', db.Integer, db.ForeignKey('sessions.id'), primary_key=True),
+    db.Column('monster_instance_id', db.Integer, db.ForeignKey('monster_instances.id'), primary_key=True)
+)
+
+
+class BestiaryEntry(db.Model):
+    """A global creature/monster template. Not tied to any campaign.
+    GMs create these once and spawn instances per campaign."""
+    __tablename__ = 'bestiary_entries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    system = db.Column(db.String(50))           # "D&D 5e", "ICRPG", etc. (optional)
+    cr_level = db.Column(db.String(20))         # "CR 1/4", "Level 3", etc. (optional)
+    stat_block = db.Column(db.Text, nullable=False)  # Markdown-supported
+    image_path = db.Column(db.String(255))      # Portrait/token image filename
+    source = db.Column(db.String(100))          # "Monster Manual p.166", "Homebrew"
+    visible_to_players = db.Column(db.Boolean, default=False)
+    tags = db.Column(db.Text)                   # Comma-separated: "humanoid,goblinoid,forest"
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Cascade delete: removing a Bestiary Entry also removes all its spawned instances
+    instances = db.relationship('MonsterInstance', backref='bestiary_entry',
+                                lazy=True, cascade='all, delete-orphan')
+
+    def get_tags_list(self):
+        """Return tags as a Python list, or empty list if none."""
+        if not self.tags:
+            return []
+        return [t.strip() for t in self.tags.split(',') if t.strip()]
+
+    def __repr__(self):
+        return f'<BestiaryEntry {self.name}>'
+
+
+class MonsterInstance(db.Model):
+    """A specific creature spawned from a BestiaryEntry, scoped to one campaign.
+    E.g. 'Goblin 1', 'Goblin 2' are two instances of the 'Goblin' BestiaryEntry."""
+    __tablename__ = 'monster_instances'
+
+    id = db.Column(db.Integer, primary_key=True)
+    bestiary_entry_id = db.Column(db.Integer, db.ForeignKey('bestiary_entries.id'), nullable=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+
+    instance_name = db.Column(db.String(100), nullable=False)   # "Goblin 1", "Snarl"
+    status = db.Column(db.String(20), default='alive')          # alive / dead / fled / unknown
+    notes = db.Column(db.Text)                                  # GM-only notes about this creature
+
+    # Set when this instance has been promoted to a full NPC
+    promoted_to_npc_id = db.Column(db.Integer, db.ForeignKey('npcs.id'), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    campaign = db.relationship('Campaign', backref='monster_instances')
+    promoted_npc = db.relationship('NPC', backref='original_monster_instance',
+                                   foreign_keys=[promoted_to_npc_id])
+    sessions = db.relationship('Session', secondary=session_monsters,
+                               backref='monsters_encountered')
+
+    def __repr__(self):
+        return f'<MonsterInstance {self.instance_name}>'
+
+
 def get_or_create_tags(campaign_id, tag_string):
     """Parse a comma-separated tag string and return a list of Tag objects.
     Creates new Tag records as needed. Tags are stored lowercase and trimmed."""

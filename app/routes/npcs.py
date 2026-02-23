@@ -19,6 +19,10 @@ def list_npcs():
         flash('Please select a campaign first.', 'warning')
         return redirect(url_for('main.index'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     active_tag = request.args.get('tag', '').strip().lower() or None
     query = NPC.query.filter_by(campaign_id=campaign_id)
     if active_tag:
@@ -72,6 +76,7 @@ def create_npc():
         if filename:
             npc.portrait_filename = filename
 
+        npc.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
 
         flash(f'NPC "{npc.name}" created!', 'success')
@@ -91,6 +96,11 @@ def npc_detail(npc_id):
     if npc.campaign_id != campaign_id:
         flash('NPC not found in this campaign.', 'danger')
         return redirect(url_for('npcs.list_npcs'))
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
 
     return render_template('npcs/detail.html', npc=npc)
 
@@ -132,6 +142,7 @@ def edit_npc(npc_id):
         if filename:
             npc.portrait_filename = filename
 
+        npc.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
 
         flash(f'NPC "{npc.name}" updated!', 'success')

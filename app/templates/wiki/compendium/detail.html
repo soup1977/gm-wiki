@@ -1,0 +1,27 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ entry.title }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_compendium', campaign_id=campaign.id) }}">Compendium</a>
+        </li>
+        {% if entry.category %}
+        <li class="breadcrumb-item text-muted">{{ entry.category }}</li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ entry.title }}</li>
+    </ol>
+</nav>
+
+<h2 class="mb-2">{{ entry.title }}</h2>
+{% if entry.category %}
+<p class="text-muted mb-4"><span class="badge bg-secondary">{{ entry.category }}</span></p>
+{% endif %}
+
+{% if entry.content %}
+<div>{{ entry.content | md | safe }}</div>
+{% else %}
+<p class="text-muted">No content yet.</p>
+{% endif %}
+{% endblock %}

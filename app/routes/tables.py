@@ -17,6 +17,12 @@ def get_active_campaign_id():
 @tables_bp.route('/')
 def list_tables():
     campaign_id = get_active_campaign_id()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
+
     tab = request.args.get('tab', 'all')            # all | builtin | custom
     category_filter = request.args.get('category', '')
 

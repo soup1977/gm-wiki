@@ -1,0 +1,92 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ location.name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_locations', campaign_id=campaign.id) }}">Locations</a>
+        </li>
+        {% if location.parent_location and location.parent_location.is_player_visible %}
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=location.parent_location.id) }}">
+                {{ location.parent_location.name }}
+            </a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ location.name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>{{ location.name }}</h2>
+    {% if location.type %}
+    <p class="text-muted mb-0">{{ location.type }}</p>
+    {% endif %}
+</div>
+
+{% if location.map_filename %}
+<div class="mb-4">
+    <img src="{{ url_for('static', filename='uploads/' + location.map_filename) }}"
+         alt="{{ location.name }} map" class="img-fluid rounded" style="max-height: 400px;">
+</div>
+{% endif %}
+
+{% if location.description %}
+<div class="mb-4">
+    <div>{{ location.description | md | safe }}</div>
+</div>
+{% endif %}
+
+{% if location.notes %}
+<div class="mb-4">
+    <h5>Notes</h5>
+    <div>{{ location.notes | md | safe }}</div>
+</div>
+{% endif %}
+
+{% set visible_children = location.child_locations | selectattr('is_player_visible') | list %}
+{% if visible_children %}
+<div class="mb-4">
+    <h5>Areas Within</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for child in visible_children %}
+        <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=child.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ child.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% set visible_connections = location.all_connected_locations | selectattr('is_player_visible') | list %}
+{% if visible_connections %}
+<div class="mb-4">
+    <h5>Connected Locations</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for conn in visible_connections %}
+        <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=conn.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-arrow-left-right"></i> {{ conn.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% set visible_npcs = location.npcs_living_here | selectattr('is_player_visible') | list %}
+{% if visible_npcs %}
+<div class="mb-4">
+    <h5>Notable People Here</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for npc in visible_npcs %}
+        <a href="{{ url_for('wiki.wiki_npc_detail', campaign_id=campaign.id, npc_id=npc.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-person"></i> {{ npc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

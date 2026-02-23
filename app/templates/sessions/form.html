@@ -118,6 +118,20 @@
             </select>
         </div>
         {% endif %}
+
+        {% if monsters %}
+        <div class="col-md-6">
+            <label for="monsters_encountered" class="form-label">Monsters Encountered</label>
+            <select class="form-select" id="monsters_encountered" name="monsters_encountered" multiple size="6">
+                {% for monster in monsters %}
+                <option value="{{ monster.id }}"
+                    {% if sess and monster in sess.monsters_encountered %}selected{% endif %}>
+                    {{ monster.instance_name }} ({{ monster.bestiary_entry.name }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
     </div>
 
     <div class="form-text mb-3">Hold Ctrl (Windows) or Cmd (Mac) to select multiple in each list.</div>
@@ -156,6 +170,16 @@
         </div>
     </div>
     {% endif %}
+
+    <div class="form-check mb-3">
+        <input type="checkbox" name="is_player_visible" id="is_player_visible"
+               class="form-check-input"
+               {% if sess and sess.is_player_visible %}checked{% endif %}>
+        <label class="form-check-label" for="is_player_visible">
+            <i class="bi bi-people"></i> Visible in Player Wiki
+        </label>
+        <div class="form-text">When checked, this session recap appears in the read-only player wiki.</div>
+    </div>
 
     <div class="d-flex gap-2 mt-2">
         <button type="submit" class="btn btn-primary">

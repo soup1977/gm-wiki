@@ -2,7 +2,8 @@ from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
-                        get_or_create_tags, PlayerCharacter, SessionAttendance)
+                        get_or_create_tags, PlayerCharacter, SessionAttendance,
+                        MonsterInstance)
 
 sessions_bp = Blueprint('sessions', __name__)
 
@@ -30,6 +31,10 @@ def list_sessions():
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
 
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
     active_tag = request.args.get('tag', '').strip().lower() or None
     query = Session.query.filter_by(campaign_id=campaign_id)
     if active_tag:
@@ -56,6 +61,8 @@ def create_session():
     quests = Quest.query.filter_by(campaign_id=campaign_id).order_by(Quest.name).all()
     pcs = PlayerCharacter.query.filter_by(campaign_id=campaign_id)\
         .order_by(PlayerCharacter.character_name).all()
+    monsters = MonsterInstance.query.filter_by(campaign_id=campaign_id)\
+        .order_by(MonsterInstance.instance_name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -67,7 +74,8 @@ def create_session():
                 flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
                 return render_template('sessions/form.html', sess=None,
                                        npcs=npcs, locations=locations,
-                                       items=items, quests=quests, pcs=pcs)
+                                       items=items, quests=quests, pcs=pcs,
+                                       monsters=monsters)
 
         sess = Session(
             campaign_id=campaign_id,
@@ -94,12 +102,17 @@ def create_session():
             Quest.id.in_(request.form.getlist('quests_touched')),
             Quest.campaign_id == campaign_id
         ).all()
+        sess.monsters_encountered = MonsterInstance.query.filter(
+            MonsterInstance.id.in_(request.form.getlist('monsters_encountered')),
+            MonsterInstance.campaign_id == campaign_id
+        ).all()
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(sess)
         db.session.flush()  # Need sess.id before creating attendance rows
 
         _save_attendance(sess, campaign_id)
+        sess.is_player_visible = 'is_player_visible' in request.form
 
         db.session.commit()
         label = f'Session {sess.number}' if sess.number else 'Session'
@@ -108,13 +121,19 @@ def create_session():
 
     return render_template('sessions/form.html', sess=None,
                            npcs=npcs, locations=locations,
-                           items=items, quests=quests, pcs=pcs)
+                           items=items, quests=quests, pcs=pcs, monsters=monsters)
 
 
 @sessions_bp.route('/sessions/<int:session_id>')
 def session_detail(session_id):
     campaign_id = get_active_campaign_id()
     sess = Session.query.filter_by(id=session_id, campaign_id=campaign_id).first_or_404()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
+
     return render_template('sessions/detail.html', sess=sess)
 
 
@@ -129,6 +148,8 @@ def edit_session(session_id):
     quests = Quest.query.filter_by(campaign_id=campaign_id).order_by(Quest.name).all()
     pcs = PlayerCharacter.query.filter_by(campaign_id=campaign_id)\
         .order_by(PlayerCharacter.character_name).all()
+    monsters = MonsterInstance.query.filter_by(campaign_id=campaign_id)\
+        .order_by(MonsterInstance.instance_name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -140,7 +161,8 @@ def edit_session(session_id):
                 flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
                 return render_template('sessions/form.html', sess=sess,
                                        npcs=npcs, locations=locations,
-                                       items=items, quests=quests, pcs=pcs)
+                                       items=items, quests=quests, pcs=pcs,
+                                       monsters=monsters)
 
         sess.number = request.form.get('number') or None
         sess.title = request.form.get('title', '').strip() or None
@@ -164,16 +186,21 @@ def edit_session(session_id):
             Quest.id.in_(request.form.getlist('quests_touched')),
             Quest.campaign_id == campaign_id
         ).all()
+        sess.monsters_encountered = MonsterInstance.query.filter(
+            MonsterInstance.id.in_(request.form.getlist('monsters_encountered')),
+            MonsterInstance.campaign_id == campaign_id
+        ).all()
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         _save_attendance(sess, campaign_id)
+        sess.is_player_visible = 'is_player_visible' in request.form
         db.session.commit()
         flash('Session updated.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))
 
     return render_template('sessions/form.html', sess=sess,
                            npcs=npcs, locations=locations,
-                           items=items, quests=quests, pcs=pcs)
+                           items=items, quests=quests, pcs=pcs, monsters=monsters)
 
 
 @sessions_bp.route('/sessions/<int:session_id>/delete', methods=['POST'])

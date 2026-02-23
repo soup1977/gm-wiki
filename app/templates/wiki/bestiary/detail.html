@@ -1,0 +1,37 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ entry.name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_bestiary', campaign_id=campaign.id) }}">Bestiary</a>
+        </li>
+        <li class="breadcrumb-item active">{{ entry.name }}</li>
+    </ol>
+</nav>
+
+<h2 class="mb-3">{{ entry.name }}</h2>
+
+{% if entry.image_path %}
+<div class="mb-4">
+    <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
+         alt="{{ entry.name }}" class="img-fluid rounded" style="max-height: 350px;">
+</div>
+{% endif %}
+
+{% if entry.get_tags_list() %}
+<div class="mb-4">
+    {% for tag in entry.get_tags_list() %}
+    <span class="badge bg-secondary me-1">{{ tag }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if entry.source %}
+<div class="mb-4">
+    <h5>Source</h5>
+    <p class="text-muted mb-0">{{ entry.source }}</p>
+</div>
+{% endif %}
+{% endblock %}

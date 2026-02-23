@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from app.models import Session as GameSession, PlayerCharacter
+from app.models import Session as GameSession, PlayerCharacter, BestiaryEntry
 
 combat_bp = Blueprint('combat', __name__, url_prefix='/combat-tracker')
 
@@ -11,6 +11,11 @@ def get_active_campaign_id():
 @combat_bp.route('/')
 def tracker():
     campaign_id = get_active_campaign_id()
+
+    if request.args.get('from') != 'session':
+        session.pop('in_session_mode', None)
+        session.pop('session_title', None)
+
     current_session_id = session.get('current_session_id')
 
     # Build list of sessions to populate the session picker dropdown
@@ -47,12 +52,45 @@ def tracker():
                         'stats': stats,
                     })
 
+    # Build session monster data — Monster Instances linked to the current session.
+    # These appear as a separate quick-add list in the modal.
+    session_monsters = []
+    if current_session_id and campaign_id:
+        game_session = GameSession.query.filter_by(
+            id=current_session_id, campaign_id=campaign_id
+        ).first()
+        if game_session:
+            for inst in game_session.monsters_encountered:
+                entry = inst.bestiary_entry
+                session_monsters.append({
+                    'id': inst.id,
+                    'instance_name': inst.instance_name,
+                    'status': inst.status,
+                    'entry_name': entry.name,
+                    'cr_level': entry.cr_level or '',
+                    'stat_block': entry.stat_block or '',
+                })
+
+    # Build bestiary data for the quick-add dropdown.
+    # Includes name, cr_level, and stat_block (for loading into monster notes).
+    bestiary_data = [
+        {
+            'id': e.id,
+            'name': e.name,
+            'cr_level': e.cr_level or '',
+            'stat_block': e.stat_block or '',
+        }
+        for e in BestiaryEntry.query.order_by(BestiaryEntry.name).all()
+    ]
+
     return render_template(
         'combat/tracker.html',
         all_sessions=all_sessions,
         current_session_id=current_session_id,
         current_session_name=current_session_name,
         session_pcs=session_pcs,
+        bestiary_data=bestiary_data,
+        session_monsters=session_monsters,
     )
 
 
@@ -65,4 +103,6 @@ def set_session():
         session['current_session_id'] = int(sess_id)
     else:
         session.pop('current_session_id', None)
-    return redirect(url_for('combat.tracker'))
+    in_session = session.get('in_session_mode')
+    target = url_for('combat.tracker') + ('?from=session' if in_session else '')
+    return redirect(target)

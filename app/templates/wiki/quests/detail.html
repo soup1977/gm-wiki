@@ -1,0 +1,81 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ quest.name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_quests', campaign_id=campaign.id) }}">Quests</a>
+        </li>
+        <li class="breadcrumb-item active">{{ quest.name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>{{ quest.name }}</h2>
+    <div class="mt-2">
+        {% if quest.status == 'active' %}
+            <span class="badge bg-success fs-6">Active</span>
+        {% elif quest.status == 'completed' %}
+            <span class="badge bg-primary fs-6">Completed</span>
+        {% elif quest.status == 'failed' %}
+            <span class="badge bg-danger fs-6">Failed</span>
+        {% elif quest.status == 'on_hold' %}
+            <span class="badge bg-warning text-dark fs-6">On Hold</span>
+        {% else %}
+            <span class="badge bg-secondary fs-6">{{ quest.status }}</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if quest.hook %}
+<div class="mb-4">
+    <h5>Hook</h5>
+    <div>{{ quest.hook | md | safe }}</div>
+</div>
+{% endif %}
+
+{% if quest.description %}
+<div class="mb-4">
+    <h5>Description</h5>
+    <div>{{ quest.description | md | safe }}</div>
+</div>
+{% endif %}
+
+{% if quest.outcome %}
+<div class="mb-4">
+    <h5>Outcome</h5>
+    <div>{{ quest.outcome | md | safe }}</div>
+</div>
+{% endif %}
+
+{% set visible_npcs = quest.involved_npcs | selectattr('is_player_visible') | list %}
+{% if visible_npcs %}
+<div class="mb-4">
+    <h5>Involved People</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for npc in visible_npcs %}
+        <a href="{{ url_for('wiki.wiki_npc_detail', campaign_id=campaign.id, npc_id=npc.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-person"></i> {{ npc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% set visible_locations = quest.involved_locations | selectattr('is_player_visible') | list %}
+{% if visible_locations %}
+<div class="mb-4">
+    <h5>Involved Locations</h5>
+    <div class="d-flex flex-wrap gap-2">
+        {% for loc in visible_locations %}
+        <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=loc.id) }}"
+           class="btn btn-sm btn-outline-light">
+            <i class="bi bi-geo-alt"></i> {{ loc.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ campaign.name }} — Player Wiki{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>{{ campaign.name }}</h2>
+        {% if campaign.system %}
+        <p class="text-muted">{{ campaign.system }}</p>
+        {% endif %}
+        {% if campaign.description %}
+        <p>{{ campaign.description }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Active Quests -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-flag"></i> Active Quests</h5>
+            </div>
+            <div class="card-body">
+                {% if active_quests %}
+                <ul class="list-unstyled mb-0">
+                    {% for quest in active_quests %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('wiki.wiki_quest_detail', campaign_id=campaign.id, quest_id=quest.id) }}"
+                           class="text-light text-decoration-none">
+                            <i class="bi bi-chevron-right text-muted small"></i> {{ quest.name }}
+                        </a>
+                        {% if quest.hook %}
+                        <p class="text-muted small mb-0 ms-3">{{ quest.hook | truncate(80, true) }}</p>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No active quests.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar3"></i> Recent Sessions</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_sessions %}
+                <ul class="list-unstyled mb-0">
+                    {% for sess in recent_sessions %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('wiki.wiki_session_detail', campaign_id=campaign.id, session_id=sess.id) }}"
+                           class="text-light text-decoration-none">
+                            {% if sess.number %}<span class="text-muted small">#{{ sess.number }}</span> {% endif %}
+                            {{ sess.title or 'Untitled Session' }}
+                        </a>
+                        {% if sess.date_played %}
+                        <span class="text-muted small ms-2">{{ sess.date_played.strftime('%b %d, %Y') }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">No session recaps yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick links -->
+<h5 class="text-muted mb-3">Browse</h5>
+<div class="row g-3">
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('wiki.wiki_npcs', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary w-100">
+            <i class="bi bi-people d-block fs-4 mb-1"></i> NPCs
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('wiki.wiki_locations', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary w-100">
+            <i class="bi bi-geo-alt d-block fs-4 mb-1"></i> Locations
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('wiki.wiki_items', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary w-100">
+            <i class="bi bi-bag d-block fs-4 mb-1"></i> Items
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('wiki.wiki_sessions', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary w-100">
+            <i class="bi bi-calendar3 d-block fs-4 mb-1"></i> All Sessions
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('wiki.wiki_compendium', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary w-100">
+            <i class="bi bi-book d-block fs-4 mb-1"></i> Compendium
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('wiki.wiki_bestiary', campaign_id=campaign.id) }}"
+           class="btn btn-outline-secondary w-100">
+            <i class="bi bi-book-dead d-block fs-4 mb-1"></i> Bestiary
+        </a>
+    </div>
+</div>
+{% endblock %}

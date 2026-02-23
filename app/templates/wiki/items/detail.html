@@ -1,0 +1,65 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ item.name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_items', campaign_id=campaign.id) }}">Items</a>
+        </li>
+        <li class="breadcrumb-item active">{{ item.name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>{{ item.name }}</h2>
+    <div class="d-flex gap-2 mt-2">
+        {% if item.type %}
+        <span class="badge bg-secondary">{{ item.type }}</span>
+        {% endif %}
+        {% if item.rarity %}
+        {% if item.rarity == 'common' %}
+            <span class="badge bg-secondary">{{ item.rarity | title }}</span>
+        {% elif item.rarity == 'uncommon' %}
+            <span class="badge bg-success">{{ item.rarity | title }}</span>
+        {% elif item.rarity == 'rare' %}
+            <span class="badge bg-primary">{{ item.rarity | title }}</span>
+        {% elif item.rarity == 'very rare' %}
+            <span class="badge bg-info text-dark">{{ item.rarity | title }}</span>
+        {% elif item.rarity == 'legendary' %}
+            <span class="badge bg-warning text-dark">{{ item.rarity | title }}</span>
+        {% elif item.rarity == 'unique' %}
+            <span class="badge bg-danger">{{ item.rarity | title }}</span>
+        {% else %}
+            <span class="badge bg-secondary">{{ item.rarity | title }}</span>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% if item.description %}
+<div class="mb-4">
+    <div>{{ item.description | md | safe }}</div>
+</div>
+{% endif %}
+
+{% if item.owner_npc and item.owner_npc.is_player_visible %}
+<div class="mb-4">
+    <h5>Owner</h5>
+    <a href="{{ url_for('wiki.wiki_npc_detail', campaign_id=campaign.id, npc_id=item.owner_npc.id) }}"
+       class="btn btn-sm btn-outline-light">
+        <i class="bi bi-person"></i> {{ item.owner_npc.name }}
+    </a>
+</div>
+{% endif %}
+
+{% if item.origin_location and item.origin_location.is_player_visible %}
+<div class="mb-4">
+    <h5>Origin Location</h5>
+    <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=item.origin_location.id) }}"
+       class="btn btn-sm btn-outline-light">
+        <i class="bi bi-geo-alt"></i> {{ item.origin_location.name }}
+    </a>
+</div>
+{% endif %}
+{% endblock %}
