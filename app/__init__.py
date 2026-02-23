@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
+import markdown as _md
 
 # Create the database object here, but don't attach it to an app yet
 db = SQLAlchemy()
@@ -18,6 +19,15 @@ def create_app():
     # Attach the database and migration engine to this app instance
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # Register the 'md' Jinja2 filter — converts Markdown text to HTML
+    # Usage in templates: {{ some_field | md | safe }}
+    # The 'nl2br' extension turns single newlines into <br> tags
+    @app.template_filter('md')
+    def markdown_filter(text):
+        if not text:
+            return ''
+        return _md.markdown(text, extensions=['nl2br'])
 
     # Register Blueprints — each Blueprint is a group of related routes
     from app.routes.main import main_bp

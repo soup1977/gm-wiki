@@ -43,7 +43,7 @@
     <div class="mb-3">
         <label for="summary" class="form-label">Summary</label>
         <textarea class="form-control" id="summary" name="summary" rows="6">{{ sess.summary if sess else '' }}</textarea>
-        <div class="form-text">What happened this session?</div>
+        <div class="form-text">What happened this session? Markdown supported.</div>
     </div>
 
     <div class="mb-3 p-3 border border-warning rounded">
@@ -51,6 +51,7 @@
             <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
         </label>
         <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ sess.gm_notes if sess else '' }}</textarea>
+        <div class="form-text">Markdown supported.</div>
     </div>
 
     <div class="row g-3 mb-3">

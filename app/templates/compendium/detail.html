@@ -39,7 +39,7 @@
 
 {% if entry.content %}
 <div class="mt-3">
-    <p style="white-space: pre-wrap;">{{ entry.content }}</p>
+    <div>{{ entry.content | md | safe }}</div>
 </div>
 {% else %}
 <p class="text-muted">No content yet. <a href="{{ url_for('compendium.edit_entry', entry_id=entry.id) }}">Add some.</a></p>

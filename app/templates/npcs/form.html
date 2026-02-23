@@ -83,16 +83,19 @@
             <div class="mb-3">
                 <label for="physical_description" class="form-label">Physical Description</label>
                 <textarea class="form-control" id="physical_description" name="physical_description" rows="3">{{ npc.physical_description if npc else '' }}</textarea>
+                <div class="form-text">Markdown supported.</div>
             </div>
 
             <div class="mb-3">
                 <label for="personality" class="form-label">Personality</label>
                 <textarea class="form-control" id="personality" name="personality" rows="3">{{ npc.personality if npc else '' }}</textarea>
+                <div class="form-text">Markdown supported.</div>
             </div>
 
             <div class="mb-3">
                 <label for="notes" class="form-label">Notes</label>
                 <textarea class="form-control" id="notes" name="notes" rows="3">{{ npc.notes if npc else '' }}</textarea>
+                <div class="form-text">Markdown supported.</div>
             </div>
 
             <div class="mb-4">
@@ -100,7 +103,7 @@
                     <i class="bi bi-eye-slash"></i> Secrets (GM Only)
                 </label>
                 <textarea class="form-control border-warning" id="secrets" name="secrets" rows="3">{{ npc.secrets if npc else '' }}</textarea>
-                <div class="form-text text-warning">These secrets will never be shown to players.</div>
+                <div class="form-text text-warning">These secrets will never be shown to players. Markdown supported.</div>
             </div>
 
             <div class="d-flex gap-2">

@@ -44,28 +44,28 @@
         {% if quest.hook %}
         <div class="mb-4">
             <h5 class="text-secondary">Hook</h5>
-            <p>{{ quest.hook }}</p>
+            <div>{{ quest.hook | md | safe }}</div>
         </div>
         {% endif %}
 
         {% if quest.description %}
         <div class="mb-4">
             <h5 class="text-secondary">Description</h5>
-            <p>{{ quest.description }}</p>
+            <div>{{ quest.description | md | safe }}</div>
         </div>
         {% endif %}
 
         {% if quest.outcome %}
         <div class="mb-4">
             <h5 class="text-secondary">Outcome</h5>
-            <p>{{ quest.outcome }}</p>
+            <div>{{ quest.outcome | md | safe }}</div>
         </div>
         {% endif %}
 
         {% if quest.gm_notes %}
         <div class="mb-4 p-3 border border-warning rounded">
             <h5 class="text-warning"><i class="bi bi-eye-slash"></i> GM Notes</h5>
-            <p class="mb-0">{{ quest.gm_notes }}</p>
+            <div class="mb-0">{{ quest.gm_notes | md | safe }}</div>
         </div>
         {% endif %}
     </div>

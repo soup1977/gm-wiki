@@ -57,14 +57,14 @@
         {% if item.description %}
         <div class="mb-4">
             <h5 class="text-secondary">Description</h5>
-            <p>{{ item.description }}</p>
+            <div>{{ item.description | md | safe }}</div>
         </div>
         {% endif %}
 
         {% if item.gm_notes %}
         <div class="mb-4 p-3 border border-warning rounded">
             <h5 class="text-warning"><i class="bi bi-eye-slash"></i> GM Notes</h5>
-            <p class="mb-0">{{ item.gm_notes }}</p>
+            <div class="mb-0">{{ item.gm_notes | md | safe }}</div>
         </div>
         {% endif %}
     </div>
