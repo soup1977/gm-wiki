@@ -58,6 +58,23 @@ class Campaign(db.Model):
         return f'<Campaign {self.name}>'
 
 
+class CampaignStatTemplate(db.Model):
+    """Defines what PC stats are tracked in this campaign.
+    Each row is one stat field (e.g. "Armor Class", "Max HP").
+    The GM picks a preset when creating the campaign and can edit fields later."""
+    __tablename__ = 'campaign_stat_template'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    stat_name = db.Column(db.String(100), nullable=False)
+    display_order = db.Column(db.Integer, default=0)
+
+    campaign = db.relationship('Campaign', backref='stat_template_fields')
+
+    def __repr__(self):
+        return f'<CampaignStatTemplate {self.stat_name}>'
+
+
 class Tag(db.Model):
     __tablename__ = 'tags'
 

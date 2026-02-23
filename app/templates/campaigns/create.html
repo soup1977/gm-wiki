@@ -26,6 +26,28 @@
                 <label for="description" class="form-label">Description</label>
                 <textarea class="form-control" id="description" name="description" rows="4"></textarea>
             </div>
+
+            <hr class="border-secondary mb-4">
+
+            <h5 class="mb-3">Player Character Stat Fields</h5>
+            <p class="text-muted small mb-3">
+                Choose a preset to auto-populate stat fields for your Player Characters.
+                You can add, remove, or rename fields any time from Campaign Settings.
+            </p>
+            <div class="mb-3">
+                <label for="stat_preset" class="form-label">Game System Preset</label>
+                <select class="form-select" id="stat_preset" name="stat_preset" onchange="updatePresetPreview()">
+                    {% for key, preset in stat_presets.items() %}
+                    <option value="{{ key }}">{{ preset.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="preset-preview" class="mb-4" style="display:none;">
+                <p class="text-muted small mb-2">Stat fields that will be created:</p>
+                <ul id="preset-stat-list" class="list-group list-group-flush mb-0"></ul>
+            </div>
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-success">
                     <i class="bi bi-check-circle"></i> Create Campaign
@@ -35,4 +57,32 @@
         </form>
     </div>
 </div>
+
+<script>
+// Preset data mirrored from the server — keeps the preview client-side with no round trip.
+const STAT_PRESETS = {{ stat_presets | tojson }};
+
+function updatePresetPreview() {
+    const key = document.getElementById('stat_preset').value;
+    const preset = STAT_PRESETS[key];
+    const preview = document.getElementById('preset-preview');
+    const list = document.getElementById('preset-stat-list');
+
+    list.innerHTML = '';
+    if (preset && preset.stats.length > 0) {
+        preset.stats.forEach(function(stat) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item bg-dark text-light border-secondary py-1 small';
+            li.textContent = stat;
+            list.appendChild(li);
+        });
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Show preview on page load for whichever option is selected by default
+updatePresetPreview();
+</script>
 {% endblock %}
