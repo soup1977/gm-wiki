@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}{{ table.name }} — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <a href="{{ url_for('tables.list_tables') }}" class="text-muted text-decoration-none small">
+            <i class="bi bi-arrow-left"></i> Random Tables
+        </a>
+        <h2 class="mb-0 mt-1">{{ table.name }}</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary"
+                onclick="rollTable({{ table.id }}, '{{ table.name | e }}')"
+                {% if table.rows | length == 0 %}disabled title="Add entries first"{% endif %}>
+            <i class="bi bi-dice-5"></i> Roll
+        </button>
+        {% if not table.is_builtin %}
+        <a href="{{ url_for('tables.edit_table', table_id=table.id) }}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('tables.delete_table', table_id=table.id) }}"
+              onsubmit="return confirm('Delete table &quot;{{ table.name }}&quot;? All rows will be lost.')">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{# Metadata row #}
+<div class="d-flex flex-wrap gap-3 mb-4 text-muted small">
+    {% if table.category %}
+    <span><i class="bi bi-tag"></i> {{ table.category }}</span>
+    {% endif %}
+    <span><i class="bi bi-list-ol"></i> {{ table.rows | length }} entries</span>
+    {% if table.is_builtin %}
+    <span class="badge bg-info text-dark align-self-center">Built-in</span>
+    {% endif %}
+</div>
+
+{% if table.description %}
+<p class="text-muted mb-4">{{ table.description }}</p>
+{% endif %}
+
+{# Rows table #}
+{% if table.rows %}
+<div class="table-responsive">
+    <table class="table table-dark table-hover align-middle mb-4">
+        <thead class="table-secondary">
+            <tr>
+                {% if not table.is_builtin %}<th style="width:60px"></th>{% endif %}
+                <th>Entry</th>
+                <th style="width:80px" class="text-center">Weight</th>
+                {% if not table.is_builtin %}<th style="width:100px"></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table.rows | sort(attribute='display_order') %}
+            <tr>
+                {% if not table.is_builtin %}
+                <td>
+                    <div class="d-flex flex-column gap-1">
+                        <form method="POST"
+                              action="{{ url_for('tables.move_row', table_id=table.id, row_id=row.id) }}">
+                            <input type="hidden" name="direction" value="up">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                    {% if loop.first %}disabled{% endif %}>
+                                <i class="bi bi-chevron-up"></i>
+                            </button>
+                        </form>
+                        <form method="POST"
+                              action="{{ url_for('tables.move_row', table_id=table.id, row_id=row.id) }}">
+                            <input type="hidden" name="direction" value="down">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                    {% if loop.last %}disabled{% endif %}>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+                {% endif %}
+                <td>{{ row.content }}</td>
+                <td class="text-center">
+                    {% if row.weight > 1 %}
+                    <span class="badge bg-warning text-dark">×{{ row.weight }}</span>
+                    {% else %}
+                    <span class="text-muted">1</span>
+                    {% endif %}
+                </td>
+                {% if not table.is_builtin %}
+                <td>
+                    <div class="d-flex gap-1 justify-content-end">
+                        <a href="{{ url_for('tables.edit_row', table_id=table.id, row_id=row.id) }}"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST"
+                              action="{{ url_for('tables.delete_row', table_id=table.id, row_id=row.id) }}"
+                              onsubmit="return confirm('Delete this entry?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-list-ul fs-1 d-block mb-3"></i>
+    <p>No entries yet.</p>
+</div>
+{% endif %}
+
+{# Add row form (custom tables only) #}
+{% if not table.is_builtin %}
+<div class="card bg-dark border-secondary mt-2">
+    <div class="card-header border-secondary">
+        <h6 class="mb-0">Add Entry</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('tables.add_row', table_id=table.id) }}">
+            <div class="row g-2 align-items-end">
+                <div class="col">
+                    <label class="form-label text-muted small">Entry text</label>
+                    <input type="text" name="content" class="form-control bg-dark text-light border-secondary"
+                           placeholder="e.g. A hooded stranger watches from the corner" required>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label text-muted small">Weight</label>
+                    <input type="number" name="weight" value="1" min="1" max="99"
+                           class="form-control bg-dark text-light border-secondary" style="width:75px">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Add
+                    </button>
+                </div>
+            </div>
+            <div class="form-text text-muted mt-1">
+                Weight controls relative probability. A weight of 2 makes this result twice as likely.
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{# Roll result modal #}
+<div class="modal fade" id="rollResultModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="roll-modal-title">Roll Result</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p class="fs-3 fw-bold mb-0" id="roll-result-text">—</p>
+            </div>
+            <div class="modal-footer border-secondary justify-content-between">
+                <button class="btn btn-primary" id="roll-again-btn" onclick="rollAgain()">
+                    <i class="bi bi-dice-5"></i> Roll Again
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let _currentRollTableId = null;
+let _currentRollTableName = null;
+const rollModal = new bootstrap.Modal(document.getElementById('rollResultModal'));
+
+function rollTable(tableId, tableName) {
+    _currentRollTableId = tableId;
+    _currentRollTableName = tableName;
+    document.getElementById('roll-modal-title').textContent = tableName;
+    document.getElementById('roll-result-text').textContent = '…';
+    rollModal.show();
+    fetchRoll(tableId);
+}
+
+function rollAgain() {
+    if (_currentRollTableId) fetchRoll(_currentRollTableId);
+}
+
+function fetchRoll(tableId) {
+    fetch(`/random-tables/${tableId}/roll`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('roll-result-text').textContent = data.result || data.error || '?';
+        })
+        .catch(() => {
+            document.getElementById('roll-result-text').textContent = 'Error rolling on table.';
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{% if table %}Edit Table{% else %}New Table{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('tables.list_tables') }}" class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left"></i> Random Tables
+    </a>
+</div>
+
+<h2 class="mb-4">{% if table %}Edit Table{% else %}New Table{% endif %}</h2>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Table Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name"
+                               class="form-control bg-dark text-light border-secondary"
+                               value="{{ table.name if table else '' }}"
+                               placeholder="e.g. Tavern Patrons" required autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Category <span class="text-muted small">(optional)</span></label>
+                        <input type="text" name="category"
+                               class="form-control bg-dark text-light border-secondary"
+                               value="{{ table.category if table and table.category else '' }}"
+                               placeholder="e.g. NPCs, Weather, Encounters">
+                        <div class="form-text text-muted">Used for filtering on the tables list.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Description <span class="text-muted small">(optional)</span></label>
+                        <textarea name="description" rows="3"
+                                  class="form-control bg-dark text-light border-secondary"
+                                  placeholder="Brief description of what this table is for">{{ table.description if table and table.description else '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i>
+                            {% if table %}Save Changes{% else %}Create Table{% endif %}
+                        </button>
+                        {% if table %}
+                        <a href="{{ url_for('tables.table_detail', table_id=table.id) }}"
+                           class="btn btn-outline-secondary">Cancel</a>
+                        {% else %}
+                        <a href="{{ url_for('tables.list_tables') }}"
+                           class="btn btn-outline-secondary">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

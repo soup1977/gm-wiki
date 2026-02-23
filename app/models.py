@@ -365,6 +365,48 @@ class SessionAttendance(db.Model):
         return f'<SessionAttendance session={self.session_id} char={self.character_id}>'
 
 
+class RandomTable(db.Model):
+    """A rollable table of random results.
+    campaign_id=NULL means it's a built-in table visible to all campaigns.
+    Custom tables belong to one campaign (campaign_id set)."""
+    __tablename__ = 'random_tables'
+
+    id = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+
+    name = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100))    # "Names", "Encounters", "Weather", etc.
+    description = db.Column(db.Text)
+    is_builtin = db.Column(db.Boolean, default=False)   # True for system-supplied tables
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    campaign = db.relationship('Campaign', backref='random_tables')
+    rows = db.relationship('TableRow', backref='table', cascade='all, delete-orphan',
+                           order_by='TableRow.display_order')
+
+    def __repr__(self):
+        return f'<RandomTable {self.name}>'
+
+
+class TableRow(db.Model):
+    """One entry in a RandomTable. weight > 1 makes this entry more likely."""
+    __tablename__ = 'table_rows'
+
+    id = db.Column(db.Integer, primary_key=True)
+    table_id = db.Column(db.Integer, db.ForeignKey('random_tables.id'), nullable=False)
+
+    content = db.Column(db.Text, nullable=False)
+    weight = db.Column(db.Integer, default=1)       # Higher = more likely to be rolled
+    display_order = db.Column(db.Integer, default=0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<TableRow {self.id}: {self.content[:40]}>'
+
+
 def get_or_create_tags(campaign_id, tag_string):
     """Parse a comma-separated tag string and return a list of Tag objects.
     Creates new Tag records as needed. Tags are stored lowercase and trimmed."""
