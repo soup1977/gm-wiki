@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Import Results — GM Wiki{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-check-circle"></i> Import Results</h2>
+<p class="text-muted">
+    Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=campaign.id) }}">
+        <strong>{{ campaign.name }}</strong>
+    </a>
+</p>
+
+<div class="row g-3 mb-4">
+    <!-- NPCs -->
+    <div class="col-md-4">
+        <div class="card h-100 border-primary">
+            <div class="card-header bg-dark">
+                <i class="bi bi-people"></i> NPCs
+                <span class="badge bg-primary ms-2">{{ results.npcs|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if results.npcs %}
+                <ul class="list-unstyled mb-0 small">
+                    {% for name in results.npcs %}
+                    <li><i class="bi bi-person"></i> {{ name }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">None imported</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Locations -->
+    <div class="col-md-4">
+        <div class="card h-100 border-success">
+            <div class="card-header bg-dark">
+                <i class="bi bi-geo-alt"></i> Locations
+                <span class="badge bg-success ms-2">{{ results.locations|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if results.locations %}
+                <ul class="list-unstyled mb-0 small">
+                    {% for name in results.locations %}
+                    <li>{% if name.startswith('  ') %}<span class="text-muted">{{ name }}</span>{% else %}<i class="bi bi-geo-alt"></i> {{ name }}{% endif %}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">None imported</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Compendium -->
+    <div class="col-md-4">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-dark">
+                <i class="bi bi-book"></i> Compendium
+                <span class="badge bg-warning text-dark ms-2">{{ results.compendium|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if results.compendium %}
+                <ul class="list-unstyled mb-0 small">
+                    {% for name in results.compendium %}
+                    <li><i class="bi bi-file-text"></i> {{ name }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">None imported</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if results.skipped %}
+<div class="card mb-3 border-secondary">
+    <div class="card-header bg-dark">
+        <i class="bi bi-skip-forward"></i> Skipped
+        <span class="badge bg-secondary ms-2">{{ results.skipped|length }}</span>
+    </div>
+    <div class="card-body small">
+        {{ results.skipped | join(', ') }}
+    </div>
+</div>
+{% endif %}
+
+{% if results.errors %}
+<div class="card mb-3 border-danger">
+    <div class="card-header bg-dark text-danger">
+        <i class="bi bi-exclamation-triangle"></i> Errors
+        <span class="badge bg-danger ms-2">{{ results.errors|length }}</span>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0 small text-danger">
+            {% for err in results.errors %}
+            <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex gap-2 mt-3">
+    <a href="{{ url_for('campaigns.campaign_detail', campaign_id=campaign.id) }}" class="btn btn-primary">
+        <i class="bi bi-folder2-open"></i> View Campaign
+    </a>
+    <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-outline-primary">NPCs</a>
+    <a href="{{ url_for('locations.list_locations') }}" class="btn btn-outline-success">Locations</a>
+    <a href="{{ url_for('compendium.list_compendium') }}" class="btn btn-outline-warning">Compendium</a>
+    <a href="{{ url_for('obsidian_import.select_vault') }}" class="btn btn-outline-secondary">
+        Import Another
+    </a>
+</div>
+{% endblock %}

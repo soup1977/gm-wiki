@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Import from Obsidian — GM Wiki{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-box-arrow-in-down"></i> Import from Obsidian</h2>
+<p class="text-muted">Import an Obsidian vault into GM Wiki. The importer will scan your vault folder and auto-map files to NPCs, Locations, and Compendium entries.</p>
+
+<div class="card mt-4" style="max-width: 700px;">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label for="vault_path" class="form-label fw-semibold">Vault Folder Path</label>
+                <input type="text" class="form-control" id="vault_path" name="vault_path"
+                       placeholder="/path/to/your/ObsidianVault"
+                       value="{{ request.form.get('vault_path', '') }}" required>
+                <div class="form-text">Full path to the Obsidian vault folder on this machine.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Target Campaign</label>
+                {% if campaigns %}
+                <div class="mb-2">
+                    <select class="form-select" name="campaign_id" id="campaign_select">
+                        <option value="">— Select existing campaign —</option>
+                        {% for c in campaigns %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="text-muted small mb-2">— or —</div>
+                {% endif %}
+                <input type="text" class="form-control" name="new_campaign_name"
+                       placeholder="Create new campaign (enter name)">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Scan Vault
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4 border-info" style="max-width: 700px;">
+    <div class="card-body small">
+        <h6 class="card-title text-info"><i class="bi bi-info-circle"></i> How It Works</h6>
+        <ol class="mb-0">
+            <li>Enter the path to your Obsidian vault folder</li>
+            <li>The scanner reads the folder structure and auto-maps files based on folder names</li>
+            <li>You'll preview the mappings and can adjust them before importing</li>
+            <li>Files are imported as NPCs, Locations, or Compendium entries</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

@@ -107,6 +107,29 @@ Each entity type is its own page, cross-linked to others.
 - Pull request to merge into main, even solo
 - Descriptive commit messages (e.g. `"Add campaign create form and database model"`)
 
+### Branching Rules — IMPORTANT
+**Before starting any significant change, create a feature branch.** A "significant change" is anything that:
+- Adds a new route file, Blueprint, or template folder
+- Adds or modifies database models
+- Touches more than 2–3 files
+- Could break existing functionality if something goes wrong
+
+**Steps Claude must follow at the start of a significant task:**
+1. Check `git status` to confirm we're on `main` and working tree is clean
+2. Create a branch: `git checkout -b feature/<short-description>`
+3. Do all work on that branch
+4. At the end, remind Craig to commit and open a PR to merge into `main`
+
+**Never code directly on `main`** for anything bigger than a typo fix or single-line tweak.
+
+If the work is already done on `main` (like this session), remind Craig to retroactively create a branch using:
+```
+git checkout -b feature/<short-description>
+# (work is already here)
+git push -u origin feature/<short-description>
+```
+Then open a PR to make the merge intentional and reviewable.
+
 ---
 
 ## Scope Reference
