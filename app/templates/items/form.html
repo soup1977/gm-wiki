@@ -24,91 +24,122 @@
     {% endif %}
 </div>
 
-<form method="POST" style="max-width: 800px;">
-    <div class="mb-3">
-        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="name" name="name"
-               value="{{ item.name if item else '' }}" required>
-    </div>
+<form method="POST">
+    <div class="row g-4">
 
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label for="type" class="form-label">Type</label>
-            <input type="text" class="form-control" id="type" name="type"
-                   value="{{ item.type if item else '' }}"
-                   placeholder="e.g. weapon, armor, consumable">
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="rarity" class="form-label">Rarity</label>
-            <select class="form-select" id="rarity" name="rarity">
-                <option value="">— None —</option>
-                {% for r in rarities %}
-                <option value="{{ r }}" {% if item and item.rarity == r %}selected{% endif %}>
-                    {{ r | title }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-    </div>
+        <!-- LEFT COLUMN: metadata and relationships -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
 
-    <div class="mb-3">
-        <label for="tags" class="form-label">Tags</label>
-        <input type="text" class="form-control" id="tags" name="tags"
-               value="{{ item.tags | map(attribute='name') | join(', ') if item else '' }}"
-               placeholder="e.g. magic, cursed, key-item">
-        <div class="form-text">Comma-separated. Used to filter and group entries.</div>
-    </div>
+                    <div>
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               value="{{ item.name if item else '' }}" required autofocus>
+                    </div>
 
-    <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <textarea class="form-control" id="description" name="description" rows="4">{{ item.description if item else '' }}</textarea>
-        <div class="form-text">Markdown supported.</div>
-    </div>
+                    <div>
+                        <label for="type" class="form-label">Type</label>
+                        <input type="text" class="form-control" id="type" name="type"
+                               value="{{ item.type if item else '' }}"
+                               placeholder="e.g. weapon, armor, consumable">
+                    </div>
 
-    <div class="mb-3 p-3 border border-warning rounded">
-        <label for="gm_notes" class="form-label text-warning">
-            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
-        </label>
-        <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ item.gm_notes if item else '' }}</textarea>
-        <div class="form-text">Markdown supported.</div>
-    </div>
+                    <div>
+                        <label for="rarity" class="form-label">Rarity</label>
+                        <select class="form-select" id="rarity" name="rarity">
+                            <option value="">— None —</option>
+                            {% for r in rarities %}
+                            <option value="{{ r }}" {% if item and item.rarity == r %}selected{% endif %}>
+                                {{ r | title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label for="owner_npc_id" class="form-label">Owner</label>
-            <select class="form-select" id="owner_npc_id" name="owner_npc_id">
-                <option value="">— Party —</option>
-                {% for npc in npcs %}
-                <option value="{{ npc.id }}" {% if item and item.owner_npc_id == npc.id %}selected{% endif %}>
-                    {{ npc.name }}
-                </option>
-                {% endfor %}
-            </select>
-            <div class="form-text">Leave blank if the party owns this item.</div>
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="origin_location_id" class="form-label">Origin Location</label>
-            <select class="form-select" id="origin_location_id" name="origin_location_id">
-                <option value="">— Unknown —</option>
-                {% for location in locations %}
-                <option value="{{ location.id }}" {% if item and item.origin_location_id == location.id %}selected{% endif %}>
-                    {{ location.name }}
-                </option>
-                {% endfor %}
-            </select>
-            <div class="form-text">Where was this item found or acquired?</div>
-        </div>
-    </div>
+                    <div>
+                        <label for="owner_npc_id" class="form-label">Owner</label>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="owner_npc_id" name="owner_npc_id">
+                                <option value="">— Party —</option>
+                                {% for npc in npcs %}
+                                <option value="{{ npc.id }}" {% if item and item.owner_npc_id == npc.id %}selected{% endif %}>
+                                    {{ npc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="npc" data-qc-target="owner_npc_id" data-qc-label="NPC">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Leave blank if the party owns this item.</div>
+                    </div>
 
-    <div class="form-check mb-3">
-        <input type="checkbox" name="is_player_visible" id="is_player_visible"
-               class="form-check-input"
-               {% if item and item.is_player_visible %}checked{% endif %}>
-        <label class="form-check-label" for="is_player_visible">
-            <i class="bi bi-people"></i> Visible in Player Wiki
-        </label>
-        <div class="form-text">When checked, this item appears in the read-only player wiki.</div>
-    </div>
+                    <div>
+                        <label for="origin_location_id" class="form-label">Origin Location</label>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="origin_location_id" name="origin_location_id">
+                                <option value="">— Unknown —</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {% if item and item.origin_location_id == location.id %}selected{% endif %}>
+                                    {{ location.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="origin_location_id" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Where was this item found or acquired?</div>
+                    </div>
+
+                    <div>
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               value="{{ item.tags | map(attribute='name') | join(', ') if item else '' }}"
+                               placeholder="e.g. magic, cursed, key-item">
+                        <div class="form-text">Comma-separated.</div>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" name="is_player_visible" id="is_player_visible"
+                               class="form-check-input"
+                               {% if item and item.is_player_visible %}checked{% endif %}>
+                        <label class="form-check-label" for="is_player_visible">
+                            <i class="bi bi-people"></i> Visible in Player Wiki
+                        </label>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-4 -->
+
+        <!-- RIGHT COLUMN: description and notes -->
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="12">{{ item.description if item else '' }}</textarea>
+                        <div class="form-text">Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="gm_notes" class="form-label text-warning">
+                            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-warning">(GM Only)</span>
+                        </label>
+                        <textarea class="form-control border-warning" id="gm_notes" name="gm_notes" rows="8">{{ item.gm_notes if item else '' }}</textarea>
+                        <div class="form-text text-warning">Never shown to players. Markdown supported.</div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-8 -->
+
+    </div><!-- row -->
 
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">

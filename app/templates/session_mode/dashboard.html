@@ -80,11 +80,25 @@
     </div>
 </div>
 
+{# Session Plan (prep notes) — collapsible #}
+{% if game_session.prep_notes %}
+<details class="mb-3">
+    <summary class="list-unstyled d-flex justify-content-between align-items-center p-2 border border-info rounded text-info small"
+             style="cursor:pointer;">
+        <span><i class="bi bi-journal-bookmark me-1"></i> Session Plan</span>
+        <span class="text-muted">click to expand</span>
+    </summary>
+    <div class="border border-info border-top-0 rounded-bottom p-3 bg-dark">
+        {{ game_session.prep_notes | md | safe }}
+    </div>
+</details>
+{% endif %}
+
 {# Quick launch buttons #}
 <div class="d-flex flex-wrap gap-3 mb-4">
     <a href="{{ url_for('combat.tracker') }}?from=session"
        class="btn btn-lg btn-primary flex-fill" style="min-width:180px;">
-        <i class="bi bi-sword fs-5 d-block mb-1"></i>
+        <i class="bi bi-shield-shaded fs-5 d-block mb-1"></i>
         Combat Tracker
     </a>
     <a href="{{ url_for('tables.list_tables') }}?from=session"
@@ -99,20 +113,83 @@
     </a>
 </div>
 
+{# ── Encounters panel ─────────────────────────────────────────────────────── #}
+{% if session_encounters %}
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0"><i class="bi bi-map me-1"></i> Encounters</h5>
+        <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-plus-circle me-1"></i> New
+        </a>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
+        {% for enc in session_encounters %}
+        {% set type_color = {'combat':'danger','loot':'success','social':'info','trap':'warning','other':'secondary'}.get(enc.encounter_type, 'secondary') %}
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <a href="{{ url_for('encounters.encounter_detail', encounter_id=enc.id) }}"
+                           class="text-decoration-none text-light fw-bold small">{{ enc.name }}</a>
+                        <span class="badge bg-{{ type_color }} ms-2 small">{{ enc.encounter_type | capitalize }}</span>
+                    </div>
+                    {% if enc.monsters %}
+                    <div class="text-muted small mt-1">
+                        {% for em in enc.monsters %}{{ em.bestiary_entry.name }}{% if em.count > 1 %} ×{{ em.count }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-secondary p-1">
+                    {% if enc.encounter_type == 'combat' %}
+                    <form method="POST"
+                          action="{{ url_for('encounters.start_combat', encounter_id=enc.id) }}">
+                        <button type="submit" class="btn btn-sm btn-danger w-100">
+                            <i class="bi bi-shield-shaded me-1"></i> Start Combat
+                        </button>
+                    </form>
+                    {% elif enc.encounter_type == 'loot' and enc.loot_table %}
+                    <a href="{{ url_for('tables.table_detail', table_id=enc.loot_table.id) }}"
+                       class="btn btn-sm btn-success w-100">
+                        <i class="bi bi-dice-6 me-1"></i> Roll Loot
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('encounters.encounter_detail', encounter_id=enc.id) }}"
+                       class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-eye me-1"></i> View
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% elif game_session %}
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0 text-muted"><i class="bi bi-map me-1"></i> Encounters</h5>
+        <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-plus-circle me-1"></i> Plan Encounter
+        </a>
+    </div>
+    <p class="text-muted small">No encounters planned for this session. Link encounters to this session during prep.</p>
+</div>
+{% endif %}
+
 {# ── 3-column info grid ───────────────────────────────────────────────────── #}
 <div class="row g-3 mb-4">
 
-    {# Column 1: Active Quests #}
+    {# Column 1: Session Quests #}
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-map me-1"></i> Active Quests</h6>
-                <span class="badge bg-secondary">{{ active_quests | length }}</span>
+                <h6 class="mb-0"><i class="bi bi-flag me-1"></i> Session Quests</h6>
+                <span class="badge bg-secondary">{{ session_quests | length }}</span>
             </div>
             <div class="card-body p-0">
-                {% if active_quests %}
+                {% if session_quests %}
                 <ul class="list-group list-group-flush">
-                    {% for quest in active_quests %}
+                    {% for quest in session_quests %}
                     <li class="list-group-item bg-dark border-secondary py-2">
                         <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}?from=session"
                            class="text-decoration-none text-light fw-bold">{{ quest.name }}</a>
@@ -123,7 +200,20 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <div class="text-muted small p-3">No active quests.</div>
+                <div class="text-muted small p-3">
+                    No quests linked to this session.
+                    <a href="{{ url_for('sessions.edit_session', session_id=game_session.id) }}"
+                       class="d-block mt-1">Edit session to add quests.</a>
+                </div>
+                {% endif %}
+                {% if other_active_count > 0 %}
+                <div class="p-2 border-top border-secondary">
+                    <a href="{{ url_for('quests.list_quests') }}?from=session"
+                       class="text-muted small text-decoration-none">
+                        <i class="bi bi-arrow-right-circle me-1"></i>
+                        {{ other_active_count }} other active quest{{ 's' if other_active_count != 1 }} →
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -219,26 +309,21 @@
     </div>
 </div>
 
-{# ── Pinned NPCs ──────────────────────────────────────────────────────────── #}
+{# ── Session NPCs ─────────────────────────────────────────────────────────── #}
+{% if game_session.npcs_featured %}
 <div class="card bg-dark border-secondary mb-4">
     <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-pin-angle me-1"></i> Pinned NPCs
-            {% if pinned_npcs %}
-            <span class="badge bg-secondary ms-1">{{ pinned_npcs | length }}</span>
-            {% endif %}
+        <h6 class="mb-0"><i class="bi bi-person me-1"></i> Session NPCs
+            <span class="badge bg-secondary ms-1">{{ game_session.npcs_featured | length }}</span>
         </h6>
-        <button class="btn btn-sm btn-outline-secondary"
-                onclick="togglePinManager()"
-                id="pin-manager-toggle">
-            <i class="bi bi-pencil"></i> Manage
-        </button>
+        <a href="{{ url_for('sessions.edit_session', session_id=game_session.id) }}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
     </div>
-
-    {# Pinned NPC display row #}
-    {% if pinned_npcs %}
     <div class="card-body py-2">
         <div class="d-flex flex-wrap gap-3">
-            {% for npc in pinned_npcs %}
+            {% for npc in game_session.npcs_featured %}
             <div class="d-flex align-items-center gap-2">
                 {% if npc.portrait_filename %}
                 <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
@@ -261,44 +346,24 @@
             {% endfor %}
         </div>
     </div>
-    {% else %}
-    <div class="card-body py-2">
-        <p class="text-muted small mb-0">No NPCs pinned. Click Manage to pin NPCs for quick reference.</p>
+</div>
+{% else %}
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-muted"><i class="bi bi-person me-1"></i> Session NPCs</h6>
+        <a href="{{ url_for('sessions.edit_session', session_id=game_session.id) }}"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
     </div>
-    {% endif %}
-
-    {# Pin manager — hidden by default, shown inline (no Bootstrap modal) #}
-    {% set pinned_ids = game_session.pinned_npc_ids or [] %}
-    <div id="pin-manager" style="display:none;" class="border-top border-secondary">
-        <form method="POST" action="{{ url_for('session_mode.pin_npcs') }}" class="p-3">
-            <p class="text-muted small mb-2">Check NPCs to keep pinned for quick reference during this session:</p>
-            <div class="row g-2 mb-3">
-                {% for npc in all_npcs %}
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox"
-                               name="pinned_npc_ids" value="{{ npc.id }}"
-                               id="pin-npc-{{ npc.id }}"
-                               {% if npc.id in pinned_ids %}checked{% endif %}>
-                        <label class="form-check-label small" for="pin-npc-{{ npc.id }}">
-                            {{ npc.name }}
-                            {% if npc.role %}<span class="text-muted">({{ npc.role }})</span>{% endif %}
-                        </label>
-                    </div>
-                </div>
-                {% endfor %}
-                {% if not all_npcs %}
-                <div class="col-12 text-muted small">No NPCs in this campaign yet.</div>
-                {% endif %}
-            </div>
-            <button type="submit" class="btn btn-sm btn-success">
-                <i class="bi bi-check-circle"></i> Save Pinned NPCs
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
-                    onclick="togglePinManager()">Cancel</button>
-        </form>
+    <div class="card-body py-2">
+        <p class="text-muted small mb-0">
+            No NPCs linked to this session yet.
+            Link them in the session form and they'll appear here automatically.
+        </p>
     </div>
 </div>
+{% endif %}
 
 {# ── Quick note ───────────────────────────────────────────────────────────── #}
 <div class="card bg-dark border-secondary mb-4">
@@ -348,17 +413,4 @@
 
 {% endif %}{# end if game_session #}
 
-<script>
-function togglePinManager() {
-    const mgr = document.getElementById('pin-manager');
-    const btn = document.getElementById('pin-manager-toggle');
-    if (mgr.style.display === 'none') {
-        mgr.style.display = '';
-        btn.textContent = '✕ Close';
-    } else {
-        mgr.style.display = 'none';
-        btn.innerHTML = '<i class="bi bi-pencil"></i> Manage';
-    }
-}
-</script>
 {% endblock %}

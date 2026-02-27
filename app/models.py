@@ -58,6 +58,24 @@ class Campaign(db.Model):
         return f'<Campaign {self.name}>'
 
 
+class Faction(db.Model):
+    """A named faction or organization within a campaign.
+    NPCs, Locations, and Quests can be linked to a faction."""
+    __tablename__ = 'factions'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    name        = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    disposition = db.Column(db.String(50))  # friendly|neutral|hostile|unknown
+    gm_notes    = db.Column(db.Text)
+
+    campaign = db.relationship('Campaign', backref='factions')
+
+    def __repr__(self):
+        return f'<Faction {self.name}>'
+
+
 class CampaignStatTemplate(db.Model):
     """Defines what PC stats are tracked in this campaign.
     Each row is one stat field (e.g. "Armor Class", "Max HP").
@@ -90,7 +108,9 @@ class PlayerCharacter(db.Model):
     status = db.Column(db.String(50), default='active')
     # Status values: active, inactive, retired, dead, npc
 
-    notes = db.Column(db.Text)                   # Markdown GM notes
+    backstory = db.Column(db.Text)               # Player-provided character background
+    gm_hooks = db.Column(db.Text)                # Private GM notes on story hooks
+    notes = db.Column(db.Text)                   # Ongoing GM notes
     portrait_filename = db.Column(db.String(255))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -151,12 +171,14 @@ class Location(db.Model):
     notes = db.Column(db.Text)                    # General notes (markdown in Phase 4)
     map_filename = db.Column(db.String(255))       # stored filename in static/uploads/
     is_player_visible = db.Column(db.Boolean, default=False)  # Used in Phase 6
+    faction_id = db.Column(db.Integer, db.ForeignKey('factions.id'), nullable=True)
 
     # Self-referencing parent (region > city > district)
     parent_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
     # Relationships
     campaign = db.relationship('Campaign', backref='locations')
+    faction = db.relationship('Faction', backref='locations', foreign_keys=[faction_id])
     parent_location = db.relationship(
         'Location',
         remote_side='Location.id',
@@ -192,7 +214,8 @@ class NPC(db.Model):
     name = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(200))              # e.g. "blacksmith", "villain"
     status = db.Column(db.String(50), default='alive')  # alive / dead / unknown / missing
-    faction = db.Column(db.String(200))           # plain text for now
+    faction = db.Column(db.String(200))           # legacy text field (kept for backward compat)
+    faction_id = db.Column(db.Integer, db.ForeignKey('factions.id'), nullable=True)
     physical_description = db.Column(db.Text)
     personality = db.Column(db.Text)
     secrets = db.Column(db.Text)                  # GM-only — never shown to players
@@ -206,6 +229,7 @@ class NPC(db.Model):
 
     # Relationships
     campaign = db.relationship('Campaign', backref='npcs')
+    faction_rel = db.relationship('Faction', backref='npcs', foreign_keys=[faction_id])
     home_location = db.relationship('Location', backref='npcs_living_here', foreign_keys=[home_location_id])
     # Locations this NPC is associated with (separate from home)
     connected_locations = db.relationship('Location', secondary=npc_location_link,
@@ -241,8 +265,10 @@ class Quest(db.Model):
     outcome = db.Column(db.Text)       # What happened (fill in when resolved)
     gm_notes = db.Column(db.Text)      # GM-only, never shown to players
     is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
+    faction_id = db.Column(db.Integer, db.ForeignKey('factions.id'), nullable=True)
 
     campaign = db.relationship('Campaign', backref='quests')
+    faction = db.relationship('Faction', backref='quests', foreign_keys=[faction_id])
     involved_npcs = db.relationship('NPC', secondary=quest_npc_link, backref='quests')
     involved_locations = db.relationship('Location', secondary=quest_location_link, backref='quests')
     tags = db.relationship('Tag', secondary=quest_tags)
@@ -323,7 +349,8 @@ class Session(db.Model):
     number = db.Column(db.Integer)           # e.g. 1, 2, 3...
     title = db.Column(db.String(200))        # optional short title
     date_played = db.Column(db.Date)
-    summary = db.Column(db.Text)             # What happened this session
+    prep_notes = db.Column(db.Text)          # Pre-session planning notes (shown in Session Mode)
+    summary = db.Column(db.Text)             # What happened this session (post-session)
     gm_notes = db.Column(db.Text)            # GM-only notes
     is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
 
@@ -475,6 +502,46 @@ class MonsterInstance(db.Model):
         return f'<MonsterInstance {self.instance_name}>'
 
 
+class Encounter(db.Model):
+    """A pre-planned encounter for a session — combat, loot, trap, social, or other."""
+    __tablename__ = 'encounters'
+
+    id             = db.Column(db.Integer, primary_key=True)
+    campaign_id    = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    session_id     = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=True)
+    name           = db.Column(db.String(200), nullable=False)
+    encounter_type = db.Column(db.String(50), default='combat')   # combat|loot|social|trap|other
+    status         = db.Column(db.String(50), default='planned')  # planned|used|skipped
+    description    = db.Column(db.Text)
+    gm_notes       = db.Column(db.Text)
+    loot_table_id  = db.Column(db.Integer, db.ForeignKey('random_tables.id'), nullable=True)
+
+    campaign   = db.relationship('Campaign',    backref='encounters')
+    session    = db.relationship('Session',     backref='encounters', foreign_keys=[session_id])
+    loot_table = db.relationship('RandomTable', backref='encounters')
+    monsters   = db.relationship('EncounterMonster', backref='encounter',
+                                 cascade='all, delete-orphan', order_by='EncounterMonster.id')
+
+    def __repr__(self):
+        return f'<Encounter {self.name}>'
+
+
+class EncounterMonster(db.Model):
+    """One row per creature type in an Encounter, with a count."""
+    __tablename__ = 'encounter_monster'
+
+    id                = db.Column(db.Integer, primary_key=True)
+    encounter_id      = db.Column(db.Integer, db.ForeignKey('encounters.id'), nullable=False)
+    bestiary_entry_id = db.Column(db.Integer, db.ForeignKey('bestiary_entries.id'), nullable=False)
+    count             = db.Column(db.Integer, default=1, nullable=False)
+    notes             = db.Column(db.String(200))
+
+    bestiary_entry = db.relationship('BestiaryEntry', backref='encounter_slots')
+
+    def __repr__(self):
+        return f'<EncounterMonster {self.bestiary_entry_id} ×{self.count}>'
+
+
 def get_or_create_tags(campaign_id, tag_string):
     """Parse a comma-separated tag string and return a list of Tag objects.
     Creates new Tag records as needed. Tags are stored lowercase and trimmed."""
@@ -487,3 +554,19 @@ def get_or_create_tags(campaign_id, tag_string):
             db.session.add(tag)
         tags.append(tag)
     return tags
+
+
+class EntityMention(db.Model):
+    """Tracks which entity text fields reference other entities via #shortcodes.
+
+    Created automatically when a #type[Name] shortcode is processed on save.
+    Used to display "Referenced by" back-links on entity detail pages.
+    """
+    __tablename__ = 'entity_mention'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    source_type = db.Column(db.String(50), nullable=False)  # 'npc','loc','item','quest','comp','session'
+    source_id   = db.Column(db.Integer, nullable=False)
+    target_type = db.Column(db.String(50), nullable=False)
+    target_id   = db.Column(db.Integer, nullable=False)

@@ -4,8 +4,11 @@ from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
                         get_or_create_tags, PlayerCharacter, SessionAttendance,
                         MonsterInstance)
+from app.shortcode import process_shortcodes, clear_mentions
 
 sessions_bp = Blueprint('sessions', __name__)
+
+_SESSION_TEXT_FIELDS = ['prep_notes', 'summary', 'gm_notes']
 
 
 def get_active_campaign_id():
@@ -82,6 +85,7 @@ def create_session():
             number=request.form.get('number') or None,
             title=request.form.get('title', '').strip() or None,
             date_played=parsed_date,
+            prep_notes=request.form.get('prep_notes', '').strip() or None,
             summary=request.form.get('summary', '').strip() or None,
             gm_notes=request.form.get('gm_notes', '').strip() or None,
         )
@@ -113,6 +117,14 @@ def create_session():
 
         _save_attendance(sess, campaign_id)
         sess.is_player_visible = 'is_player_visible' in request.form
+
+        for field in _SESSION_TEXT_FIELDS:
+            val = getattr(sess, field)
+            if val:
+                processed, mentions = process_shortcodes(val, campaign_id, 'session', sess.id)
+                setattr(sess, field, processed)
+                for m in mentions:
+                    db.session.add(m)
 
         db.session.commit()
         label = f'Session {sess.number}' if sess.number else 'Session'
@@ -167,6 +179,7 @@ def edit_session(session_id):
         sess.number = request.form.get('number') or None
         sess.title = request.form.get('title', '').strip() or None
         sess.date_played = parsed_date
+        sess.prep_notes = request.form.get('prep_notes', '').strip() or None
         sess.summary = request.form.get('summary', '').strip() or None
         sess.gm_notes = request.form.get('gm_notes', '').strip() or None
 
@@ -194,6 +207,16 @@ def edit_session(session_id):
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         _save_attendance(sess, campaign_id)
         sess.is_player_visible = 'is_player_visible' in request.form
+
+        clear_mentions('session', sess.id)
+        for field in _SESSION_TEXT_FIELDS:
+            val = getattr(sess, field)
+            if val:
+                processed, mentions = process_shortcodes(val, campaign_id, 'session', sess.id)
+                setattr(sess, field, processed)
+                for m in mentions:
+                    db.session.add(m)
+
         db.session.commit()
         flash('Session updated.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))

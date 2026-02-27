@@ -96,12 +96,28 @@
             </p>
             {% endif %}
 
-            {# Notes #}
+            {# Backstory, GM Hooks, Ongoing Notes #}
             <hr class="border-secondary my-4">
             <div class="mb-4">
-                <label for="notes" class="form-label">Notes</label>
+                <label for="backstory" class="form-label">
+                    <i class="bi bi-journal-text me-1"></i>Backstory
+                </label>
+                <textarea class="form-control" id="backstory" name="backstory" rows="5">{{ pc.backstory if pc else '' }}</textarea>
+                <div class="form-text">Character background — can be shared with players. Markdown supported.</div>
+            </div>
+
+            <div class="mb-4">
+                <label for="gm_hooks" class="form-label text-warning">
+                    <i class="bi bi-eye-slash me-1"></i>GM Hooks <span class="text-warning">(GM Only)</span>
+                </label>
+                <textarea class="form-control border-warning" id="gm_hooks" name="gm_hooks" rows="4">{{ pc.gm_hooks if pc else '' }}</textarea>
+                <div class="form-text text-warning">Private GM notes on story potential. Never shown to players. Markdown supported.</div>
+            </div>
+
+            <div class="mb-4">
+                <label for="notes" class="form-label">Ongoing Notes</label>
                 <textarea class="form-control" id="notes" name="notes" rows="5">{{ pc.notes if pc else '' }}</textarea>
-                <div class="form-text">Markdown supported.</div>
+                <div class="form-text">Current state, recent events, etc. Markdown supported.</div>
             </div>
 
             <div class="d-flex gap-2">

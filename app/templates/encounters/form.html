@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}{% if encounter %}Edit Encounter{% else %}New Encounter{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('encounters.list_encounters') }}">Encounters</a></li>
+        <li class="breadcrumb-item active">{% if encounter %}Edit{% else %}New{% endif %}</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if encounter %}Edit "{{ encounter.name }}"{% else %}New Encounter{% endif %}</h2>
+
+<form method="POST">
+
+<div class="row g-4">
+
+{# Left column: core fields #}
+<div class="col-lg-6">
+    <div class="mb-3">
+        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <input type="text" name="name" class="form-control bg-dark text-light border-secondary"
+               value="{{ encounter.name if encounter else '' }}" required autofocus>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+            <label class="form-label">Type</label>
+            <select name="encounter_type" id="encounterType"
+                    class="form-select bg-dark text-light border-secondary"
+                    onchange="toggleCombatFields()">
+                {% for t in encounter_types %}
+                <option value="{{ t }}"
+                    {% if encounter and encounter.encounter_type == t %}selected
+                    {% elif not encounter and t == 'combat' %}selected{% endif %}>
+                    {{ t | capitalize }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select bg-dark text-light border-secondary">
+                {% for s in encounter_statuses %}
+                <option value="{{ s }}"
+                    {% if encounter and encounter.status == s %}selected
+                    {% elif not encounter and s == 'planned' %}selected{% endif %}>
+                    {{ s | capitalize }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Linked Session</label>
+        <div class="d-flex gap-2 align-items-start">
+            <select name="session_id" class="form-select bg-dark text-light border-secondary flex-grow-1">
+                <option value="">— None —</option>
+                {% for s in sessions %}
+                <option value="{{ s.id }}"
+                    {% if encounter and encounter.session_id == s.id %}selected{% endif %}>
+                    {% if s.number %}#{{ s.number }} {% endif %}{{ s.title or 'Untitled' }}
+                    {% if s.date_played %} · {{ s.date_played.strftime('%b %d, %Y') }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                    data-qc-entity="session" data-qc-target="session_id" data-qc-label="Session">
+                <i class="bi bi-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    {# Loot table — only relevant for loot type #}
+    <div class="mb-3" id="lootTableField"
+         style="{% if not encounter or encounter.encounter_type != 'loot' %}display:none{% endif %}">
+        <label class="form-label">Loot Table</label>
+        <div class="d-flex gap-2 align-items-start">
+            <select name="loot_table_id" class="form-select bg-dark text-light border-secondary flex-grow-1">
+                <option value="">— None —</option>
+                {% for tbl in random_tables %}
+                <option value="{{ tbl.id }}"
+                    {% if encounter and encounter.loot_table_id == tbl.id %}selected{% endif %}>
+                    {{ tbl.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                    data-qc-entity="random_table" data-qc-target="loot_table_id" data-qc-label="Random Table">
+                <i class="bi bi-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="4"
+                  class="form-control bg-dark text-light border-secondary">{{ encounter.description if encounter and encounter.description else '' }}</textarea>
+        <div class="form-text text-muted">Markdown supported. Use #shortcodes to link entities.</div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">GM Notes</label>
+        <textarea name="gm_notes" rows="3"
+                  class="form-control bg-dark text-light border-secondary">{{ encounter.gm_notes if encounter and encounter.gm_notes else '' }}</textarea>
+    </div>
+</div>
+
+{# Right column: creature roster (combat only) #}
+<div class="col-lg-6" id="monsterSection"
+     style="{% if encounter and encounter.encounter_type != 'combat' %}display:none{% endif %}">
+    <label class="form-label">Creature Roster</label>
+    <div id="monsterRows">
+        {% if encounter and encounter.monsters %}
+        {% for em in encounter.monsters %}
+        <div class="monster-row d-flex gap-2 mb-2 align-items-center">
+            <select name="monster_entry_ids[]"
+                    class="form-select bg-dark text-light border-secondary">
+                <option value="">— Pick creature —</option>
+                {% for entry in bestiary_entries %}
+                <option value="{{ entry.id }}"
+                    {% if em.bestiary_entry_id == entry.id %}selected{% endif %}>
+                    {{ entry.name }}{% if entry.cr_level %} (CR {{ entry.cr_level }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <input type="number" name="monster_counts[]" value="{{ em.count }}" min="1" max="99"
+                   class="form-control bg-dark text-light border-secondary" style="width:80px;">
+            <button type="button" class="btn btn-outline-secondary btn-sm quick-create-btn"
+                    data-qc-entity="bestiary" data-qc-target-mode="sibling" data-qc-label="Creature">
+                <i class="bi bi-plus"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        {% endfor %}
+        {% else %}
+        {# One empty row for new encounters #}
+        <div class="monster-row d-flex gap-2 mb-2 align-items-center">
+            <select name="monster_entry_ids[]"
+                    class="form-select bg-dark text-light border-secondary">
+                <option value="">— Pick creature —</option>
+                {% for entry in bestiary_entries %}
+                <option value="{{ entry.id }}">
+                    {{ entry.name }}{% if entry.cr_level %} (CR {{ entry.cr_level }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <input type="number" name="monster_counts[]" value="1" min="1" max="99"
+                   class="form-control bg-dark text-light border-secondary" style="width:80px;">
+            <button type="button" class="btn btn-outline-secondary btn-sm quick-create-btn"
+                    data-qc-entity="bestiary" data-qc-target-mode="sibling" data-qc-label="Creature">
+                <i class="bi bi-plus"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addRow()">
+        <i class="bi bi-plus-circle me-1"></i> Add Creature
+    </button>
+
+    <div class="form-text text-muted mt-2">
+        Each row: choose a bestiary creature and how many to spawn when combat starts.
+    </div>
+</div>
+
+</div>{# end row #}
+
+<div class="mt-4 d-flex gap-2">
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-circle me-1"></i> {% if encounter %}Save Changes{% else %}Create Encounter{% endif %}
+    </button>
+    <a href="{% if encounter %}{{ url_for('encounters.encounter_detail', encounter_id=encounter.id) }}{% else %}{{ url_for('encounters.list_encounters') }}{% endif %}"
+       class="btn btn-secondary">Cancel</a>
+</div>
+
+</form>
+
+{# Template row (hidden) used by addRow() JS #}
+<template id="rowTemplate">
+    <div class="monster-row d-flex gap-2 mb-2 align-items-center">
+        <select name="monster_entry_ids[]"
+                class="form-select bg-dark text-light border-secondary">
+            <option value="">— Pick creature —</option>
+            {% for entry in bestiary_entries %}
+            <option value="{{ entry.id }}">
+                {{ entry.name }}{% if entry.cr_level %} (CR {{ entry.cr_level }}){% endif %}
+            </option>
+            {% endfor %}
+        </select>
+        <input type="number" name="monster_counts[]" value="1" min="1" max="99"
+               class="form-control bg-dark text-light border-secondary" style="width:80px;">
+        <button type="button" class="btn btn-outline-secondary btn-sm quick-create-btn"
+                data-qc-entity="bestiary" data-qc-target-mode="sibling" data-qc-label="Creature">
+            <i class="bi bi-plus"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+</template>
+
+<script>
+function addRow() {
+    const tmpl = document.getElementById('rowTemplate');
+    const clone = tmpl.content.cloneNode(true);
+    document.getElementById('monsterRows').appendChild(clone);
+}
+
+function removeRow(btn) {
+    btn.closest('.monster-row').remove();
+}
+
+function toggleCombatFields() {
+    const type = document.getElementById('encounterType').value;
+    const monsterSection = document.getElementById('monsterSection');
+    const lootField = document.getElementById('lootTableField');
+    monsterSection.style.display = (type === 'combat') ? '' : 'none';
+    lootField.style.display = (type === 'loot') ? '' : 'none';
+}
+</script>
+{% endblock %}

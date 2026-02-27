@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2><i class="bi bi-book-dead"></i> Bestiary</h2>
+    <h2><i class="bi bi-collection"></i> Bestiary</h2>
     <div class="d-flex gap-2">
         <a href="{{ url_for('bestiary_import.import_web') }}" class="btn btn-outline-info">
             <i class="bi bi-cloud-download"></i> Import from Web
@@ -43,43 +43,59 @@
 </div>
 {% endif %}
 
-{% if entries %}
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for entry in entries %}
-    <div class="col">
-        <div class="card h-100 bg-dark border-secondary">
-            {% if entry.image_path %}
-            <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
-                 class="card-img-top" alt="{{ entry.name }}"
-                 style="max-height:200px; object-fit:contain; background:#1a1a1a;">
-            {% endif %}
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{{ url_for('bestiary.entry_detail', entry_id=entry.id) }}"
-                       class="text-decoration-none text-light">{{ entry.name }}</a>
-                </h5>
-                <p class="card-text small text-muted">
-                    {% if entry.cr_level %}<span class="me-2">{{ entry.cr_level }}</span>{% endif %}
-                    {% if entry.system %}<span class="badge bg-secondary">{{ entry.system }}</span>{% endif %}
-                </p>
-                {% if entry.get_tags_list() %}
-                <div>
-                    {% for tag in entry.get_tags_list() %}
-                    <a href="{{ url_for('bestiary.list_bestiary', tag=tag) }}"
-                       class="badge bg-secondary text-decoration-none me-1">{{ tag }}</a>
-                    {% endfor %}
+{% if grouped_entries %}
+    {% for system_name, system_entries in grouped_entries.items() %}
+    {% set group_id = "bestiary-grp-" ~ loop.index %}
+
+    <!-- System group header (collapsible) -->
+    <div class="d-flex align-items-center gap-2 mb-3 {% if not loop.first %}mt-4{% endif %} group-header"
+         data-bs-toggle="collapse" data-bs-target="#{{ group_id }}">
+        <i class="bi bi-chevron-down group-chevron text-muted"></i>
+        <h5 class="mb-0 text-muted">{{ system_name }}</h5>
+        <span class="badge bg-secondary">{{ system_entries | length }}</span>
+        <hr class="flex-grow-1 border-secondary my-0">
+    </div>
+
+    <!-- Collapsible card group -->
+    <div id="{{ group_id }}" class="collapse show mb-2">
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for entry in system_entries %}
+            <div class="col">
+                <div class="card h-100 bg-dark border-secondary">
+                    {% if entry.image_path %}
+                    <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
+                         class="card-img-top" alt="{{ entry.name }}"
+                         style="max-height:200px; object-fit:contain; background:#1a1a1a;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('bestiary.entry_detail', entry_id=entry.id) }}"
+                               class="text-decoration-none text-light">{{ entry.name }}</a>
+                        </h5>
+                        <p class="card-text small text-muted">
+                            {% if entry.cr_level %}<span class="me-2">{{ entry.cr_level }}</span>{% endif %}
+                            {% if entry.system %}<span class="badge bg-secondary">{{ entry.system }}</span>{% endif %}
+                        </p>
+                        {% if entry.get_tags_list() %}
+                        <div>
+                            {% for tag in entry.get_tags_list() %}
+                            <a href="{{ url_for('bestiary.list_bestiary', tag=tag) }}"
+                               class="badge bg-secondary text-decoration-none me-1">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center small text-muted">
+                        <span>{{ entry.instances | length }} instance(s)</span>
+                        <a href="{{ url_for('bestiary.entry_detail', entry_id=entry.id) }}"
+                           class="btn btn-sm btn-outline-secondary">View</a>
+                    </div>
                 </div>
-                {% endif %}
             </div>
-            <div class="card-footer d-flex justify-content-between align-items-center small text-muted">
-                <span>{{ entry.instances | length }} instance(s)</span>
-                <a href="{{ url_for('bestiary.entry_detail', entry_id=entry.id) }}"
-                   class="btn btn-sm btn-outline-secondary">View</a>
-            </div>
+            {% endfor %}
         </div>
     </div>
     {% endfor %}
-</div>
 {% else %}
 <p class="text-muted">
     {% if search or active_tag %}

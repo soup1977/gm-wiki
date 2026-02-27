@@ -18,79 +18,59 @@
 <h2 class="mb-4">{% if entry %}Edit: {{ entry.name }}{% else %}Add Bestiary Entry{% endif %}</h2>
 
 <form method="post" enctype="multipart/form-data">
-    <div class="row g-3">
-        <!-- Left column -->
-        <div class="col-md-8">
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-3 text-muted">Basic Info</h6>
-                    <div class="mb-3">
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: metadata, image, tags, visibility -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
                         <label class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control"
+                        <input type="text" name="name" class="form-control" autofocus
                                value="{{ entry.name if entry else '' }}" required>
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">System</label>
-                            <input type="text" name="system" class="form-control"
-                                   value="{{ entry.system or '' if entry else '' }}"
-                                   placeholder="e.g. D&D 5e, ICRPG, Pathfinder">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">CR / Level</label>
-                            <input type="text" name="cr_level" class="form-control"
-                                   value="{{ entry.cr_level or '' if entry else '' }}"
-                                   placeholder="e.g. CR 2, Level 5">
-                        </div>
+
+                    <div>
+                        <label class="form-label">System</label>
+                        <input type="text" name="system" class="form-control"
+                               value="{{ entry.system or '' if entry else '' }}"
+                               placeholder="e.g. D&D 5e, ICRPG, Pathfinder">
                     </div>
-                    <div class="mb-3">
+
+                    <div>
+                        <label class="form-label">CR / Level</label>
+                        <input type="text" name="cr_level" class="form-control"
+                               value="{{ entry.cr_level or '' if entry else '' }}"
+                               placeholder="e.g. CR 2, Level 5">
+                    </div>
+
+                    <div>
                         <label class="form-label">Source</label>
                         <input type="text" name="source" class="form-control"
                                value="{{ entry.source or '' if entry else '' }}"
                                placeholder="e.g. Monster Manual p.166, Homebrew">
                     </div>
-                </div>
-            </div>
 
-            <!-- Stat Block -->
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-body">
-                    <label class="form-label fw-bold">Stat Block <span class="text-danger">*</span>
-                        <span class="text-muted fw-normal small ms-1">(Markdown supported)</span>
-                    </label>
-                    <textarea name="stat_block" class="form-control font-monospace" rows="14"
-                              required>{{ entry.stat_block if entry else '' }}</textarea>
-                </div>
-            </div>
-        </div>
+                    <div>
+                        <label class="form-label">Tags</label>
+                        <input type="text" name="tags" class="form-control"
+                               value="{{ entry.tags or '' if entry else '' }}"
+                               placeholder="humanoid, goblinoid, forest">
+                        <div class="form-text">Comma-separated. Lowercase recommended.</div>
+                    </div>
 
-        <!-- Right column -->
-        <div class="col-md-4">
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-3 text-muted">Image</h6>
-                    {% if entry and entry.image_path %}
-                    <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
-                         alt="{{ entry.name }}" class="img-fluid rounded mb-2"
-                         style="max-height:200px; object-fit:contain;">
-                    <p class="text-muted small">Upload a new image to replace the current one.</p>
-                    {% endif %}
-                    <input type="file" name="image" class="form-control" accept="image/*">
-                </div>
-            </div>
+                    <div>
+                        <label class="form-label">Image</label>
+                        {% if entry and entry.image_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + entry.image_path) }}"
+                             alt="{{ entry.name }}" class="img-fluid rounded mb-2"
+                             style="max-height:150px; object-fit:contain;">
+                        <div class="form-text">Upload a new image to replace.</div>
+                        {% endif %}
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
 
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-3 text-muted">Tags</h6>
-                    <input type="text" name="tags" class="form-control"
-                           value="{{ entry.tags or '' if entry else '' }}"
-                           placeholder="humanoid, goblinoid, forest">
-                    <div class="form-text">Comma-separated. Lowercase recommended.</div>
-                </div>
-            </div>
-
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-body">
                     <div class="form-check">
                         <input type="checkbox" name="visible_to_players" id="visible_to_players"
                                class="form-check-input"
@@ -100,12 +80,32 @@
                         </label>
                         <div class="form-text">Shows name, image, tags, and source in the Player Wiki.</div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="d-flex gap-2 mt-2">
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-4 -->
+
+        <!-- RIGHT COLUMN: stat block -->
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label class="form-label fw-bold">
+                            Stat Block <span class="text-danger">*</span>
+                            <span class="text-muted fw-normal small ms-1">(Markdown supported)</span>
+                        </label>
+                        <textarea name="stat_block" class="form-control font-monospace" rows="24"
+                                  required>{{ entry.stat_block if entry else '' }}</textarea>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-8 -->
+
+    </div><!-- row -->
+
+    <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">
             {% if entry %}Save Changes{% else %}Add to Bestiary{% endif %}
         </button>

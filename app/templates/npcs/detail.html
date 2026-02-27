@@ -21,8 +21,11 @@
         <h2>{{ npc.name }}</h2>
         <p class="text-muted mb-0">
             {% if npc.role %}{{ npc.role }}{% endif %}
-            {% if npc.role and npc.faction %} &mdash; {% endif %}
-            {% if npc.faction %}{{ npc.faction }}{% endif %}
+            {% if npc.role and (npc.faction_rel or npc.faction) %} &mdash; {% endif %}
+            {% if npc.faction_rel %}
+            <a href="{{ url_for('factions.faction_detail', faction_id=npc.faction_rel.id) }}"
+               class="badge bg-secondary text-decoration-none">{{ npc.faction_rel.name }}</a>
+            {% elif npc.faction %}{{ npc.faction }}{% endif %}
         </p>
         <p class="text-muted small mb-0">
             Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=npc.campaign.id) }}">{{ npc.campaign.name }}</a>
@@ -124,6 +127,17 @@
         <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}" class="btn btn-sm btn-outline-light">
             <i class="bi bi-geo-alt"></i> {{ loc.name }}
         </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if mentions %}
+<div class="mt-4 border-top border-secondary pt-3">
+    <h6 class="text-muted small"><i class="bi bi-link-45deg me-1"></i>Referenced by</h6>
+    <div class="d-flex flex-wrap gap-2">
+        {% for m in mentions %}
+        <a href="{{ m.url }}" class="badge bg-secondary text-decoration-none">{{ m.label }}</a>
         {% endfor %}
     </div>
 </div>

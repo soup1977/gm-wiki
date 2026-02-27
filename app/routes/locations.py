@@ -1,8 +1,12 @@
+from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db, save_upload
-from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags
+from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags, Faction
+from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 locations_bp = Blueprint('locations', __name__, url_prefix='/locations')
+
+_LOC_TEXT_FIELDS = ['description', 'notes', 'gm_notes']
 
 
 def get_active_campaign_id():
@@ -31,7 +35,21 @@ def list_locations():
         {tag for loc in Location.query.filter_by(campaign_id=campaign_id).all() for tag in loc.tags},
         key=lambda t: t.name
     )
-    return render_template('locations/list.html', locations=locations, all_tags=all_tags, active_tag=active_tag)
+
+    # Group by parent location; "Top Level" group comes first
+    groups = defaultdict(list)
+    for loc in locations:
+        key = loc.parent_location.name if loc.parent_location else 'Top Level'
+        groups[key].append(loc)
+
+    def group_sort_key(k):
+        return (0, '') if k == 'Top Level' else (1, k.lower())
+
+    grouped_locations = dict(sorted(groups.items(), key=lambda x: group_sort_key(x[0])))
+
+    return render_template('locations/list.html', locations=locations,
+                           grouped_locations=grouped_locations,
+                           all_tags=all_tags, active_tag=active_tag)
 
 
 @locations_bp.route('/new', methods=['GET', 'POST'])
@@ -50,6 +68,9 @@ def create_location():
         parent_id = request.form.get('parent_location_id')
         parent_id = int(parent_id) if parent_id else None
 
+        faction_id_val = request.form.get('faction_id')
+        faction_id = int(faction_id_val) if faction_id_val else None
+
         location = Location(
             campaign_id=campaign_id,
             name=name,
@@ -57,7 +78,8 @@ def create_location():
             description=request.form.get('description', '').strip(),
             gm_notes=request.form.get('gm_notes', '').strip(),
             notes=request.form.get('notes', '').strip(),
-            parent_location_id=parent_id
+            parent_location_id=parent_id,
+            faction_id=faction_id
         )
         db.session.add(location)
 
@@ -71,6 +93,16 @@ def create_location():
             location.map_filename = filename
 
         location.is_player_visible = 'is_player_visible' in request.form
+        db.session.flush()
+
+        for field in _LOC_TEXT_FIELDS:
+            val = getattr(location, field)
+            if val:
+                processed, mentions = process_shortcodes(val, campaign_id, 'loc', location.id)
+                setattr(location, field, processed)
+                for m in mentions:
+                    db.session.add(m)
+
         db.session.commit()
 
         flash(f'Location "{location.name}" created!', 'success')
@@ -79,7 +111,8 @@ def create_location():
     # GET — show the form
     # Get all locations in this campaign for the parent dropdown
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
-    return render_template('locations/form.html', location=None, locations=locations)
+    factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
+    return render_template('locations/form.html', location=None, locations=locations, factions=factions)
 
 
 @locations_bp.route('/<int:location_id>')
@@ -97,7 +130,8 @@ def location_detail(location_id):
         session.pop('current_session_id', None)
         session.pop('session_title', None)
 
-    return render_template('locations/detail.html', location=location)
+    mentions = resolve_mentions_for_target('loc', location_id)
+    return render_template('locations/detail.html', location=location, mentions=mentions)
 
 
 @locations_bp.route('/<int:location_id>/edit', methods=['GET', 'POST'])
@@ -129,6 +163,8 @@ def edit_location(location_id):
         location.gm_notes = request.form.get('gm_notes', '').strip()
         location.notes = request.form.get('notes', '').strip()
         location.parent_location_id = parent_id
+        faction_id_val = request.form.get('faction_id')
+        location.faction_id = int(faction_id_val) if faction_id_val else None
 
         connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
         # Exclude self just in case
@@ -143,6 +179,16 @@ def edit_location(location_id):
             location.map_filename = filename
 
         location.is_player_visible = 'is_player_visible' in request.form
+
+        clear_mentions('loc', location.id)
+        for field in _LOC_TEXT_FIELDS:
+            val = getattr(location, field)
+            if val:
+                processed, mentions = process_shortcodes(val, campaign_id, 'loc', location.id)
+                setattr(location, field, processed)
+                for m in mentions:
+                    db.session.add(m)
+
         db.session.commit()
 
         flash(f'Location "{location.name}" updated!', 'success')
@@ -153,7 +199,8 @@ def edit_location(location_id):
     locations = Location.query.filter_by(campaign_id=campaign_id).filter(
         Location.id != location.id
     ).order_by(Location.name).all()
-    return render_template('locations/form.html', location=location, locations=locations)
+    factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
+    return render_template('locations/form.html', location=location, locations=locations, factions=factions)
 
 
 @locations_bp.route('/<int:location_id>/delete', methods=['POST'])

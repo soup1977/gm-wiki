@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Preview Import — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2><i class="bi bi-eye"></i> Preview Import</h2>
+        <p class="text-muted mb-0">Vault: <code>{{ vault_path }}</code> — {{ entries|length }} files found, {{ images|length }} images</p>
+    </div>
+    <a href="{{ url_for('obsidian_import.select_vault') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<form method="POST">
+    {% for folder, folder_entries in grouped.items() %}
+    <div class="card mb-3">
+        <div class="card-header bg-dark">
+            <i class="bi bi-folder2-open"></i> <strong>{{ folder }}</strong>
+            <span class="badge bg-secondary ms-2">{{ folder_entries|length }} files</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">File</th>
+                        <th style="width: 25%;">Import As</th>
+                        <th style="width: 20%;">Category</th>
+                        <th style="width: 10%;">GM Only</th>
+                        <th style="width: 10%;">Subfolder</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in folder_entries %}
+                    {% set idx = entries.index(entry) %}
+                    <tr>
+                        <td>
+                            <code class="text-info">{{ entry.filename }}</code>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm" name="type_{{ idx }}">
+                                <option value="skip" {% if entry.entity_type == 'skip' %}selected{% endif %}>
+                                    Skip
+                                </option>
+                                <option value="npc" {% if entry.entity_type == 'npc' %}selected{% endif %}>
+                                    NPC
+                                </option>
+                                <option value="npc_faction" {% if entry.entity_type == 'npc_faction' %}selected{% endif %}>
+                                    NPC (Faction)
+                                </option>
+                                <option value="location" {% if entry.entity_type == 'location' %}selected{% endif %}>
+                                    Location
+                                </option>
+                                <option value="compendium" {% if entry.entity_type == 'compendium' %}selected{% endif %}>
+                                    Compendium
+                                </option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm"
+                                   name="category_{{ idx }}"
+                                   value="{{ entry.category or '' }}"
+                                   placeholder="Category">
+                        </td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input"
+                                   name="gm_only_{{ idx }}"
+                                   {% if entry.is_gm_only %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <span class="text-muted small">{{ entry.subfolder }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if images %}
+    <div class="card mb-3 border-info">
+        <div class="card-header bg-dark">
+            <i class="bi bi-image"></i> <strong>Images Found</strong>
+            <span class="badge bg-info ms-2">{{ images|length }}</span>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0 small">
+                {% for img in images %}
+                <li><code>{{ img }}</code></li>
+                {% endfor %}
+            </ul>
+            <p class="text-muted small mt-2 mb-0">Images near Floor files will be attached as maps automatically.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="bi bi-download"></i> Run Import
+        </button>
+        <a href="{{ url_for('obsidian_import.select_vault') }}" class="btn btn-outline-secondary btn-lg">
+            Cancel
+        </a>
+    </div>
+</form>
+{% endblock %}

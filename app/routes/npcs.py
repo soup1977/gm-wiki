@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db, save_upload
-from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags
+from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags, Faction
+from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
+
+_NPC_TEXT_FIELDS = ['physical_description', 'personality', 'notes', 'secrets']
 
 npcs_bp = Blueprint('npcs', __name__, url_prefix='/npcs')
 
@@ -52,12 +55,15 @@ def create_npc():
         home_id = request.form.get('home_location_id')
         home_id = int(home_id) if home_id else None
 
+        faction_id_val = request.form.get('faction_id')
+        faction_id = int(faction_id_val) if faction_id_val else None
+
         npc = NPC(
             campaign_id=campaign_id,
             name=name,
             role=request.form.get('role', '').strip(),
             status=request.form.get('status', 'alive'),
-            faction=request.form.get('faction', '').strip(),
+            faction_id=faction_id,
             physical_description=request.form.get('physical_description', '').strip(),
             personality=request.form.get('personality', '').strip(),
             secrets=request.form.get('secrets', '').strip(),
@@ -77,6 +83,16 @@ def create_npc():
             npc.portrait_filename = filename
 
         npc.is_player_visible = 'is_player_visible' in request.form
+        db.session.flush()  # get npc.id before processing shortcodes
+
+        for field in _NPC_TEXT_FIELDS:
+            val = getattr(npc, field)
+            if val:
+                processed, mentions = process_shortcodes(val, campaign_id, 'npc', npc.id)
+                setattr(npc, field, processed)
+                for m in mentions:
+                    db.session.add(m)
+
         db.session.commit()
 
         flash(f'NPC "{npc.name}" created!', 'success')
@@ -84,8 +100,9 @@ def create_npc():
 
     # GET — show the form
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
+    factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
     return render_template('npcs/form.html', npc=None, locations=locations,
-                           status_choices=NPC_STATUS_CHOICES)
+                           status_choices=NPC_STATUS_CHOICES, factions=factions)
 
 
 @npcs_bp.route('/<int:npc_id>')
@@ -102,7 +119,8 @@ def npc_detail(npc_id):
         session.pop('current_session_id', None)
         session.pop('session_title', None)
 
-    return render_template('npcs/detail.html', npc=npc)
+    mentions = resolve_mentions_for_target('npc', npc_id)
+    return render_template('npcs/detail.html', npc=npc, mentions=mentions)
 
 
 @npcs_bp.route('/<int:npc_id>/edit', methods=['GET', 'POST'])
@@ -126,7 +144,8 @@ def edit_npc(npc_id):
         npc.name = name
         npc.role = request.form.get('role', '').strip()
         npc.status = request.form.get('status', 'alive')
-        npc.faction = request.form.get('faction', '').strip()
+        faction_id_val = request.form.get('faction_id')
+        npc.faction_id = int(faction_id_val) if faction_id_val else None
         npc.physical_description = request.form.get('physical_description', '').strip()
         npc.personality = request.form.get('personality', '').strip()
         npc.secrets = request.form.get('secrets', '').strip()
@@ -143,6 +162,16 @@ def edit_npc(npc_id):
             npc.portrait_filename = filename
 
         npc.is_player_visible = 'is_player_visible' in request.form
+
+        clear_mentions('npc', npc.id)
+        for field in _NPC_TEXT_FIELDS:
+            val = getattr(npc, field)
+            if val:
+                processed, mentions = process_shortcodes(val, campaign_id, 'npc', npc.id)
+                setattr(npc, field, processed)
+                for m in mentions:
+                    db.session.add(m)
+
         db.session.commit()
 
         flash(f'NPC "{npc.name}" updated!', 'success')
@@ -150,8 +179,9 @@ def edit_npc(npc_id):
 
     # GET — show the form with current data
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
+    factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
     return render_template('npcs/form.html', npc=npc, locations=locations,
-                           status_choices=NPC_STATUS_CHOICES)
+                           status_choices=NPC_STATUS_CHOICES, factions=factions)
 
 
 @npcs_bp.route('/<int:npc_id>/delete', methods=['POST'])

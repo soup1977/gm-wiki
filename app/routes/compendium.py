@@ -1,6 +1,8 @@
+from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app import db
 from app.models import CompendiumEntry
+from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 compendium_bp = Blueprint('compendium', __name__)
 
@@ -19,7 +21,13 @@ def list_compendium():
                .filter_by(campaign_id=campaign_id)
                .order_by(CompendiumEntry.category, CompendiumEntry.title)
                .all())
-    return render_template('compendium/list.html', entries=entries)
+    # Group by category for the list view
+    groups = defaultdict(list)
+    for entry in entries:
+        key = entry.category or 'Uncategorized'
+        groups[key].append(entry)
+    grouped_entries = dict(sorted(groups.items()))
+    return render_template('compendium/list.html', entries=entries, grouped_entries=grouped_entries)
 
 
 @compendium_bp.route('/compendium/new', methods=['GET', 'POST'])
@@ -43,6 +51,14 @@ def create_entry():
             is_gm_only=bool(request.form.get('is_gm_only')),
         )
         db.session.add(entry)
+        db.session.flush()
+
+        if entry.content:
+            processed, mentions = process_shortcodes(entry.content, campaign_id, 'comp', entry.id)
+            entry.content = processed
+            for m in mentions:
+                db.session.add(m)
+
         db.session.commit()
         flash(f'Entry "{entry.title}" created.', 'success')
         return redirect(url_for('compendium.entry_detail', entry_id=entry.id))
@@ -54,7 +70,8 @@ def create_entry():
 def entry_detail(entry_id):
     campaign_id = get_active_campaign_id()
     entry = CompendiumEntry.query.filter_by(id=entry_id, campaign_id=campaign_id).first_or_404()
-    return render_template('compendium/detail.html', entry=entry)
+    mentions = resolve_mentions_for_target('comp', entry_id)
+    return render_template('compendium/detail.html', entry=entry, mentions=mentions)
 
 
 @compendium_bp.route('/compendium/<int:entry_id>/edit', methods=['GET', 'POST'])
@@ -72,6 +89,13 @@ def edit_entry(entry_id):
         entry.category = request.form.get('category', '').strip() or None
         entry.content = request.form.get('content', '').strip() or None
         entry.is_gm_only = bool(request.form.get('is_gm_only'))
+
+        clear_mentions('comp', entry.id)
+        if entry.content:
+            processed, mentions = process_shortcodes(entry.content, campaign_id, 'comp', entry.id)
+            entry.content = processed
+            for m in mentions:
+                db.session.add(m)
 
         db.session.commit()
         flash(f'Entry "{entry.title}" updated.', 'success')

@@ -56,8 +56,15 @@
 {% endif %}
 
 <div class="row g-4">
-    <!-- Summary and GM notes -->
+    <!-- Prep notes, Summary, and GM notes -->
     <div class="col-md-8">
+        {% if sess.prep_notes %}
+        <div class="mb-4 p-3 border border-info rounded">
+            <h5 class="text-info"><i class="bi bi-journal-bookmark me-1"></i> Session Plan</h5>
+            <div>{{ sess.prep_notes | md | safe }}</div>
+        </div>
+        {% endif %}
+
         {% if sess.summary %}
         <div class="mb-4">
             <h5 class="text-secondary">Summary</h5>

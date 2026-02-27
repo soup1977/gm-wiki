@@ -116,4 +116,15 @@
         </div>
     </div>
 </div>
+
+{% if mentions %}
+<div class="mt-4 border-top border-secondary pt-3">
+    <h6 class="text-muted small"><i class="bi bi-link-45deg me-1"></i>Referenced by</h6>
+    <div class="d-flex flex-wrap gap-2">
+        {% for m in mentions %}
+        <a href="{{ m.url }}" class="badge bg-secondary text-decoration-none">{{ m.label }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

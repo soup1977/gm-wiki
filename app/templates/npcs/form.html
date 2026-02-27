@@ -2,162 +2,205 @@
 {% block title %}{{ 'Edit' if npc else 'New' }} NPC — GM Wiki{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="mb-3">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
-                {% if npc %}
-                <li class="breadcrumb-item"><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a></li>
-                <li class="breadcrumb-item active">Edit</li>
-                {% else %}
-                <li class="breadcrumb-item active">New</li>
-                {% endif %}
-            </ol>
-        </nav>
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
+        {% if npc %}
+        <li class="breadcrumb-item"><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+        <li class="breadcrumb-item active">New</li>
+        {% endif %}
+    </ol>
+</nav>
 
-        <div class="d-flex align-items-center gap-3 mb-4">
-            <h2 class="mb-0">{{ 'Edit' if npc else 'New' }} NPC</h2>
-            {% if config.AI_ENABLED %}
-            <button type="button" class="btn btn-outline-primary btn-sm"
-                    data-bs-toggle="modal" data-bs-target="#smartFillModal">
-                <i class="bi bi-stars"></i> Smart Fill
-            </button>
-            {% endif %}
-        </div>
-
-        <form method="POST" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="name" name="name"
-                       value="{{ npc.name if npc else '' }}" required autofocus>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="role" class="form-label">Role</label>
-                    <input type="text" class="form-control" id="role" name="role"
-                           value="{{ npc.role if npc else '' }}"
-                           placeholder="e.g. Blacksmith, Villain, Merchant...">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-select" id="status" name="status">
-                        {% for choice in status_choices %}
-                        <option value="{{ choice }}"
-                                {% if npc and npc.status == choice %}selected{% endif %}>
-                            {{ choice|capitalize }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="faction" class="form-label">Faction</label>
-                    <input type="text" class="form-control" id="faction" name="faction"
-                           value="{{ npc.faction if npc else '' }}"
-                           placeholder="e.g. Thieves Guild, Royal Guard...">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="home_location_id" class="form-label">Home Location</label>
-                    <select class="form-select" id="home_location_id" name="home_location_id">
-                        <option value="">None</option>
-                        {% for loc in locations %}
-                        <option value="{{ loc.id }}"
-                                {% if npc and npc.home_location_id == loc.id %}selected{% endif %}>
-                            {{ loc.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="connected_location_ids" class="form-label">Connected Locations</label>
-                <select class="form-select" id="connected_location_ids" name="connected_location_ids" multiple size="5">
-                    {% for loc in locations %}
-                    <option value="{{ loc.id }}"
-                            {% if npc and loc in npc.connected_locations %}selected{% endif %}>
-                        {{ loc.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple. Locations this NPC is associated with beyond their home.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="portrait" class="form-label">Portrait Image</label>
-                {% if npc and npc.portrait_filename %}
-                <div class="mb-2">
-                    <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
-                         alt="Current portrait" class="img-thumbnail" style="max-height: 150px;">
-                    <div class="form-text">Upload a new image below to replace this one.</div>
-                </div>
-                {% endif %}
-                <input type="file" class="form-control" id="portrait" name="portrait" accept="image/*">
-                <div class="form-text">Accepted formats: JPG, PNG, GIF, WebP. Leave blank to keep the existing image.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="tags" class="form-label">Tags</label>
-                <input type="text" class="form-control" id="tags" name="tags"
-                       value="{{ npc.tags | map(attribute='name') | join(', ') if npc else '' }}"
-                       placeholder="e.g. villain, faction-guild, season-1">
-                <div class="form-text">Comma-separated. Used to filter and group entries.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="physical_description" class="form-label">Physical Description</label>
-                <textarea class="form-control" id="physical_description" name="physical_description" rows="3">{{ npc.physical_description if npc else '' }}</textarea>
-                <div class="form-text">Markdown supported.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="personality" class="form-label">Personality</label>
-                <textarea class="form-control" id="personality" name="personality" rows="3">{{ npc.personality if npc else '' }}</textarea>
-                <div class="form-text">Markdown supported.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="notes" class="form-label">Notes</label>
-                <textarea class="form-control" id="notes" name="notes" rows="3">{{ npc.notes if npc else '' }}</textarea>
-                <div class="form-text">Markdown supported.</div>
-            </div>
-
-            <div class="mb-4">
-                <label for="secrets" class="form-label">
-                    <i class="bi bi-eye-slash"></i> Secrets (GM Only)
-                </label>
-                <textarea class="form-control border-warning" id="secrets" name="secrets" rows="3">{{ npc.secrets if npc else '' }}</textarea>
-                <div class="form-text text-warning">These secrets will never be shown to players. Markdown supported.</div>
-            </div>
-
-            <div class="form-check mb-3">
-                <input type="checkbox" name="is_player_visible" id="is_player_visible"
-                       class="form-check-input"
-                       {% if npc and npc.is_player_visible %}checked{% endif %}>
-                <label class="form-check-label" for="is_player_visible">
-                    <i class="bi bi-people"></i> Visible in Player Wiki
-                </label>
-                <div class="form-text">When checked, this NPC appears in the read-only player wiki.</div>
-            </div>
-
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> {{ 'Save Changes' if npc else 'Create NPC' }}
-                </button>
-                {% if npc %}
-                <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="btn btn-outline-secondary">Cancel</a>
-                {% else %}
-                <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-outline-secondary">Cancel</a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="mb-0">{{ 'Edit' if npc else 'New' }} NPC</h2>
+    {% if config.AI_ENABLED %}
+    <button type="button" class="btn btn-outline-primary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#smartFillModal">
+        <i class="bi bi-stars"></i> Smart Fill
+    </button>
+    {% endif %}
 </div>
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: metadata, dropdowns, uploads -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               value="{{ npc.name if npc else '' }}" required autofocus>
+                    </div>
+
+                    <div>
+                        <label for="role" class="form-label">Role</label>
+                        <input type="text" class="form-control" id="role" name="role"
+                               value="{{ npc.role if npc else '' }}"
+                               placeholder="e.g. Blacksmith, Villain, Merchant...">
+                    </div>
+
+                    <div>
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            {% for choice in status_choices %}
+                            <option value="{{ choice }}"
+                                    {% if npc and npc.status == choice %}selected{% endif %}>
+                                {{ choice|capitalize }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="faction_id" class="form-label">Faction</label>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="faction_id" name="faction_id">
+                                <option value="">— None —</option>
+                                {% for f in factions %}
+                                <option value="{{ f.id }}"
+                                        {% if npc and npc.faction_id == f.id %}selected{% endif %}>
+                                    {{ f.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="faction" data-qc-target="faction_id" data-qc-label="Faction">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        {% if npc and npc.faction and not npc.faction_id %}
+                        <div class="form-text text-warning">Previously: "{{ npc.faction }}" — select from dropdown to link</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="home_location_id" class="form-label">Home Location</label>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="home_location_id" name="home_location_id">
+                                <option value="">None</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}"
+                                        {% if npc and npc.home_location_id == loc.id %}selected{% endif %}>
+                                    {{ loc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="home_location_id" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="connected_location_ids" class="form-label">Connected Locations</label>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="connected_location_ids" name="connected_location_ids" multiple size="4">
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}"
+                                        {% if npc and loc in npc.connected_locations %}selected{% endif %}>
+                                    {{ loc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="connected_location_ids" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                    </div>
+
+                    <div>
+                        <label for="portrait" class="form-label">Portrait Image</label>
+                        {% if npc and npc.portrait_filename %}
+                        <div class="mb-2">
+                            <img src="{{ url_for('static', filename='uploads/' + npc.portrait_filename) }}"
+                                 alt="Current portrait" class="img-thumbnail" style="max-height: 120px;">
+                            <div class="form-text">Upload below to replace.</div>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="portrait" name="portrait" accept="image/*">
+                        <div class="form-text">JPG, PNG, GIF, WebP.</div>
+                    </div>
+
+                    <div>
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               value="{{ npc.tags | map(attribute='name') | join(', ') if npc else '' }}"
+                               placeholder="e.g. villain, faction-guild, season-1">
+                        <div class="form-text">Comma-separated.</div>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" name="is_player_visible" id="is_player_visible"
+                               class="form-check-input"
+                               {% if npc and npc.is_player_visible %}checked{% endif %}>
+                        <label class="form-check-label" for="is_player_visible">
+                            <i class="bi bi-people"></i> Visible in Player Wiki
+                        </label>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-4 -->
+
+        <!-- RIGHT COLUMN: all text / notes fields -->
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label for="physical_description" class="form-label">Physical Description</label>
+                        <textarea class="form-control" id="physical_description" name="physical_description" rows="6">{{ npc.physical_description if npc else '' }}</textarea>
+                        <div class="form-text">Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="personality" class="form-label">Personality</label>
+                        <textarea class="form-control" id="personality" name="personality" rows="6">{{ npc.personality if npc else '' }}</textarea>
+                        <div class="form-text">Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="6">{{ npc.notes if npc else '' }}</textarea>
+                        <div class="form-text">Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="secrets" class="form-label">
+                            <i class="bi bi-eye-slash"></i> Secrets <span class="text-warning">(GM Only)</span>
+                        </label>
+                        <textarea class="form-control border-warning" id="secrets" name="secrets" rows="6">{{ npc.secrets if npc else '' }}</textarea>
+                        <div class="form-text text-warning">Never shown to players. Markdown supported.</div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-8 -->
+
+    </div><!-- row -->
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> {{ 'Save Changes' if npc else 'Create NPC' }}
+        </button>
+        {% if npc %}
+        <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        {% else %}
+        <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-outline-secondary">Cancel</a>
+        {% endif %}
+    </div>
+</form>
+
 {% if config.AI_ENABLED %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'npc';</script>
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
