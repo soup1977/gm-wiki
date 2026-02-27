@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, jsonify, current_app
+from flask_login import login_required
 from app.models import Campaign, NPC, Location, Quest, Item, Session, BestiaryEntry, CompendiumEntry
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
 
 @settings_bp.route('/')
+@login_required
 def index():
     ai_enabled = current_app.config.get('AI_ENABLED', False)
 
@@ -24,6 +26,7 @@ def index():
 
 
 @settings_bp.route('/test-ai')
+@login_required
 def test_ai():
     """AJAX endpoint: test whether the Claude API key is valid."""
     if not current_app.config.get('AI_ENABLED'):

@@ -1,5 +1,6 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask_login import login_required
 from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
                         get_or_create_tags, PlayerCharacter, SessionAttendance,
@@ -28,6 +29,7 @@ def _save_attendance(sess, campaign_id):
 
 
 @sessions_bp.route('/sessions')
+@login_required
 def list_sessions():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -52,6 +54,7 @@ def list_sessions():
 
 
 @sessions_bp.route('/sessions/new', methods=['GET', 'POST'])
+@login_required
 def create_session():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -137,6 +140,7 @@ def create_session():
 
 
 @sessions_bp.route('/sessions/<int:session_id>')
+@login_required
 def session_detail(session_id):
     campaign_id = get_active_campaign_id()
     sess = Session.query.filter_by(id=session_id, campaign_id=campaign_id).first_or_404()
@@ -150,6 +154,7 @@ def session_detail(session_id):
 
 
 @sessions_bp.route('/sessions/<int:session_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_session(session_id):
     campaign_id = get_active_campaign_id()
     sess = Session.query.filter_by(id=session_id, campaign_id=campaign_id).first_or_404()
@@ -227,6 +232,7 @@ def edit_session(session_id):
 
 
 @sessions_bp.route('/sessions/<int:session_id>/delete', methods=['POST'])
+@login_required
 def delete_session(session_id):
     campaign_id = get_active_campaign_id()
     sess = Session.query.filter_by(id=session_id, campaign_id=campaign_id).first_or_404()

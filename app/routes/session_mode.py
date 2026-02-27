@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db
 from app.models import Session as GameSession, Quest, Location, Encounter
 
@@ -11,6 +12,7 @@ def get_active_campaign_id():
 
 
 @session_mode_bp.route('/')
+@login_required
 def dashboard():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -101,6 +103,7 @@ def dashboard():
 
 
 @session_mode_bp.route('/set-session', methods=['POST'])
+@login_required
 def set_session():
     sess_id = request.form.get('session_id', '').strip()
     if sess_id:
@@ -111,6 +114,7 @@ def set_session():
 
 
 @session_mode_bp.route('/set-location', methods=['POST'])
+@login_required
 def set_location():
     campaign_id = get_active_campaign_id()
     current_session_id = session.get('current_session_id')
@@ -128,6 +132,7 @@ def set_location():
 
 
 @session_mode_bp.route('/add-note', methods=['POST'])
+@login_required
 def add_note():
     campaign_id = get_active_campaign_id()
     current_session_id = session.get('current_session_id')

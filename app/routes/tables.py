@@ -2,6 +2,7 @@ import random
 from datetime import datetime
 from flask import (Blueprint, render_template, redirect, url_for,
                    request, flash, session, jsonify)
+from flask_login import login_required
 from app import db
 from app.models import RandomTable, TableRow
 
@@ -15,6 +16,7 @@ def get_active_campaign_id():
 # ── Table listing ─────────────────────────────────────────────────────────────
 
 @tables_bp.route('/')
+@login_required
 def list_tables():
     campaign_id = get_active_campaign_id()
 
@@ -59,6 +61,7 @@ def list_tables():
 # ── Create table ─────────────────────────────────────────────────────────────
 
 @tables_bp.route('/create', methods=['GET', 'POST'])
+@login_required
 def create_table():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -89,6 +92,7 @@ def create_table():
 # ── Table detail ──────────────────────────────────────────────────────────────
 
 @tables_bp.route('/<int:table_id>')
+@login_required
 def table_detail(table_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -104,6 +108,7 @@ def table_detail(table_id):
 # ── Edit table ────────────────────────────────────────────────────────────────
 
 @tables_bp.route('/<int:table_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_table(table_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -134,6 +139,7 @@ def edit_table(table_id):
 # ── Delete table ──────────────────────────────────────────────────────────────
 
 @tables_bp.route('/<int:table_id>/delete', methods=['POST'])
+@login_required
 def delete_table(table_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -152,6 +158,7 @@ def delete_table(table_id):
 # ── Row management ────────────────────────────────────────────────────────────
 
 @tables_bp.route('/<int:table_id>/rows/add', methods=['POST'])
+@login_required
 def add_row(table_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -181,6 +188,7 @@ def add_row(table_id):
 
 
 @tables_bp.route('/<int:table_id>/rows/<int:row_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_row(table_id, row_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -205,6 +213,7 @@ def edit_row(table_id, row_id):
 
 
 @tables_bp.route('/<int:table_id>/rows/<int:row_id>/delete', methods=['POST'])
+@login_required
 def delete_row(table_id, row_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -220,6 +229,7 @@ def delete_row(table_id, row_id):
 
 
 @tables_bp.route('/<int:table_id>/rows/<int:row_id>/move', methods=['POST'])
+@login_required
 def move_row(table_id, row_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)
@@ -251,6 +261,7 @@ def move_row(table_id, row_id):
 # ── Roll endpoint ─────────────────────────────────────────────────────────────
 
 @tables_bp.route('/<int:table_id>/roll')
+@login_required
 def roll(table_id):
     campaign_id = get_active_campaign_id()
     table = RandomTable.query.get_or_404(table_id)

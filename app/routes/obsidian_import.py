@@ -11,6 +11,7 @@ from flask import (
     Blueprint, render_template, request, redirect, url_for,
     flash, session as flask_session, current_app
 )
+from flask_login import login_required
 from app import db
 from app.models import Campaign, NPC, Location, CompendiumEntry, Tag
 from app.obsidian_parser import (
@@ -24,6 +25,7 @@ obsidian_import_bp = Blueprint('obsidian_import', __name__)
 
 
 @obsidian_import_bp.route('/obsidian-import', methods=['GET', 'POST'])
+@login_required
 def select_vault():
     """Step 1: User enters the path to their Obsidian vault folder."""
     campaigns = Campaign.query.order_by(Campaign.name).all()
@@ -48,6 +50,7 @@ def select_vault():
 
 
 @obsidian_import_bp.route('/obsidian-import/preview', methods=['GET', 'POST'])
+@login_required
 def preview():
     """Step 2: Show scanned files with auto-mappings. User can adjust."""
     vault_path = flask_session.get('obsidian_vault_path')
@@ -98,6 +101,7 @@ def preview():
 
 
 @obsidian_import_bp.route('/obsidian-import/execute', methods=['GET', 'POST'])
+@login_required
 def execute():
     """Step 3: Run the import and show results."""
     vault_path = flask_session.get('obsidian_vault_path')

@@ -5,12 +5,14 @@ Returns JSON array of matching entities (max 10), scoped to active campaign.
 """
 
 from flask import Blueprint, jsonify, request, session
+from flask_login import login_required
 from app.shortcode import TYPE_CONFIG, _get_model
 
 entity_search_bp = Blueprint('entity_search', __name__, url_prefix='/api')
 
 
 @entity_search_bp.route('/entity-search')
+@login_required
 def search():
     type_key = request.args.get('type', '').strip().lower()
     q = request.args.get('q', '').strip()

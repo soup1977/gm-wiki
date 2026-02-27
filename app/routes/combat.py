@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask_login import login_required
 from app.models import Session as GameSession, PlayerCharacter, BestiaryEntry
 
 combat_bp = Blueprint('combat', __name__, url_prefix='/combat-tracker')
@@ -9,6 +10,7 @@ def get_active_campaign_id():
 
 
 @combat_bp.route('/')
+@login_required
 def tracker():
     campaign_id = get_active_campaign_id()
 
@@ -95,6 +97,7 @@ def tracker():
 
 
 @combat_bp.route('/set-session', methods=['POST'])
+@login_required
 def set_session():
     """Store the chosen session ID in the Flask session so the combat tracker
     knows which PCs to offer for auto-population."""

@@ -15,6 +15,7 @@ If ANTHROPIC_API_KEY is not set, the endpoint returns a 403.
 
 import json
 from flask import Blueprint, request, jsonify, current_app
+from flask_login import login_required
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -112,6 +113,7 @@ Rules:
 # ---------------------------------------------------------------------------
 
 @ai_bp.route('/smart-fill', methods=['POST'])
+@login_required
 def smart_fill():
     """
     Accepts JSON body: { "entity_type": "npc", "text": "..." }

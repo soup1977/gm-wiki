@@ -6,6 +6,7 @@ import urllib.error
 import markdown as _md
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask_login import login_required
 from app import db
 from app.models import BestiaryEntry
 
@@ -230,11 +231,13 @@ def _build_tags(m):
 # ---------------------------------------------------------------------------
 
 @bestiary_import_bp.route('/web')
+@login_required
 def import_web():
     return render_template('bestiary/import_web.html')
 
 
 @bestiary_import_bp.route('/web/search')
+@login_required
 def search():
     """AJAX endpoint: proxy a name search to Open5e, return minimal JSON list."""
     q = request.args.get('q', '').strip()
@@ -258,6 +261,7 @@ def search():
 
 
 @bestiary_import_bp.route('/web/preview')
+@login_required
 def preview():
     """AJAX endpoint: fetch full creature data from Open5e and return formatted preview."""
     slug = request.args.get('slug', '').strip()
@@ -291,6 +295,7 @@ def preview():
 
 
 @bestiary_import_bp.route('/web/save', methods=['POST'])
+@login_required
 def save():
     """POST handler: fetch creature from Open5e and save as a BestiaryEntry."""
     slug = request.form.get('slug', '').strip()

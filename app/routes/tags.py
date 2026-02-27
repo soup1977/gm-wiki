@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db
 from app.models import Tag, NPC, Location, Quest, Item, Session as GameSession
 from sqlalchemy import func
@@ -11,6 +12,7 @@ def get_active_campaign_id():
 
 
 @tags_bp.route('/')
+@login_required
 def list_tags():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -36,6 +38,7 @@ def list_tags():
 
 
 @tags_bp.route('/<int:tag_id>/rename', methods=['POST'])
+@login_required
 def rename_tag(tag_id):
     campaign_id = get_active_campaign_id()
     tag = Tag.query.get_or_404(tag_id)
@@ -64,6 +67,7 @@ def rename_tag(tag_id):
 
 
 @tags_bp.route('/<int:tag_id>/delete', methods=['POST'])
+@login_required
 def delete_tag(tag_id):
     campaign_id = get_active_campaign_id()
     tag = Tag.query.get_or_404(tag_id)
