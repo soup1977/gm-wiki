@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db, save_upload
 from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags, Faction
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
@@ -16,6 +17,7 @@ def get_active_campaign_id():
 
 
 @npcs_bp.route('/')
+@login_required
 def list_npcs():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -40,6 +42,7 @@ def list_npcs():
 
 
 @npcs_bp.route('/new', methods=['GET', 'POST'])
+@login_required
 def create_npc():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -106,6 +109,7 @@ def create_npc():
 
 
 @npcs_bp.route('/<int:npc_id>')
+@login_required
 def npc_detail(npc_id):
     campaign_id = get_active_campaign_id()
     npc = NPC.query.get_or_404(npc_id)
@@ -124,6 +128,7 @@ def npc_detail(npc_id):
 
 
 @npcs_bp.route('/<int:npc_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_npc(npc_id):
     campaign_id = get_active_campaign_id()
     npc = NPC.query.get_or_404(npc_id)
@@ -185,6 +190,7 @@ def edit_npc(npc_id):
 
 
 @npcs_bp.route('/<int:npc_id>/delete', methods=['POST'])
+@login_required
 def delete_npc(npc_id):
     campaign_id = get_active_campaign_id()
     npc = NPC.query.get_or_404(npc_id)

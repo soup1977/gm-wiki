@@ -1,5 +1,6 @@
 from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask_login import login_required
 from app import db
 from app.models import CompendiumEntry
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
@@ -12,6 +13,7 @@ def get_active_campaign_id():
 
 
 @compendium_bp.route('/compendium')
+@login_required
 def list_compendium():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -31,6 +33,7 @@ def list_compendium():
 
 
 @compendium_bp.route('/compendium/new', methods=['GET', 'POST'])
+@login_required
 def create_entry():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -67,6 +70,7 @@ def create_entry():
 
 
 @compendium_bp.route('/compendium/<int:entry_id>')
+@login_required
 def entry_detail(entry_id):
     campaign_id = get_active_campaign_id()
     entry = CompendiumEntry.query.filter_by(id=entry_id, campaign_id=campaign_id).first_or_404()
@@ -75,6 +79,7 @@ def entry_detail(entry_id):
 
 
 @compendium_bp.route('/compendium/<int:entry_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_entry(entry_id):
     campaign_id = get_active_campaign_id()
     entry = CompendiumEntry.query.filter_by(id=entry_id, campaign_id=campaign_id).first_or_404()
@@ -105,6 +110,7 @@ def edit_entry(entry_id):
 
 
 @compendium_bp.route('/compendium/<int:entry_id>/delete', methods=['POST'])
+@login_required
 def delete_entry(entry_id):
     campaign_id = get_active_campaign_id()
     entry = CompendiumEntry.query.filter_by(id=entry_id, campaign_id=campaign_id).first_or_404()

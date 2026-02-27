@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db, save_upload
 from app.models import BestiaryEntry, MonsterInstance, Campaign
 from app.shortcode import process_shortcodes, clear_mentions
@@ -45,6 +46,7 @@ def _auto_instance_name(entry, campaign_id):
 
 
 @bestiary_bp.route('/')
+@login_required
 def list_bestiary():
     active_tag = request.args.get('tag', '').strip().lower() or None
     search = request.args.get('q', '').strip() or None
@@ -75,6 +77,7 @@ def list_bestiary():
 
 
 @bestiary_bp.route('/create', methods=['GET', 'POST'])
+@login_required
 def create_entry():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -126,6 +129,7 @@ def create_entry():
 
 
 @bestiary_bp.route('/<int:entry_id>')
+@login_required
 def entry_detail(entry_id):
     entry = BestiaryEntry.query.get_or_404(entry_id)
 
@@ -140,6 +144,7 @@ def entry_detail(entry_id):
 
 
 @bestiary_bp.route('/<int:entry_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_entry(entry_id):
     entry = BestiaryEntry.query.get_or_404(entry_id)
 
@@ -188,6 +193,7 @@ def edit_entry(entry_id):
 
 
 @bestiary_bp.route('/<int:entry_id>/delete', methods=['POST'])
+@login_required
 def delete_entry(entry_id):
     entry = BestiaryEntry.query.get_or_404(entry_id)
     instance_count = len(entry.instances)
@@ -205,6 +211,7 @@ def delete_entry(entry_id):
 
 
 @bestiary_bp.route('/<int:entry_id>/spawn', methods=['POST'])
+@login_required
 def spawn_instance(entry_id):
     """Create a MonsterInstance from this Bestiary Entry in the active campaign."""
     entry = BestiaryEntry.query.get_or_404(entry_id)

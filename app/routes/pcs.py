@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db, save_upload
 from app.models import PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate
 
@@ -34,6 +35,7 @@ def _save_stats(pc, campaign_id):
 
 
 @pcs_bp.route('/')
+@login_required
 def list_pcs():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -61,6 +63,7 @@ def list_pcs():
 
 
 @pcs_bp.route('/new', methods=['GET', 'POST'])
+@login_required
 def create_pc():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -110,6 +113,7 @@ def create_pc():
 
 
 @pcs_bp.route('/<int:pc_id>')
+@login_required
 def pc_detail(pc_id):
     campaign_id = get_active_campaign_id()
     pc = PlayerCharacter.query.get_or_404(pc_id)
@@ -135,6 +139,7 @@ def pc_detail(pc_id):
 
 
 @pcs_bp.route('/<int:pc_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_pc(pc_id):
     campaign_id = get_active_campaign_id()
     pc = PlayerCharacter.query.get_or_404(pc_id)
@@ -183,6 +188,7 @@ def edit_pc(pc_id):
 
 
 @pcs_bp.route('/<int:pc_id>/delete', methods=['POST'])
+@login_required
 def delete_pc(pc_id):
     campaign_id = get_active_campaign_id()
     pc = PlayerCharacter.query.get_or_404(pc_id)

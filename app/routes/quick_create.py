@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, session
+from flask_login import login_required
 from app import db
 from app.models import (Faction, Location, NPC, Quest, Item,
                         Session as GameSession, RandomTable, BestiaryEntry)
@@ -64,6 +65,7 @@ ENTITY_CONFIG = {
 
 
 @quick_create_bp.route('/quick-create/<entity_type>', methods=['POST'])
+@login_required
 def quick_create(entity_type):
     config = ENTITY_CONFIG.get(entity_type)
     if not config:

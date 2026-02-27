@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db, save_upload
 from app.models import MonsterInstance, BestiaryEntry, NPC, Session, Campaign, Location
 
@@ -18,6 +19,7 @@ def _check_campaign(campaign_id):
 
 
 @monsters_bp.route('/')
+@login_required
 def list_instances(campaign_id):
     campaign = _check_campaign(campaign_id)
     if not campaign:
@@ -48,6 +50,7 @@ def list_instances(campaign_id):
 
 
 @monsters_bp.route('/<int:instance_id>')
+@login_required
 def instance_detail(campaign_id, instance_id):
     campaign = _check_campaign(campaign_id)
     if not campaign:
@@ -67,6 +70,7 @@ def instance_detail(campaign_id, instance_id):
 
 
 @monsters_bp.route('/<int:instance_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_instance(campaign_id, instance_id):
     campaign = _check_campaign(campaign_id)
     if not campaign:
@@ -105,6 +109,7 @@ def edit_instance(campaign_id, instance_id):
 
 
 @monsters_bp.route('/<int:instance_id>/delete', methods=['POST'])
+@login_required
 def delete_instance(campaign_id, instance_id):
     campaign = _check_campaign(campaign_id)
     if not campaign:
@@ -124,6 +129,7 @@ def delete_instance(campaign_id, instance_id):
 
 
 @monsters_bp.route('/<int:instance_id>/add-to-session', methods=['POST'])
+@login_required
 def add_to_session(campaign_id, instance_id):
     """Quick-link: add this instance to a session from the detail page."""
     campaign = _check_campaign(campaign_id)
@@ -154,6 +160,7 @@ def add_to_session(campaign_id, instance_id):
 
 
 @monsters_bp.route('/<int:instance_id>/promote', methods=['GET', 'POST'])
+@login_required
 def promote_to_npc(campaign_id, instance_id):
     """Convert a Monster Instance into a full NPC."""
     campaign = _check_campaign(campaign_id)

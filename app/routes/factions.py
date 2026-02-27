@@ -1,5 +1,6 @@
 from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask_login import login_required
 from app import db
 from app.models import Faction, NPC, Location, Quest
 
@@ -19,6 +20,7 @@ def get_active_campaign_id():
 
 
 @factions_bp.route('/')
+@login_required
 def list_factions():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -40,6 +42,7 @@ def list_factions():
 
 
 @factions_bp.route('/new', methods=['GET', 'POST'])
+@login_required
 def create_faction():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -69,6 +72,7 @@ def create_faction():
 
 
 @factions_bp.route('/<int:faction_id>')
+@login_required
 def faction_detail(faction_id):
     campaign_id = get_active_campaign_id()
     faction = Faction.query.filter_by(id=faction_id, campaign_id=campaign_id).first_or_404()
@@ -77,6 +81,7 @@ def faction_detail(faction_id):
 
 
 @factions_bp.route('/<int:faction_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_faction(faction_id):
     campaign_id = get_active_campaign_id()
     faction = Faction.query.filter_by(id=faction_id, campaign_id=campaign_id).first_or_404()
@@ -101,6 +106,7 @@ def edit_faction(faction_id):
 
 
 @factions_bp.route('/<int:faction_id>/delete', methods=['POST'])
+@login_required
 def delete_faction(faction_id):
     campaign_id = get_active_campaign_id()
     faction = Faction.query.filter_by(id=faction_id, campaign_id=campaign_id).first_or_404()

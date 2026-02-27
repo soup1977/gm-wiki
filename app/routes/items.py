@@ -1,5 +1,6 @@
 from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask_login import login_required
 from app import db
 from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
@@ -16,6 +17,7 @@ def get_active_campaign_id():
 
 
 @items_bp.route('/items')
+@login_required
 def list_items():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -49,6 +51,7 @@ def list_items():
 
 
 @items_bp.route('/items/new', methods=['GET', 'POST'])
+@login_required
 def create_item():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -102,6 +105,7 @@ def create_item():
 
 
 @items_bp.route('/items/<int:item_id>')
+@login_required
 def item_detail(item_id):
     campaign_id = get_active_campaign_id()
     item = Item.query.filter_by(id=item_id, campaign_id=campaign_id).first_or_404()
@@ -116,6 +120,7 @@ def item_detail(item_id):
 
 
 @items_bp.route('/items/<int:item_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_item(item_id):
     campaign_id = get_active_campaign_id()
     item = Item.query.filter_by(id=item_id, campaign_id=campaign_id).first_or_404()
@@ -163,6 +168,7 @@ def edit_item(item_id):
 
 
 @items_bp.route('/items/<int:item_id>/delete', methods=['POST'])
+@login_required
 def delete_item(item_id):
     campaign_id = get_active_campaign_id()
     item = Item.query.filter_by(id=item_id, campaign_id=campaign_id).first_or_404()

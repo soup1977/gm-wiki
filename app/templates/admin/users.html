@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}User Management — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people-fill me-2"></i>User Management</h2>
+    <a href="{{ url_for('admin.create_user') }}" class="btn btn-success">
+        <i class="bi bi-person-plus me-1"></i> New User
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Campaigns</th>
+                <th>Created</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>
+                    <i class="bi bi-person me-1"></i>{{ user.username }}
+                    {% if user.id == current_user.id %}
+                    <span class="badge bg-info ms-1">you</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_admin %}
+                    <span class="badge bg-warning text-dark">Admin</span>
+                    {% else %}
+                    <span class="badge bg-secondary">User</span>
+                    {% endif %}
+                </td>
+                <td>{{ user.campaigns | length }}</td>
+                <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '—' }}</td>
+                <td class="text-end">
+                    <div class="d-flex gap-1 justify-content-end">
+                        {# Reset password #}
+                        <form method="POST" action="{{ url_for('admin.reset_password', user_id=user.id) }}"
+                              class="d-flex gap-1"
+                              onsubmit="return confirm('Reset password for {{ user.username }}?')">
+                            <input type="password" name="new_password" class="form-control form-control-sm"
+                                   placeholder="New password" style="width: 140px;" required minlength="4">
+                            <button type="submit" class="btn btn-outline-warning btn-sm" title="Reset password">
+                                <i class="bi bi-key"></i>
+                            </button>
+                        </form>
+
+                        {# Delete (not self) #}
+                        {% if user.id != current_user.id %}
+                        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                              onsubmit="return confirm('Delete user {{ user.username }}? Their campaigns will become orphaned.')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete user">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

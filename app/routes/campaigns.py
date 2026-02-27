@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required, current_user
 from app import db
 from app.models import Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location, CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat
 
@@ -53,12 +54,14 @@ STAT_PRESETS = {
 
 
 @campaigns_bp.route('/')
+@login_required
 def list_campaigns():
-    campaigns = Campaign.query.order_by(Campaign.name).all()
+    campaigns = Campaign.query.filter_by(user_id=current_user.id).order_by(Campaign.name).all()
     return render_template('campaigns/list.html', campaigns=campaigns)
 
 
 @campaigns_bp.route('/create', methods=['GET', 'POST'])
+@login_required
 def create_campaign():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -67,6 +70,7 @@ def create_campaign():
             return redirect(url_for('campaigns.create_campaign'))
 
         campaign = Campaign(
+            user_id=current_user.id,
             name=name,
             system=request.form.get('system', '').strip(),
             status=request.form.get('status', 'active'),
@@ -97,14 +101,16 @@ def create_campaign():
 
 
 @campaigns_bp.route('/<int:campaign_id>')
+@login_required
 def campaign_detail(campaign_id):
-    campaign = Campaign.query.get_or_404(campaign_id)
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
     return render_template('campaigns/detail.html', campaign=campaign)
 
 
 @campaigns_bp.route('/<int:campaign_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_campaign(campaign_id):
-    campaign = Campaign.query.get_or_404(campaign_id)
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         if not name:
@@ -126,8 +132,9 @@ def edit_campaign(campaign_id):
 # ── Stat template management ─────────────────────────────────────────────────
 
 @campaigns_bp.route('/<int:campaign_id>/stats/add', methods=['POST'])
+@login_required
 def add_stat_field(campaign_id):
-    campaign = Campaign.query.get_or_404(campaign_id)
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
     stat_name = request.form.get('stat_name', '').strip()
     if not stat_name:
         flash('Stat name cannot be empty.', 'danger')
@@ -160,6 +167,7 @@ def add_stat_field(campaign_id):
 
 
 @campaigns_bp.route('/<int:campaign_id>/stats/<int:stat_id>/rename', methods=['POST'])
+@login_required
 def rename_stat_field(campaign_id, stat_id):
     field = CampaignStatTemplate.query.filter_by(id=stat_id, campaign_id=campaign_id).first_or_404()
     new_name = request.form.get('stat_name', '').strip()
@@ -173,6 +181,7 @@ def rename_stat_field(campaign_id, stat_id):
 
 
 @campaigns_bp.route('/<int:campaign_id>/stats/<int:stat_id>/delete', methods=['POST'])
+@login_required
 def delete_stat_field(campaign_id, stat_id):
     field = CampaignStatTemplate.query.filter_by(id=stat_id, campaign_id=campaign_id).first_or_404()
     name = field.stat_name
@@ -183,6 +192,7 @@ def delete_stat_field(campaign_id, stat_id):
 
 
 @campaigns_bp.route('/<int:campaign_id>/stats/<int:stat_id>/move', methods=['POST'])
+@login_required
 def move_stat_field(campaign_id, stat_id):
     direction = request.form.get('direction')  # 'up' or 'down'
     field = CampaignStatTemplate.query.filter_by(id=stat_id, campaign_id=campaign_id).first_or_404()
@@ -209,8 +219,9 @@ def move_stat_field(campaign_id, stat_id):
 # ── Delete campaign ───────────────────────────────────────────────────────────
 
 @campaigns_bp.route('/<int:campaign_id>/delete', methods=['POST'])
+@login_required
 def delete_campaign(campaign_id):
-    campaign = Campaign.query.get_or_404(campaign_id)
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
     name = campaign.name
 
     # Delete in dependency order so nothing is left referencing a deleted object.

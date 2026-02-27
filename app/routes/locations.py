@@ -1,5 +1,6 @@
 from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask_login import login_required
 from app import db, save_upload
 from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags, Faction
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
@@ -15,6 +16,7 @@ def get_active_campaign_id():
 
 
 @locations_bp.route('/')
+@login_required
 def list_locations():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -53,6 +55,7 @@ def list_locations():
 
 
 @locations_bp.route('/new', methods=['GET', 'POST'])
+@login_required
 def create_location():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -116,6 +119,7 @@ def create_location():
 
 
 @locations_bp.route('/<int:location_id>')
+@login_required
 def location_detail(location_id):
     campaign_id = get_active_campaign_id()
     location = Location.query.get_or_404(location_id)
@@ -135,6 +139,7 @@ def location_detail(location_id):
 
 
 @locations_bp.route('/<int:location_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_location(location_id):
     campaign_id = get_active_campaign_id()
     location = Location.query.get_or_404(location_id)
@@ -204,6 +209,7 @@ def edit_location(location_id):
 
 
 @locations_bp.route('/<int:location_id>/delete', methods=['POST'])
+@login_required
 def delete_location(location_id):
     campaign_id = get_active_campaign_id()
     location = Location.query.get_or_404(location_id)

@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask_login import login_required
 from app import db
 from app.models import (Encounter, EncounterMonster, BestiaryEntry,
                         MonsterInstance, RandomTable, Session as GameSession)
@@ -68,6 +69,7 @@ def _save_monsters(encounter, entry_ids, counts):
 
 
 @encounters_bp.route('/')
+@login_required
 def list_encounters():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -91,6 +93,7 @@ def list_encounters():
 
 
 @encounters_bp.route('/new', methods=['GET', 'POST'])
+@login_required
 def create_encounter():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
@@ -148,6 +151,7 @@ def create_encounter():
 
 
 @encounters_bp.route('/<int:encounter_id>')
+@login_required
 def encounter_detail(encounter_id):
     campaign_id = get_active_campaign_id()
     encounter = Encounter.query.filter_by(id=encounter_id, campaign_id=campaign_id).first_or_404()
@@ -156,6 +160,7 @@ def encounter_detail(encounter_id):
 
 
 @encounters_bp.route('/<int:encounter_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_encounter(encounter_id):
     campaign_id = get_active_campaign_id()
     encounter = Encounter.query.filter_by(id=encounter_id, campaign_id=campaign_id).first_or_404()
@@ -206,6 +211,7 @@ def edit_encounter(encounter_id):
 
 
 @encounters_bp.route('/<int:encounter_id>/delete', methods=['POST'])
+@login_required
 def delete_encounter(encounter_id):
     campaign_id = get_active_campaign_id()
     encounter = Encounter.query.filter_by(id=encounter_id, campaign_id=campaign_id).first_or_404()
@@ -217,6 +223,7 @@ def delete_encounter(encounter_id):
 
 
 @encounters_bp.route('/<int:encounter_id>/start-combat', methods=['POST'])
+@login_required
 def start_combat(encounter_id):
     """Spawn MonsterInstances for each EncounterMonster and send the GM to the combat tracker."""
     campaign_id = get_active_campaign_id()
