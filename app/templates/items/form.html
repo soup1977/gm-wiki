@@ -59,27 +59,39 @@
 
                     <div>
                         <label for="owner_npc_id" class="form-label">Owner</label>
-                        <select class="form-select" id="owner_npc_id" name="owner_npc_id">
-                            <option value="">— Party —</option>
-                            {% for npc in npcs %}
-                            <option value="{{ npc.id }}" {% if item and item.owner_npc_id == npc.id %}selected{% endif %}>
-                                {{ npc.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="owner_npc_id" name="owner_npc_id">
+                                <option value="">— Party —</option>
+                                {% for npc in npcs %}
+                                <option value="{{ npc.id }}" {% if item and item.owner_npc_id == npc.id %}selected{% endif %}>
+                                    {{ npc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="npc" data-qc-target="owner_npc_id" data-qc-label="NPC">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                         <div class="form-text">Leave blank if the party owns this item.</div>
                     </div>
 
                     <div>
                         <label for="origin_location_id" class="form-label">Origin Location</label>
-                        <select class="form-select" id="origin_location_id" name="origin_location_id">
-                            <option value="">— Unknown —</option>
-                            {% for location in locations %}
-                            <option value="{{ location.id }}" {% if item and item.origin_location_id == location.id %}selected{% endif %}>
-                                {{ location.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="origin_location_id" name="origin_location_id">
+                                <option value="">— Unknown —</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {% if item and item.origin_location_id == location.id %}selected{% endif %}>
+                                    {{ location.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="origin_location_id" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                         <div class="form-text">Where was this item found or acquired?</div>
                     </div>
 

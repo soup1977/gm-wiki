@@ -60,15 +60,21 @@
 
                     <div>
                         <label for="faction_id" class="form-label">Faction</label>
-                        <select class="form-select" id="faction_id" name="faction_id">
-                            <option value="">— None —</option>
-                            {% for f in factions %}
-                            <option value="{{ f.id }}"
-                                    {% if npc and npc.faction_id == f.id %}selected{% endif %}>
-                                {{ f.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="faction_id" name="faction_id">
+                                <option value="">— None —</option>
+                                {% for f in factions %}
+                                <option value="{{ f.id }}"
+                                        {% if npc and npc.faction_id == f.id %}selected{% endif %}>
+                                    {{ f.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="faction" data-qc-target="faction_id" data-qc-label="Faction">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                         {% if npc and npc.faction and not npc.faction_id %}
                         <div class="form-text text-warning">Previously: "{{ npc.faction }}" — select from dropdown to link</div>
                         {% endif %}
@@ -76,27 +82,39 @@
 
                     <div>
                         <label for="home_location_id" class="form-label">Home Location</label>
-                        <select class="form-select" id="home_location_id" name="home_location_id">
-                            <option value="">None</option>
-                            {% for loc in locations %}
-                            <option value="{{ loc.id }}"
-                                    {% if npc and npc.home_location_id == loc.id %}selected{% endif %}>
-                                {{ loc.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="home_location_id" name="home_location_id">
+                                <option value="">None</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}"
+                                        {% if npc and npc.home_location_id == loc.id %}selected{% endif %}>
+                                    {{ loc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="home_location_id" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div>
                         <label for="connected_location_ids" class="form-label">Connected Locations</label>
-                        <select class="form-select" id="connected_location_ids" name="connected_location_ids" multiple size="4">
-                            {% for loc in locations %}
-                            <option value="{{ loc.id }}"
-                                    {% if npc and loc in npc.connected_locations %}selected{% endif %}>
-                                {{ loc.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="connected_location_ids" name="connected_location_ids" multiple size="4">
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}"
+                                        {% if npc and loc in npc.connected_locations %}selected{% endif %}>
+                                    {{ loc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="connected_location_ids" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                         <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple.</div>
                     </div>
 

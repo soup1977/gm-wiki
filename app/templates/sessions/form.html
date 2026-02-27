@@ -65,61 +65,77 @@
                         <div class="form-text">Comma-separated.</div>
                     </div>
 
-                    {% if npcs %}
                     <div>
                         <label for="npcs_featured" class="form-label">NPCs in This Session</label>
-                        <select class="form-select" id="npcs_featured" name="npcs_featured" multiple size="5">
-                            {% for npc in npcs %}
-                            <option value="{{ npc.id }}"
-                                {% if sess and npc in sess.npcs_featured %}selected{% endif %}>
-                                {{ npc.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="npcs_featured" name="npcs_featured" multiple size="5">
+                                {% for npc in npcs %}
+                                <option value="{{ npc.id }}"
+                                    {% if sess and npc in sess.npcs_featured %}selected{% endif %}>
+                                    {{ npc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="npc" data-qc-target="npcs_featured" data-qc-label="NPC">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                     </div>
-                    {% endif %}
 
-                    {% if locations %}
                     <div>
                         <label for="locations_visited" class="form-label">Locations Visited</label>
-                        <select class="form-select" id="locations_visited" name="locations_visited" multiple size="5">
-                            {% for loc in locations %}
-                            <option value="{{ loc.id }}"
-                                {% if sess and loc in sess.locations_visited %}selected{% endif %}>
-                                {{ loc.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="locations_visited" name="locations_visited" multiple size="5">
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}"
+                                    {% if sess and loc in sess.locations_visited %}selected{% endif %}>
+                                    {{ loc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="locations_visited" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                     </div>
-                    {% endif %}
 
-                    {% if quests %}
                     <div>
                         <label for="quests_touched" class="form-label">Quests Touched</label>
-                        <select class="form-select" id="quests_touched" name="quests_touched" multiple size="5">
-                            {% for quest in quests %}
-                            <option value="{{ quest.id }}"
-                                {% if sess and quest in sess.quests_touched %}selected{% endif %}>
-                                {{ quest.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="quests_touched" name="quests_touched" multiple size="5">
+                                {% for quest in quests %}
+                                <option value="{{ quest.id }}"
+                                    {% if sess and quest in sess.quests_touched %}selected{% endif %}>
+                                    {{ quest.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="quest" data-qc-target="quests_touched" data-qc-label="Quest">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                     </div>
-                    {% endif %}
 
-                    {% if items %}
                     <div>
                         <label for="items_mentioned" class="form-label">Items Mentioned</label>
-                        <select class="form-select" id="items_mentioned" name="items_mentioned" multiple size="5">
-                            {% for item in items %}
-                            <option value="{{ item.id }}"
-                                {% if sess and item in sess.items_mentioned %}selected{% endif %}>
-                                {{ item.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="items_mentioned" name="items_mentioned" multiple size="5">
+                                {% for item in items %}
+                                <option value="{{ item.id }}"
+                                    {% if sess and item in sess.items_mentioned %}selected{% endif %}>
+                                    {{ item.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="item" data-qc-target="items_mentioned" data-qc-label="Item">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                     </div>
-                    {% endif %}
 
                     {% if monsters %}
                     <div>

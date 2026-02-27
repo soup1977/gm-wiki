@@ -59,46 +59,60 @@
 
                     <div>
                         <label for="faction_id" class="form-label">Faction</label>
-                        <select class="form-select" id="faction_id" name="faction_id">
-                            <option value="">— None —</option>
-                            {% for f in factions %}
-                            <option value="{{ f.id }}"
-                                    {% if quest and quest.faction_id == f.id %}selected{% endif %}>
-                                {{ f.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="faction_id" name="faction_id">
+                                <option value="">— None —</option>
+                                {% for f in factions %}
+                                <option value="{{ f.id }}"
+                                        {% if quest and quest.faction_id == f.id %}selected{% endif %}>
+                                    {{ f.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="faction" data-qc-target="faction_id" data-qc-label="Faction">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    {% if npcs %}
                     <div>
                         <label for="involved_npcs" class="form-label">Involved NPCs</label>
-                        <select class="form-select" id="involved_npcs" name="involved_npcs" multiple size="5">
-                            {% for npc in npcs %}
-                            <option value="{{ npc.id }}"
-                                {% if quest and npc in quest.involved_npcs %}selected{% endif %}>
-                                {{ npc.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="involved_npcs" name="involved_npcs" multiple size="5">
+                                {% for npc in npcs %}
+                                <option value="{{ npc.id }}"
+                                    {% if quest and npc in quest.involved_npcs %}selected{% endif %}>
+                                    {{ npc.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="npc" data-qc-target="involved_npcs" data-qc-label="NPC">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                         <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple.</div>
                     </div>
-                    {% endif %}
 
-                    {% if locations %}
                     <div>
                         <label for="involved_locations" class="form-label">Involved Locations</label>
-                        <select class="form-select" id="involved_locations" name="involved_locations" multiple size="5">
-                            {% for location in locations %}
-                            <option value="{{ location.id }}"
-                                {% if quest and location in quest.involved_locations %}selected{% endif %}>
-                                {{ location.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="d-flex gap-2 align-items-start">
+                            <select class="form-select flex-grow-1" id="involved_locations" name="involved_locations" multiple size="5">
+                                {% for location in locations %}
+                                <option value="{{ location.id }}"
+                                    {% if quest and location in quest.involved_locations %}selected{% endif %}>
+                                    {{ location.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                    data-qc-entity="location" data-qc-target="involved_locations" data-qc-label="Location">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
                         <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple.</div>
                     </div>
-                    {% endif %}
 
                     <div class="form-check">
                         <input type="checkbox" name="is_player_visible" id="is_player_visible"

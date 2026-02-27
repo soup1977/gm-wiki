@@ -177,6 +177,7 @@ def create_app():
     from app.routes.entity_search import entity_search_bp
     from app.routes.encounters import encounters_bp
     from app.routes.factions import factions_bp
+    from app.routes.quick_create import quick_create_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(campaigns_bp)
@@ -201,6 +202,7 @@ def create_app():
     app.register_blueprint(entity_search_bp)
     app.register_blueprint(encounters_bp)
     app.register_blueprint(factions_bp)
+    app.register_blueprint(quick_create_bp)
 
     # Context processor — makes active_campaign available in EVERY template
     # automatically, so we don't have to pass it in every route
