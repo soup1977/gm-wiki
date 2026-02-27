@@ -5,7 +5,7 @@
 
 {# ── Top bar: title + round controls ────────────────────────────────────── #}
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <h2 class="mb-0"><i class="bi bi-sword"></i> Combat Tracker</h2>
+    <h2 class="mb-0"><i class="bi bi-shield-shaded"></i> Combat Tracker</h2>
     <div class="d-flex align-items-center gap-3">
         <span id="round-counter" class="fs-5 fw-bold text-warning">Round 1</span>
         <button class="btn btn-primary btn-lg" onclick="nextTurn()" id="next-turn-btn" disabled>
@@ -66,7 +66,7 @@
         </div>
         <div id="combatant-list">
             <p class="text-muted text-center py-5">
-                <i class="bi bi-sword fs-1 d-block mb-2"></i>
+                <i class="bi bi-shield-shaded fs-1 d-block mb-2"></i>
                 No combatants yet. Add some to start!
             </p>
         </div>
@@ -544,7 +544,7 @@ function render() {
 
     if (state.combatants.length === 0) {
         list.innerHTML = `<p class="text-muted text-center py-5">
-            <i class="bi bi-sword fs-1 d-block mb-2"></i>
+            <i class="bi bi-shield-shaded fs-1 d-block mb-2"></i>
             No combatants yet. Add some to start!
         </p>`;
         return;

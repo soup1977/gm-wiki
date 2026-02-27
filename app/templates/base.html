@@ -19,24 +19,24 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Left side: core campaign content (flat links) -->
             <ul class="navbar-nav me-auto">
                 {% if active_campaign %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('npcs.list_npcs') }}">NPCs</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('pcs.list_pcs') }}">PCs</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('locations.list_locations') }}">Locations</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('quests.list_quests') }}">Quests</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('items.list_items') }}">Items</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('compendium.list_compendium') }}">Compendium</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('tags.list_tags') }}">Tags</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('monsters.list_instances', campaign_id=active_campaign.id) }}">
-                        <i class="bi bi-bug"></i> Monsters
-                    </a>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('npcs.list_npcs') }}"><i class="bi bi-person me-1"></i>NPCs</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('factions.list_factions') }}"><i class="bi bi-shield me-1"></i>Factions</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('pcs.list_pcs') }}"><i class="bi bi-person-badge me-1"></i>PCs</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('locations.list_locations') }}"><i class="bi bi-geo-alt me-1"></i>Locations</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('quests.list_quests') }}"><i class="bi bi-flag me-1"></i>Quests</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sessions.list_sessions') }}"><i class="bi bi-calendar-event me-1"></i>Sessions</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('encounters.list_encounters') }}"><i class="bi bi-map me-1"></i>Encounters</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('items.list_items') }}"><i class="bi bi-backpack me-1"></i>Items</a></li>
                 {% endif %}
             </ul>
-            <ul class="navbar-nav">
+
+            <!-- Right side: session mode, tools dropdown, admin icons -->
+            <ul class="navbar-nav align-items-center gap-1">
+
+                <!-- Session Mode — keep prominent -->
                 <li class="nav-item">
                     <a class="nav-link text-success fw-semibold" href="{{ url_for('session_mode.dashboard') }}">
                         <i class="bi bi-broadcast"></i> Session Mode
@@ -50,41 +50,64 @@
                     </a>
                 </li>
                 {% endif %}
+
+                <!-- Tools dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-grid-3x3-gap"></i> Tools
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{{ url_for('combat.tracker') }}">
+                            <i class="bi bi-shield-shaded me-2"></i> Combat Tracker
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('tables.list_tables') }}">
+                            <i class="bi bi-dice-5 me-2"></i> Random Tables
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('bestiary.list_bestiary') }}">
+                            <i class="bi bi-collection me-2"></i> Bestiary
+                        </a></li>
+                        {% if active_campaign %}
+                        <li><a class="dropdown-item" href="{{ url_for('monsters.list_instances', campaign_id=active_campaign.id) }}">
+                            <i class="bi bi-bug me-2"></i> Monsters
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('compendium.list_compendium') }}">
+                            <i class="bi bi-journal-text me-2"></i> Compendium
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('tags.list_tags') }}">
+                            <i class="bi bi-tags me-2"></i> Tags
+                        </a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+
+                <!-- Admin icons (icon-only with tooltips) -->
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('combat.tracker') }}">
-                        <i class="bi bi-sword"></i> Combat
+                    <a class="nav-link text-info" href="{{ url_for('wiki.wiki_index') }}"
+                       title="Player Wiki" data-bs-toggle="tooltip">
+                        <i class="bi bi-journal-bookmark"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('tables.list_tables') }}">
-                        <i class="bi bi-dice-5"></i> Tables
+                    <a class="nav-link" href="{{ url_for('campaigns.list_campaigns') }}"
+                       title="Campaigns" data-bs-toggle="tooltip">
+                        <i class="bi bi-folder2"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('bestiary.list_bestiary') }}">
-                        <i class="bi bi-book-dead"></i> Bestiary
+                    <a class="nav-link" href="{{ url_for('obsidian_import.select_vault') }}"
+                       title="Import from Obsidian" data-bs-toggle="tooltip">
+                        <i class="bi bi-box-arrow-in-down"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-info" href="{{ url_for('wiki.wiki_index') }}">
-                        <i class="bi bi-journal-bookmark"></i> Player Wiki
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('campaigns.list_campaigns') }}">
-                        <i class="bi bi-folder2"></i> Campaigns
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('obsidian_import.select_vault') }}" title="Import from Obsidian">
-                        <i class="bi bi-box-arrow-in-down"></i> Import
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-secondary" href="{{ url_for('settings.index') }}" title="Settings">
+                    <a class="nav-link text-secondary" href="{{ url_for('settings.index') }}"
+                       title="Settings" data-bs-toggle="tooltip">
                         <i class="bi bi-gear"></i>
                     </a>
                 </li>
+
             </ul>
         </div>
     </div>
@@ -115,5 +138,14 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/table_sort.js') }}"></script>
+<script src="{{ url_for('static', filename='js/shortcode.js') }}"></script>
+<script>
+  // Enable Bootstrap tooltips on nav icons
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+    new bootstrap.Tooltip(el, { placement: 'bottom' });
+  });
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

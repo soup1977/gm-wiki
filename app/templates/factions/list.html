@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Factions — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-shield me-2"></i>Factions</h2>
+    <a href="{{ url_for('factions.create_faction') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> New Faction
+    </a>
+</div>
+
+{% if not factions %}
+<p class="text-muted">No factions yet. <a href="{{ url_for('factions.create_faction') }}">Create one.</a></p>
+{% else %}
+
+{% for disposition in ['friendly', 'neutral', 'hostile', 'unknown'] %}
+{% if grouped.get(disposition) %}
+<h5 class="text-{{ disposition_colors.get(disposition, 'secondary') }} text-uppercase small mt-4 mb-2">
+    {{ disposition | capitalize }}
+</h5>
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-2">
+    {% for faction in grouped[disposition] %}
+    <div class="col">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <a href="{{ url_for('factions.faction_detail', faction_id=faction.id) }}"
+                       class="text-decoration-none text-light fw-bold">{{ faction.name }}</a>
+                    <span class="badge bg-{{ disposition_colors.get(faction.disposition, 'secondary') }} ms-2">
+                        {{ faction.disposition | capitalize if faction.disposition else 'Unknown' }}
+                    </span>
+                </div>
+                {% if faction.description %}
+                <p class="text-muted small mt-2 mb-1">{{ faction.description | truncate(100) }}</p>
+                {% endif %}
+                <div class="text-muted small mt-1">
+                    {% if faction.npcs %}
+                    <span class="me-2"><i class="bi bi-person me-1"></i>{{ faction.npcs | length }} NPC{{ 's' if faction.npcs | length != 1 }}</span>
+                    {% endif %}
+                    {% if faction.locations %}
+                    <span class="me-2"><i class="bi bi-geo-alt me-1"></i>{{ faction.locations | length }} location{{ 's' if faction.locations | length != 1 }}</span>
+                    {% endif %}
+                    {% if faction.quests %}
+                    <span><i class="bi bi-flag me-1"></i>{{ faction.quests | length }} quest{{ 's' if faction.quests | length != 1 }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+
+{% endif %}
+{% endblock %}

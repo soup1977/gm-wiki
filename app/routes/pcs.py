@@ -86,6 +86,8 @@ def create_pc():
             level_or_rank=request.form.get('level_or_rank', '').strip(),
             class_or_role=request.form.get('class_or_role', '').strip(),
             status=request.form.get('status', 'active'),
+            backstory=request.form.get('backstory', '').strip() or None,
+            gm_hooks=request.form.get('gm_hooks', '').strip() or None,
             notes=request.form.get('notes', '').strip()
         )
         db.session.add(pc)
@@ -157,6 +159,8 @@ def edit_pc(pc_id):
         pc.level_or_rank = request.form.get('level_or_rank', '').strip()
         pc.class_or_role = request.form.get('class_or_role', '').strip()
         pc.status = request.form.get('status', 'active')
+        pc.backstory = request.form.get('backstory', '').strip() or None
+        pc.gm_hooks = request.form.get('gm_hooks', '').strip() or None
         pc.notes = request.form.get('notes', '').strip()
 
         _save_stats(pc, campaign_id)

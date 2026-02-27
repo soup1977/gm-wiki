@@ -16,36 +16,57 @@
 
 <h2 class="mb-4">{% if entry %}Edit Entry{% else %}New Entry{% endif %}</h2>
 
-<form method="POST" style="max-width: 800px;">
-    <div class="mb-3">
-        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="title" name="title"
-               value="{{ entry.title if entry else '' }}" required>
-    </div>
+<form method="POST">
+    <div class="row g-4">
 
-    <div class="mb-3">
-        <label for="category" class="form-label">Category</label>
-        <input type="text" class="form-control" id="category" name="category"
-               value="{{ entry.category if entry else '' }}"
-               placeholder="e.g. Combat, Magic, House Rules">
-        <div class="form-text">Free text — used to group entries on the list.</div>
-    </div>
+        <!-- LEFT COLUMN: title, category, options -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
 
-    <div class="mb-3">
-        <label for="content" class="form-label">Content</label>
-        <textarea class="form-control" id="content" name="content" rows="12">{{ entry.content if entry else '' }}</textarea>
-        <div class="form-text">Markdown supported — **bold**, *italic*, # headings, - bullet lists, etc.</div>
-    </div>
+                    <div>
+                        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title"
+                               value="{{ entry.title if entry else '' }}" required autofocus>
+                    </div>
 
-    <div class="mb-3">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="is_gm_only" name="is_gm_only"
-                   {% if entry and entry.is_gm_only %}checked{% endif %}>
-            <label class="form-check-label text-warning" for="is_gm_only">
-                <i class="bi bi-eye-slash"></i> GM Only — hide this entry in the player wiki view
-            </label>
-        </div>
-    </div>
+                    <div>
+                        <label for="category" class="form-label">Category</label>
+                        <input type="text" class="form-control" id="category" name="category"
+                               value="{{ entry.category if entry else '' }}"
+                               placeholder="e.g. Combat, Magic, House Rules">
+                        <div class="form-text">Groups entries on the list.</div>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_gm_only" name="is_gm_only"
+                               {% if entry and entry.is_gm_only %}checked{% endif %}>
+                        <label class="form-check-label text-warning" for="is_gm_only">
+                            <i class="bi bi-eye-slash"></i> GM Only
+                        </label>
+                        <div class="form-text text-warning">Hide from player wiki view.</div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-4 -->
+
+        <!-- RIGHT COLUMN: main content -->
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label for="content" class="form-label">Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="18">{{ entry.content if entry else '' }}</textarea>
+                        <div class="form-text">Markdown supported — **bold**, *italic*, # headings, - bullet lists, etc.</div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-8 -->
+
+    </div><!-- row -->
 
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">

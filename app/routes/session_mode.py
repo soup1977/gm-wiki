@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db
-from app.models import Session as GameSession, Quest, Location, NPC
+from app.models import Session as GameSession, Quest, Location, Encounter
 
 session_mode_bp = Blueprint('session_mode', __name__, url_prefix='/session-mode')
 
@@ -22,7 +22,6 @@ def dashboard():
     current_session_id = session.get('current_session_id')
     game_session = None
     prev_session = None
-    pinned_npcs = []
 
     # All sessions for the picker (most recent first)
     all_sessions = (
@@ -47,13 +46,6 @@ def dashboard():
         if game_session.title:
             title = f"{title}: {game_session.title}" if title else game_session.title
         session['session_title'] = title or 'Untitled Session'
-
-        # Pinned NPCs — stored as a JSON list of NPC IDs on the session record
-        if game_session.pinned_npc_ids:
-            pinned_npcs = NPC.query.filter(
-                NPC.id.in_(game_session.pinned_npc_ids),
-                NPC.campaign_id == campaign_id
-            ).order_by(NPC.name).all()
 
         # Previous session — highest session number less than the current one
         if game_session.number:
@@ -81,13 +73,18 @@ def dashboard():
         .all()
     )
 
-    # All NPCs for the pin-NPCs checklist
-    all_npcs = (
-        NPC.query
-        .filter_by(campaign_id=campaign_id)
-        .order_by(NPC.name)
+    # Encounters linked to the active session
+    session_encounters = (
+        Encounter.query
+        .filter_by(session_id=current_session_id)
+        .order_by(Encounter.name)
         .all()
-    )
+    ) if current_session_id else []
+
+    # Quests specifically linked to this session (shown in Column 1)
+    session_quests = game_session.quests_touched if game_session else []
+    other_active_count = len([q for q in active_quests
+                               if not game_session or q not in session_quests])
 
     return render_template(
         'session_mode/dashboard.html',
@@ -96,9 +93,10 @@ def dashboard():
         current_session_id=current_session_id,
         active_quests=active_quests,
         all_locations=all_locations,
-        all_npcs=all_npcs,
-        pinned_npcs=pinned_npcs,
         prev_session=prev_session,
+        session_encounters=session_encounters,
+        session_quests=session_quests,
+        other_active_count=other_active_count,
     )
 
 
@@ -126,24 +124,6 @@ def set_location():
     loc_id = request.form.get('location_id', '').strip()
     game_session.active_location_id = int(loc_id) if loc_id else None
     db.session.commit()
-    return redirect(url_for('session_mode.dashboard'))
-
-
-@session_mode_bp.route('/pin-npcs', methods=['POST'])
-def pin_npcs():
-    campaign_id = get_active_campaign_id()
-    current_session_id = session.get('current_session_id')
-    if not campaign_id or not current_session_id:
-        return redirect(url_for('session_mode.dashboard'))
-
-    game_session = GameSession.query.filter_by(
-        id=current_session_id, campaign_id=campaign_id
-    ).first_or_404()
-
-    npc_ids = [int(x) for x in request.form.getlist('pinned_npc_ids')]
-    game_session.pinned_npc_ids = npc_ids
-    db.session.commit()
-    flash('Pinned NPCs updated.', 'success')
     return redirect(url_for('session_mode.dashboard'))
 
 

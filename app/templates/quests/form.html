@@ -24,97 +24,131 @@
     {% endif %}
 </div>
 
-<form method="POST" style="max-width: 800px;">
-    <div class="mb-3">
-        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="name" name="name"
-               value="{{ quest.name if quest else '' }}" required>
-    </div>
+<form method="POST">
+    <div class="row g-4">
 
-    <div class="mb-3">
-        <label for="status" class="form-label">Status</label>
-        <select class="form-select" id="status" name="status">
-            {% for s in statuses %}
-            <option value="{{ s }}" {% if quest and quest.status == s %}selected{% elif not quest and s == 'active' %}selected{% endif %}>
-                {{ s | replace('_', ' ') | title }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
+        <!-- LEFT COLUMN: metadata and relationships -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
 
-    <div class="mb-3">
-        <label for="tags" class="form-label">Tags</label>
-        <input type="text" class="form-control" id="tags" name="tags"
-               value="{{ quest.tags | map(attribute='name') | join(', ') if quest else '' }}"
-               placeholder="e.g. main-plot, side-quest, urgent">
-        <div class="form-text">Comma-separated. Used to filter and group entries.</div>
-    </div>
+                    <div>
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               value="{{ quest.name if quest else '' }}" required autofocus>
+                    </div>
 
-    <div class="mb-3">
-        <label for="hook" class="form-label">Hook</label>
-        <textarea class="form-control" id="hook" name="hook" rows="2">{{ quest.hook if quest else '' }}</textarea>
-        <div class="form-text">How did the party get involved? Markdown supported.</div>
-    </div>
+                    <div>
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            {% for s in statuses %}
+                            <option value="{{ s }}" {% if quest and quest.status == s %}selected{% elif not quest and s == 'active' %}selected{% endif %}>
+                                {{ s | replace('_', ' ') | title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <textarea class="form-control" id="description" name="description" rows="4">{{ quest.description if quest else '' }}</textarea>
-        <div class="form-text">Markdown supported.</div>
-    </div>
+                    <div>
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               value="{{ quest.tags | map(attribute='name') | join(', ') if quest else '' }}"
+                               placeholder="e.g. main-plot, side-quest, urgent">
+                        <div class="form-text">Comma-separated.</div>
+                    </div>
 
-    <div class="mb-3">
-        <label for="outcome" class="form-label">Outcome</label>
-        <textarea class="form-control" id="outcome" name="outcome" rows="3">{{ quest.outcome if quest else '' }}</textarea>
-        <div class="form-text">Fill in when the quest is resolved. Markdown supported.</div>
-    </div>
+                    <div>
+                        <label for="faction_id" class="form-label">Faction</label>
+                        <select class="form-select" id="faction_id" name="faction_id">
+                            <option value="">— None —</option>
+                            {% for f in factions %}
+                            <option value="{{ f.id }}"
+                                    {% if quest and quest.faction_id == f.id %}selected{% endif %}>
+                                {{ f.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    <div class="mb-3 p-3 border border-warning rounded">
-        <label for="gm_notes" class="form-label text-warning">
-            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-muted fw-normal small">(GM only — never shown to players)</span>
-        </label>
-        <textarea class="form-control" id="gm_notes" name="gm_notes" rows="3">{{ quest.gm_notes if quest else '' }}</textarea>
-        <div class="form-text">Markdown supported.</div>
-    </div>
+                    {% if npcs %}
+                    <div>
+                        <label for="involved_npcs" class="form-label">Involved NPCs</label>
+                        <select class="form-select" id="involved_npcs" name="involved_npcs" multiple size="5">
+                            {% for npc in npcs %}
+                            <option value="{{ npc.id }}"
+                                {% if quest and npc in quest.involved_npcs %}selected{% endif %}>
+                                {{ npc.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                    </div>
+                    {% endif %}
 
-    {% if npcs %}
-    <div class="mb-3">
-        <label for="involved_npcs" class="form-label">Involved NPCs</label>
-        <select class="form-select" id="involved_npcs" name="involved_npcs" multiple size="6">
-            {% for npc in npcs %}
-            <option value="{{ npc.id }}"
-                {% if quest and npc in quest.involved_npcs %}selected{% endif %}>
-                {{ npc.name }}
-            </option>
-            {% endfor %}
-        </select>
-        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
-    </div>
-    {% endif %}
+                    {% if locations %}
+                    <div>
+                        <label for="involved_locations" class="form-label">Involved Locations</label>
+                        <select class="form-select" id="involved_locations" name="involved_locations" multiple size="5">
+                            {% for location in locations %}
+                            <option value="{{ location.id }}"
+                                {% if quest and location in quest.involved_locations %}selected{% endif %}>
+                                {{ location.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Hold Ctrl (Cmd on Mac) to select multiple.</div>
+                    </div>
+                    {% endif %}
 
-    {% if locations %}
-    <div class="mb-3">
-        <label for="involved_locations" class="form-label">Involved Locations</label>
-        <select class="form-select" id="involved_locations" name="involved_locations" multiple size="6">
-            {% for location in locations %}
-            <option value="{{ location.id }}"
-                {% if quest and location in quest.involved_locations %}selected{% endif %}>
-                {{ location.name }}
-            </option>
-            {% endfor %}
-        </select>
-        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
-    </div>
-    {% endif %}
+                    <div class="form-check">
+                        <input type="checkbox" name="is_player_visible" id="is_player_visible"
+                               class="form-check-input"
+                               {% if quest and quest.is_player_visible %}checked{% endif %}>
+                        <label class="form-check-label" for="is_player_visible">
+                            <i class="bi bi-people"></i> Visible in Player Wiki
+                        </label>
+                    </div>
 
-    <div class="form-check mb-3">
-        <input type="checkbox" name="is_player_visible" id="is_player_visible"
-               class="form-check-input"
-               {% if quest and quest.is_player_visible %}checked{% endif %}>
-        <label class="form-check-label" for="is_player_visible">
-            <i class="bi bi-people"></i> Visible in Player Wiki
-        </label>
-        <div class="form-text">When checked, this quest appears in the read-only player wiki.</div>
-    </div>
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-4 -->
+
+        <!-- RIGHT COLUMN: narrative text fields -->
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label for="hook" class="form-label">Hook</label>
+                        <textarea class="form-control" id="hook" name="hook" rows="4">{{ quest.hook if quest else '' }}</textarea>
+                        <div class="form-text">How did the party get involved? Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="7">{{ quest.description if quest else '' }}</textarea>
+                        <div class="form-text">Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="outcome" class="form-label">Outcome</label>
+                        <textarea class="form-control" id="outcome" name="outcome" rows="4">{{ quest.outcome if quest else '' }}</textarea>
+                        <div class="form-text">Fill in when the quest is resolved. Markdown supported.</div>
+                    </div>
+
+                    <div>
+                        <label for="gm_notes" class="form-label text-warning">
+                            <i class="bi bi-eye-slash"></i> GM Notes <span class="text-warning">(GM Only)</span>
+                        </label>
+                        <textarea class="form-control border-warning" id="gm_notes" name="gm_notes" rows="5">{{ quest.gm_notes if quest else '' }}</textarea>
+                        <div class="form-text text-warning">Never shown to players. Markdown supported.</div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-8 -->
+
+    </div><!-- row -->
 
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">

@@ -1,7 +1,9 @@
 import re
+from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from app import db, save_upload
 from app.models import BestiaryEntry, MonsterInstance, Campaign
+from app.shortcode import process_shortcodes, clear_mentions
 
 bestiary_bp = Blueprint('bestiary', __name__, url_prefix='/bestiary')
 
@@ -59,7 +61,16 @@ def list_bestiary():
         entries = [e for e in entries if active_tag in e.get_tags_list()]
 
     all_tags = _all_tags()
+
+    # Group by system for list view
+    groups = defaultdict(list)
+    for entry in entries:
+        key = entry.system or 'Unspecified'
+        groups[key].append(entry)
+    grouped_entries = dict(sorted(groups.items()))
+
     return render_template('bestiary/index.html', entries=entries,
+                           grouped_entries=grouped_entries,
                            all_tags=all_tags, active_tag=active_tag, search=search)
 
 
@@ -97,6 +108,15 @@ def create_entry():
         filename = save_upload(image_file)
         if filename:
             entry.image_path = filename
+
+        # Process shortcodes using the active campaign for entity scoping
+        campaign_id = get_active_campaign_id()
+        if campaign_id and entry.stat_block:
+            db.session.flush()
+            processed, mentions = process_shortcodes(entry.stat_block, campaign_id, 'bestiary', entry.id)
+            entry.stat_block = processed
+            for m in mentions:
+                db.session.add(m)
 
         db.session.commit()
         flash(f'"{entry.name}" added to the Bestiary!', 'success')
@@ -151,6 +171,14 @@ def edit_entry(entry_id):
         filename = save_upload(image_file)
         if filename:
             entry.image_path = filename
+
+        campaign_id = get_active_campaign_id()
+        if campaign_id and entry.stat_block:
+            clear_mentions('bestiary', entry.id)
+            processed, mentions = process_shortcodes(entry.stat_block, campaign_id, 'bestiary', entry.id)
+            entry.stat_block = processed
+            for m in mentions:
+                db.session.add(m)
 
         db.session.commit()
         flash(f'"{entry.name}" updated.', 'success')

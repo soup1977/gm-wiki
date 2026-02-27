@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{% if faction %}Edit {{ faction.name }}{% else %}New Faction{% endif %} — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('factions.list_factions') }}">Factions</a></li>
+        <li class="breadcrumb-item active">{% if faction %}Edit{% else %}New{% endif %}</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if faction %}Edit "{{ faction.name }}"{% else %}New Faction{% endif %}</h2>
+
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<form method="POST">
+
+    <div class="mb-3">
+        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <input type="text" name="name" class="form-control bg-dark text-light border-secondary"
+               value="{{ faction.name if faction else '' }}" required autofocus>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Disposition toward the party</label>
+        <select name="disposition" class="form-select bg-dark text-light border-secondary">
+            {% for d in dispositions %}
+            <option value="{{ d }}"
+                {% if faction and faction.disposition == d %}selected
+                {% elif not faction and d == 'unknown' %}selected{% endif %}>
+                {{ d | capitalize }}
+            </option>
+            {% endfor %}
+        </select>
+        <div class="form-text">How does this faction generally view the party?</div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="4"
+                  class="form-control bg-dark text-light border-secondary">{{ faction.description if faction and faction.description else '' }}</textarea>
+        <div class="form-text">Overview visible to anyone who knows about this faction. Markdown supported.</div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label text-warning">
+            <i class="bi bi-eye-slash me-1"></i> GM Notes <span class="text-warning small">(GM Only)</span>
+        </label>
+        <textarea name="gm_notes" rows="4"
+                  class="form-control border-warning bg-dark text-light">{{ faction.gm_notes if faction and faction.gm_notes else '' }}</textarea>
+        <div class="form-text text-warning">Secret details, plans, and GM insights. Markdown supported.</div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-1"></i> {% if faction %}Save Changes{% else %}Create Faction{% endif %}
+        </button>
+        <a href="{% if faction %}{{ url_for('factions.faction_detail', faction_id=faction.id) }}{% else %}{{ url_for('factions.list_factions') }}{% endif %}"
+           class="btn btn-secondary">Cancel</a>
+    </div>
+
+</form>
+</div>
+</div>
+{% endblock %}

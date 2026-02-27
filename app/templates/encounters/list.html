@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Encounters — GM Wiki{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-map me-2"></i>Encounters</h2>
+    <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> New Encounter
+    </a>
+</div>
+
+{% if not grouped %}
+<p class="text-muted">No encounters yet. <a href="{{ url_for('encounters.create_encounter') }}">Create one.</a></p>
+{% else %}
+
+{% for status in ['planned', 'used', 'skipped'] %}
+{% if grouped.get(status) %}
+<h5 class="text-muted text-uppercase small mt-4 mb-2">{{ status }}</h5>
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-2">
+    {% for enc in grouped[status] %}
+    <div class="col">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <a href="{{ url_for('encounters.encounter_detail', encounter_id=enc.id) }}"
+                       class="text-decoration-none text-light fw-bold">{{ enc.name }}</a>
+                    <span class="badge bg-{{ type_colors.get(enc.encounter_type, 'secondary') }} ms-2">
+                        {{ enc.encounter_type | capitalize }}
+                    </span>
+                </div>
+
+                {% if enc.session %}
+                <div class="small text-muted mt-1">
+                    <i class="bi bi-calendar-event me-1"></i>
+                    <a href="{{ url_for('sessions.session_detail', session_id=enc.session.id) }}"
+                       class="text-muted text-decoration-none">
+                        {% if enc.session.number %}#{{ enc.session.number }} {% endif %}{{ enc.session.title or 'Untitled' }}
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if enc.encounter_type == 'combat' and enc.monsters %}
+                <div class="small text-muted mt-1">
+                    <i class="bi bi-people me-1"></i>
+                    {{ enc.monsters | length }} creature type(s)
+                </div>
+                {% endif %}
+            </div>
+
+            {% if enc.encounter_type == 'combat' and enc.status == 'planned' %}
+            <div class="card-footer bg-transparent border-secondary pt-0 pb-2">
+                <form method="POST"
+                      action="{{ url_for('encounters.start_combat', encounter_id=enc.id) }}">
+                    <button type="submit" class="btn btn-sm btn-danger w-100">
+                        <i class="bi bi-shield-shaded me-1"></i> Start Combat
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+
+{% endif %}
+{% endblock %}

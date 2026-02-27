@@ -20,12 +20,12 @@
 {% endif %}
 
 {% if sessions %}
-<table class="table table-dark table-hover">
+<table class="table table-dark table-hover" data-sortable="true">
     <thead>
         <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>Date Played</th>
+            <th data-sort="number">#</th>
+            <th data-sort="text">Title</th>
+            <th data-sort="date">Date Played</th>
             <th></th>
         </tr>
     </thead>

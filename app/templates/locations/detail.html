@@ -27,6 +27,14 @@
         {% if location.type %}
         <p class="text-muted mb-0">{{ location.type }}</p>
         {% endif %}
+        {% if location.faction %}
+        <div class="mt-1">
+            <a href="{{ url_for('factions.faction_detail', faction_id=location.faction.id) }}"
+               class="badge bg-secondary text-decoration-none">
+                <i class="bi bi-shield me-1"></i>{{ location.faction.name }}
+            </a>
+        </div>
+        {% endif %}
         <p class="text-muted small mb-0">
             Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=location.campaign.id) }}">{{ location.campaign.name }}</a>
         </p>
@@ -154,6 +162,17 @@
         <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}" class="btn btn-sm btn-outline-light">
             <i class="bi bi-arrow-left-right"></i> {{ loc.name }}
         </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if mentions %}
+<div class="mt-4 border-top border-secondary pt-3">
+    <h6 class="text-muted small"><i class="bi bi-link-45deg me-1"></i>Referenced by</h6>
+    <div class="d-flex flex-wrap gap-2">
+        {% for m in mentions %}
+        <a href="{{ m.url }}" class="badge bg-secondary text-decoration-none">{{ m.label }}</a>
         {% endfor %}
     </div>
 </div>

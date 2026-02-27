@@ -214,13 +214,28 @@ def delete_campaign(campaign_id):
     name = campaign.name
 
     # Delete in dependency order so nothing is left referencing a deleted object.
-    # Sessions link to NPCs/Locations/Items/Quests — delete first.
+    # Sessions link to NPCs/Locations/Items/Quests/Monsters — delete first.
+    # Cascade on Session.attendances cleans up SessionAttendance rows automatically.
     for sess in list(campaign.sessions):
         db.session.delete(sess)
+
+    # Monster instances link to sessions (many-to-many) — session deletion clears
+    # those links, so instances themselves can now be safely deleted.
+    for instance in list(campaign.monster_instances):
+        db.session.delete(instance)
+
+    # Player characters — sessions are gone so attendance records are already cleaned
+    # up by the Session cascade. PC stats cascade via PlayerCharacter.stats.
+    for pc in list(campaign.player_characters):
+        db.session.delete(pc)
 
     # Compendium entries are standalone.
     for entry in list(campaign.compendium_entries):
         db.session.delete(entry)
+
+    # Custom random tables (built-ins have campaign_id=None and are left alone).
+    for table in list(campaign.random_tables):
+        db.session.delete(table)
 
     # Items reference NPCs and Locations via nullable FKs — nullify then delete.
     for item in list(campaign.items):
@@ -247,6 +262,10 @@ def delete_campaign(campaign_id):
     for loc in list(campaign.locations):
         loc.connected_locations = []
         db.session.delete(loc)
+
+    # Tags — association rows (npc_tags, etc.) were cleared when entities were deleted.
+    for tag in list(campaign.tags):
+        db.session.delete(tag)
 
     # Stat template fields are standalone per campaign.
     for field in list(campaign.stat_template_fields):
