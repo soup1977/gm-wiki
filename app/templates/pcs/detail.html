@@ -41,6 +41,7 @@
         {# Claim / Unclaim buttons #}
         {% if not pc.user_id %}
         <form method="POST" action="{{ url_for('pcs.claim_pc', pc_id=pc.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-info btn-sm">
                 <i class="bi bi-person-plus"></i> Claim
             </button>
@@ -48,6 +49,7 @@
         {% elif pc.user_id == current_user.id or current_user.is_admin %}
         <form method="POST" action="{{ url_for('pcs.unclaim_pc', pc_id=pc.id) }}" class="d-inline"
               onsubmit="return confirm('Unclaim this character?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-warning btn-sm">
                 <i class="bi bi-person-dash"></i> Unclaim
             </button>
@@ -63,6 +65,7 @@
         {% if current_user.is_admin or not pc.user_id %}
         <form method="POST" action="{{ url_for('pcs.delete_pc', pc_id=pc.id) }}"
               onsubmit="return confirm('Delete {{ pc.character_name }}? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>

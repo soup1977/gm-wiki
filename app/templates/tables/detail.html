@@ -22,6 +22,7 @@
         </a>
         <form method="POST" action="{{ url_for('tables.delete_table', table_id=table.id) }}"
               onsubmit="return confirm('Delete table &quot;{{ table.name }}&quot;? All rows will be lost.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
@@ -82,6 +83,7 @@
                     <div class="d-flex flex-column gap-1">
                         <form method="POST"
                               action="{{ url_for('tables.move_row', table_id=table.id, row_id=row.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="direction" value="up">
                             <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-1"
                                     {% if loop.first %}disabled{% endif %}>
@@ -90,6 +92,7 @@
                         </form>
                         <form method="POST"
                               action="{{ url_for('tables.move_row', table_id=table.id, row_id=row.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="direction" value="down">
                             <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-1"
                                     {% if loop.last %}disabled{% endif %}>
@@ -117,6 +120,7 @@
                         <form method="POST"
                               action="{{ url_for('tables.delete_row', table_id=table.id, row_id=row.id) }}"
                               onsubmit="return confirm('Delete this entry?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -144,6 +148,7 @@
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('tables.add_row', table_id=table.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="row g-2 align-items-end">
                 <div class="col">
                     <label class="form-label text-muted small">Entry text</label>

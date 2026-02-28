@@ -25,6 +25,7 @@
             <span class="text-muted small text-nowrap">Running session:</span>
             <form method="POST" action="{{ url_for('combat.set_session') }}"
                   class="d-flex gap-2 align-items-center flex-grow-1" style="max-width:400px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <select class="form-select form-select-sm bg-dark text-light border-secondary"
                         name="session_id" onchange="this.form.submit()">
                     <option value="">— None selected —</option>

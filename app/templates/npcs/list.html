@@ -56,6 +56,7 @@
             <td class="text-end">
                 <form method="POST" action="{{ url_for('npcs.delete_npc', npc_id=npc.id) }}"
                       onsubmit="return confirm('Delete {{ npc.name }}? This cannot be undone.')" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>

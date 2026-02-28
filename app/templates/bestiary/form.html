@@ -18,6 +18,7 @@
 <h2 class="mb-4">{% if entry %}Edit: {{ entry.name }}{% else %}Add Bestiary Entry{% endif %}</h2>
 
 <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row g-4">
 
         <!-- LEFT COLUMN: metadata, image, tags, visibility -->

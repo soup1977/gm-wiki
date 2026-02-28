@@ -17,6 +17,7 @@
 <h2 class="mb-4">{% if entry %}Edit Entry{% else %}New Entry{% endif %}</h2>
 
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row g-4">
 
         <!-- LEFT COLUMN: title, category, options -->

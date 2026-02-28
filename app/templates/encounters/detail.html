@@ -37,6 +37,7 @@
         {% if encounter.encounter_type == 'combat' %}
         <form method="POST"
               action="{{ url_for('encounters.start_combat', encounter_id=encounter.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger">
                 <i class="bi bi-shield-shaded me-1"></i> Start Combat
             </button>
@@ -55,6 +56,7 @@
         <form method="POST"
               action="{{ url_for('encounters.delete_encounter', encounter_id=encounter.id) }}"
               onsubmit="return confirm('Delete encounter \'{{ encounter.name }}\'? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i>
             </button>

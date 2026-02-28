@@ -12,6 +12,7 @@
 <h2 class="mb-4">{% if encounter %}Edit "{{ encounter.name }}"{% else %}New Encounter{% endif %}</h2>
 
 <form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
 <div class="row g-4">
 

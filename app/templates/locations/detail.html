@@ -53,6 +53,7 @@
         </a>
         <form method="POST" action="{{ url_for('locations.delete_location', location_id=location.id) }}"
               onsubmit="return confirm('Delete this location? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>

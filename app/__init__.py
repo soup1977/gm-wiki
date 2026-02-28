@@ -2,6 +2,9 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from config import Config
 import markdown as _md
 import os
@@ -18,6 +21,14 @@ migrate = Migrate()
 
 # Login manager — handles session-based user authentication
 login_manager = LoginManager()
+
+# CSRF protection — prevents cross-site request forgery attacks.
+# Every POST form must include {{ csrf_token() }} as a hidden input.
+csrf = CSRFProtect()
+
+# Rate limiter — prevents brute-force attacks on login/signup.
+# Uses in-memory storage by default (sufficient for single-server deployment).
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 
 def save_upload(file):
@@ -52,6 +63,12 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'warning'
+
+    # Set up CSRF protection
+    csrf.init_app(app)
+
+    # Set up rate limiting
+    limiter.init_app(app)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -227,6 +244,12 @@ def create_app():
     app.register_blueprint(global_search_bp)
     app.register_blueprint(srd_import_bp)
     app.register_blueprint(sd_generate_bp)
+
+    # Exempt AJAX-only blueprints from CSRF — these are called from JavaScript
+    # using fetch() and are already protected by same-origin policy + login_required
+    csrf.exempt(ai_bp)
+    csrf.exempt(quick_create_bp)
+    csrf.exempt(sd_generate_bp)
 
     # Context processor — makes active_campaign and ai_enabled available
     # in EVERY template automatically, so we don't have to pass them in every route

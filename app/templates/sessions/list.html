@@ -42,6 +42,7 @@
             <td class="text-end">
                 <form method="POST" action="{{ url_for('sessions.delete_session', session_id=sess.id) }}"
                       onsubmit="return confirm('Delete this session? This cannot be undone.')" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>

@@ -51,6 +51,7 @@
             <div class="card-footer bg-transparent border-secondary pt-0 pb-2">
                 <form method="POST"
                       action="{{ url_for('encounters.start_combat', encounter_id=enc.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-danger w-100">
                         <i class="bi bi-shield-shaded me-1"></i> Start Combat
                     </button>

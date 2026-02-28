@@ -44,6 +44,7 @@
                         <form method="POST" action="{{ url_for('admin.reset_password', user_id=user.id) }}"
                               class="d-flex gap-1"
                               onsubmit="return confirm('Reset password for {{ user.username }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="password" name="new_password" class="form-control form-control-sm"
                                    placeholder="New password" style="width: 140px;" required minlength="4">
                             <button type="submit" class="btn btn-outline-warning btn-sm" title="Reset password">
@@ -55,6 +56,7 @@
                         {% if user.id != current_user.id %}
                         <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
                               onsubmit="return confirm('Delete user {{ user.username }}? Their campaigns will become orphaned.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete user">
                                 <i class="bi bi-trash"></i>
                             </button>

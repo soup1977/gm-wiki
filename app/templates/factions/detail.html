@@ -23,6 +23,7 @@
         <form method="POST"
               action="{{ url_for('factions.delete_faction', faction_id=faction.id) }}"
               onsubmit="return confirm('Delete faction \'{{ faction.name }}\'? This will unlink all associated NPCs, locations, and quests.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i>
             </button>

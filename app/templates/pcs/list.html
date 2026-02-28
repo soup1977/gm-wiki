@@ -91,6 +91,7 @@
                 </a>
                 <form method="POST" action="{{ url_for('pcs.delete_pc', pc_id=pc.id) }}"
                       onsubmit="return confirm('Delete {{ pc.character_name }}? This cannot be undone.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         <i class="bi bi-trash"></i>
                     </button>

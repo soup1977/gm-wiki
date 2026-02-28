@@ -8,6 +8,7 @@
 <div class="card mt-4" style="max-width: 700px;">
     <div class="card-body">
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label for="vault_path" class="form-label fw-semibold">Vault Folder Path</label>
                 <input type="text" class="form-control" id="vault_path" name="vault_path"

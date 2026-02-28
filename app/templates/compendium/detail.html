@@ -30,6 +30,7 @@
         </a>
         <form method="POST" action="{{ url_for('compendium.delete_entry', entry_id=entry.id) }}"
               onsubmit="return confirm('Delete entry \'{{ entry.title }}\'? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
