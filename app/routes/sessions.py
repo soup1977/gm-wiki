@@ -4,7 +4,7 @@ from flask_login import login_required
 from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
                         get_or_create_tags, PlayerCharacter, SessionAttendance,
-                        MonsterInstance)
+                        MonsterInstance, AdventureSite)
 from app.shortcode import process_shortcodes, clear_mentions
 
 sessions_bp = Blueprint('sessions', __name__)
@@ -69,6 +69,8 @@ def create_session():
         .order_by(PlayerCharacter.character_name).all()
     monsters = MonsterInstance.query.filter_by(campaign_id=campaign_id)\
         .order_by(MonsterInstance.instance_name).all()
+    all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
+        .order_by(AdventureSite.sort_order, AdventureSite.name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -81,7 +83,7 @@ def create_session():
                 return render_template('sessions/form.html', sess=None,
                                        npcs=npcs, locations=locations,
                                        items=items, quests=quests, pcs=pcs,
-                                       monsters=monsters)
+                                       monsters=monsters, all_sites=all_sites)
 
         sess = Session(
             campaign_id=campaign_id,
@@ -114,6 +116,13 @@ def create_session():
             MonsterInstance.campaign_id == campaign_id
         ).all()
 
+        site_id = request.form.get('adventure_site_id')
+        if site_id:
+            site = AdventureSite.query.filter_by(id=int(site_id), campaign_id=campaign_id).first()
+            sess.adventure_sites = [site] if site else []
+        else:
+            sess.adventure_sites = []
+
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(sess)
         db.session.flush()  # Need sess.id before creating attendance rows
@@ -136,7 +145,8 @@ def create_session():
 
     return render_template('sessions/form.html', sess=None,
                            npcs=npcs, locations=locations,
-                           items=items, quests=quests, pcs=pcs, monsters=monsters)
+                           items=items, quests=quests, pcs=pcs,
+                           monsters=monsters, all_sites=all_sites)
 
 
 @sessions_bp.route('/sessions/<int:session_id>')
@@ -167,6 +177,8 @@ def edit_session(session_id):
         .order_by(PlayerCharacter.character_name).all()
     monsters = MonsterInstance.query.filter_by(campaign_id=campaign_id)\
         .order_by(MonsterInstance.instance_name).all()
+    all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
+        .order_by(AdventureSite.sort_order, AdventureSite.name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -179,7 +191,7 @@ def edit_session(session_id):
                 return render_template('sessions/form.html', sess=sess,
                                        npcs=npcs, locations=locations,
                                        items=items, quests=quests, pcs=pcs,
-                                       monsters=monsters)
+                                       monsters=monsters, all_sites=all_sites)
 
         sess.number = request.form.get('number') or None
         sess.title = request.form.get('title', '').strip() or None
@@ -209,6 +221,13 @@ def edit_session(session_id):
             MonsterInstance.campaign_id == campaign_id
         ).all()
 
+        site_id = request.form.get('adventure_site_id')
+        if site_id:
+            site = AdventureSite.query.filter_by(id=int(site_id), campaign_id=campaign_id).first()
+            sess.adventure_sites = [site] if site else []
+        else:
+            sess.adventure_sites = []
+
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         _save_attendance(sess, campaign_id)
         sess.is_player_visible = 'is_player_visible' in request.form
@@ -228,7 +247,8 @@ def edit_session(session_id):
 
     return render_template('sessions/form.html', sess=sess,
                            npcs=npcs, locations=locations,
-                           items=items, quests=quests, pcs=pcs, monsters=monsters)
+                           items=items, quests=quests, pcs=pcs,
+                           monsters=monsters, all_sites=all_sites)
 
 
 @sessions_bp.route('/sessions/<int:session_id>/delete', methods=['POST'])

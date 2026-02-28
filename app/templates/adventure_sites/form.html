@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}{% if site %}Edit {{ site.name }}{% else %}New Adventure Site{% endif %} — The War Table{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.list_sites') }}">Adventure Sites</a></li>
+        {% if site %}
+            <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.site_detail', site_id=site.id) }}">{{ site.name }}</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+            <li class="breadcrumb-item active">New</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<h2 class="mb-4">{% if site %}Edit Adventure Site{% else %}New Adventure Site{% endif %}</h2>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: structured fields -->
+        <div class="col-md-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div>
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               value="{{ site.name if site else '' }}" required autofocus>
+                    </div>
+
+                    <div>
+                        <label for="subtitle" class="form-label">Subtitle / Tagline</label>
+                        <input type="text" class="form-control" id="subtitle" name="subtitle"
+                               value="{{ site.subtitle if site else '' }}"
+                               placeholder="e.g. Rising waters, desperate escape">
+                        <div class="form-text">A one-line description shown on the list page.</div>
+                    </div>
+
+                    <div>
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            {% for opt in status_options %}
+                            <option value="{{ opt }}" {% if site and site.status == opt %}selected{% elif not site and opt == 'Planned' %}selected{% endif %}>
+                                {{ opt }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="estimated_sessions" class="form-label">Estimated Sessions</label>
+                        <input type="number" class="form-control" id="estimated_sessions" name="estimated_sessions"
+                               min="1" value="{{ site.estimated_sessions if site and site.estimated_sessions else '' }}"
+                               placeholder="e.g. 2">
+                        <div class="form-text">How many sessions you expect this to take.</div>
+                    </div>
+
+                    <div>
+                        <label for="sort_order" class="form-label">Sort Order</label>
+                        <input type="number" class="form-control" id="sort_order" name="sort_order"
+                               value="{{ site.sort_order if site else 0 }}" placeholder="0">
+                        <div class="form-text">Lower numbers appear first in the list.</div>
+                    </div>
+
+                    <div>
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags"
+                               value="{{ site.tags | map(attribute='name') | join(', ') if site else '' }}"
+                               placeholder="e.g. dungeon, boss, side-quest">
+                        <div class="form-text">Comma-separated.</div>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Linked Sessions</label>
+                        <div class="border border-secondary rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            {% if all_sessions %}
+                                {% for sess in all_sessions %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="linked_sessions" value="{{ sess.id }}"
+                                           id="sess_{{ sess.id }}"
+                                           {% if site and sess in site.sessions %}checked{% endif %}>
+                                    <label class="form-check-label small" for="sess_{{ sess.id }}">
+                                        {% if sess.number %}Session {{ sess.number }}{% endif %}
+                                        {% if sess.title %}— {{ sess.title }}{% endif %}
+                                        {% if sess.date_played %}<span class="text-muted">({{ sess.date_played }})</span>{% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small mb-0">No sessions yet.</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">Which sessions ran or are planned for this site.</div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-4 -->
+
+        <!-- RIGHT COLUMN: Markdown content + tips -->
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <div class="flex-grow-1">
+                        <label for="content" class="form-label">Content</label>
+                        <textarea class="form-control font-monospace" id="content" name="content" rows="22"
+                                  style="resize: vertical;">{{ site.content if site else '' }}</textarea>
+                    </div>
+
+                    <!-- Writing Tips accordion -->
+                    <div class="accordion accordion-flush" id="writingTips">
+                        <div class="accordion-item bg-dark border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-light border-0 py-2" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#tipsBody" aria-expanded="false">
+                                    <i class="bi bi-question-circle me-2"></i> Writing Tips &amp; Shortcodes
+                                </button>
+                            </h2>
+                            <div id="tipsBody" class="accordion-collapse collapse">
+                                <div class="accordion-body pt-2 pb-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <p class="text-muted small fw-bold mb-1">Markdown</p>
+                                            <table class="table table-dark table-sm small mb-0">
+                                                <tbody>
+                                                    <tr><td><code>## Zone 1: Name</code></td><td class="text-muted">→ navigation jump link</td></tr>
+                                                    <tr><td><code>### Subsection</code></td><td class="text-muted">→ sub-heading</td></tr>
+                                                    <tr><td><code>**bold**</code></td><td class="text-muted">→ <strong>bold</strong></td></tr>
+                                                    <tr><td><code>*italic*</code></td><td class="text-muted">→ <em>italic</em></td></tr>
+                                                    <tr><td><code>- bullet</code></td><td class="text-muted">→ bullet list</td></tr>
+                                                    <tr><td><code>| Col | Col |</code></td><td class="text-muted">→ table</td></tr>
+                                                    <tr><td><code>&gt; GM Note...</code></td><td class="text-muted">→ callout block</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="text-muted small fw-bold mb-1">Shortcodes — link to campaign entities</p>
+                                            <table class="table table-dark table-sm small mb-0">
+                                                <tbody>
+                                                    <tr><td><code>#npc[Name]</code></td><td class="text-muted">→ links to an NPC</td></tr>
+                                                    <tr><td><code>#location[Name]</code></td><td class="text-muted">→ links to a Location</td></tr>
+                                                    <tr><td><code>#quest[Name]</code></td><td class="text-muted">→ links to a Quest</td></tr>
+                                                    <tr><td><code>#item[Name]</code></td><td class="text-muted">→ links to an Item</td></tr>
+                                                    <tr><td><code>#session[Name]</code></td><td class="text-muted">→ links to a Session</td></tr>
+                                                    <tr><td><code>#compendium[Name]</code></td><td class="text-muted">→ links to Compendium</td></tr>
+                                                </tbody>
+                                            </table>
+                                            <p class="text-muted small mt-2 mb-0">
+                                                <i class="bi bi-lightbulb"></i>
+                                                Use <code>## headings</code> for each zone or section —
+                                                they become clickable jump links in the Run Mode sidebar.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- card-body -->
+            </div><!-- card -->
+        </div><!-- col-md-8 -->
+
+    </div><!-- row -->
+
+    <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if site %}Save Changes{% else %}Create Site{% endif %}
+        </button>
+        <a href="{% if site %}{{ url_for('adventure_sites.site_detail', site_id=site.id) }}{% else %}{{ url_for('adventure_sites.list_sites') }}{% endif %}"
+           class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

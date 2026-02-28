@@ -45,6 +45,16 @@ session_tags = db.Table('session_tags',
     db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
 )
 
+adventure_site_session = db.Table('adventure_site_session',
+    db.Column('adventure_site_id', db.Integer, db.ForeignKey('adventure_site.id'), primary_key=True),
+    db.Column('session_id', db.Integer, db.ForeignKey('sessions.id'), primary_key=True)
+)
+
+adventure_site_tags = db.Table('adventure_site_tags',
+    db.Column('adventure_site_id', db.Integer, db.ForeignKey('adventure_site.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -589,6 +599,31 @@ def get_or_create_tags(campaign_id, tag_string):
             db.session.add(tag)
         tags.append(tag)
     return tags
+
+
+class AdventureSite(db.Model):
+    """A planned adventure area — dungeon, town, region, or any self-contained
+    location designed to be run at the table. Holds a full Markdown body so the
+    GM can write everything (zones, encounters, boss stats, loot, GM notes) in
+    one navigable document instead of scattering it across multiple entities.
+    """
+    __tablename__ = 'adventure_site'
+
+    id                 = db.Column(db.Integer, primary_key=True)
+    campaign_id        = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    name               = db.Column(db.String(200), nullable=False)
+    subtitle           = db.Column(db.String(300))        # one-line tagline
+    status             = db.Column(db.String(50), default='Planned')  # Planned / Active / Completed
+    estimated_sessions = db.Column(db.Integer)
+    content            = db.Column(db.Text)               # full Markdown body
+    sort_order         = db.Column(db.Integer, default=0)
+
+    campaign = db.relationship('Campaign', backref='adventure_sites')
+    tags     = db.relationship('Tag', secondary=adventure_site_tags, backref='adventure_sites')
+    sessions = db.relationship('Session', secondary=adventure_site_session, backref='adventure_sites')
+
+    def __repr__(self):
+        return f'<AdventureSite {self.name}>'
 
 
 class AppSetting(db.Model):

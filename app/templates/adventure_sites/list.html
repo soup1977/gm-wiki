@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Adventure Sites — The War Table{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-map"></i> Adventure Sites</h2>
+    <a href="{{ url_for('adventure_sites.create_site') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Site
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <a href="{{ url_for('adventure_sites.list_sites') }}"
+       class="btn btn-sm {% if not status_filter and not tag_filter %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        All
+    </a>
+    {% for status in status_options %}
+    <a href="{{ url_for('adventure_sites.list_sites', status=status) }}"
+       class="btn btn-sm {% if status_filter == status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ status }}
+    </a>
+    {% endfor %}
+    {% if all_tags %}
+    <span class="text-muted small align-self-center ms-2">Tags:</span>
+    {% for tag in all_tags %}
+    <a href="{{ url_for('adventure_sites.list_sites', tag=tag.name) }}"
+       class="btn btn-sm {% if tag_filter == tag.name %}btn-info{% else %}btn-outline-secondary{% endif %}">
+        {{ tag.name }}
+    </a>
+    {% endfor %}
+    {% endif %}
+</div>
+
+{% if sites %}
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for site in sites %}
+    <div class="col">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <h5 class="card-title mb-0">
+                        <a href="{{ url_for('adventure_sites.site_detail', site_id=site.id) }}" class="text-light text-decoration-none">
+                            {{ site.name }}
+                        </a>
+                    </h5>
+                    <span class="badge ms-2
+                        {% if site.status == 'Active' %}bg-success
+                        {% elif site.status == 'Completed' %}bg-secondary
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {{ site.status }}
+                    </span>
+                </div>
+                {% if site.subtitle %}
+                <p class="text-muted small mb-2 fst-italic">{{ site.subtitle }}</p>
+                {% endif %}
+                <div class="d-flex gap-3 text-muted small">
+                    {% if site.estimated_sessions %}
+                    <span><i class="bi bi-calendar3"></i> ~{{ site.estimated_sessions }} session{{ 's' if site.estimated_sessions != 1 }}</span>
+                    {% endif %}
+                    {% if site.sessions %}
+                    <span><i class="bi bi-play-circle"></i> {{ site.sessions | length }} run</span>
+                    {% endif %}
+                </div>
+                {% if site.tags %}
+                <div class="mt-2">
+                    {% for tag in site.tags %}
+                    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('adventure_sites.site_detail', site_id=site.id) }}" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-book-open"></i> Open
+                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('adventure_sites.edit_site', site_id=site.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <form method="POST" action="{{ url_for('adventure_sites.delete_site', site_id=site.id) }}"
+                          onsubmit="return confirm('Delete {{ site.name }}? This cannot be undone.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-map" style="font-size: 3rem;"></i>
+    <p class="mt-3">No adventure sites yet.</p>
+    <a href="{{ url_for('adventure_sites.create_site') }}" class="btn btn-success">Create your first one</a>
+</div>
+{% endif %}
+{% endblock %}

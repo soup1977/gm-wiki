@@ -66,6 +66,22 @@
                         <div class="form-text">Comma-separated.</div>
                     </div>
 
+                    {% if all_sites %}
+                    <div>
+                        <label for="adventure_site_id" class="form-label">Adventure Site</label>
+                        <select class="form-select" id="adventure_site_id" name="adventure_site_id">
+                            <option value="">— None —</option>
+                            {% for site in all_sites %}
+                            <option value="{{ site.id }}"
+                                {% if sess and sess.adventure_sites and site in sess.adventure_sites %}selected{% endif %}>
+                                {{ site.name }}{% if site.status %} ({{ site.status }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Which adventure site was this session run at?</div>
+                    </div>
+                    {% endif %}
+
                     <div>
                         <label for="npcs_featured" class="form-label">NPCs in This Session</label>
                         <div class="d-flex gap-2 align-items-start">

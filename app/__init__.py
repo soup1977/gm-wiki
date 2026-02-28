@@ -231,6 +231,7 @@ def create_app():
     from app.routes.quests import quests_bp
     from app.routes.items import items_bp
     from app.routes.compendium import compendium_bp
+    from app.routes.adventure_sites import adventure_sites_bp
     from app.routes.sessions import sessions_bp
     from app.routes.tags import tags_bp
     from app.routes.pcs import pcs_bp
@@ -263,6 +264,7 @@ def create_app():
     app.register_blueprint(quests_bp)
     app.register_blueprint(items_bp)
     app.register_blueprint(compendium_bp)
+    app.register_blueprint(adventure_sites_bp)
     app.register_blueprint(sessions_bp)
     app.register_blueprint(tags_bp)
     app.register_blueprint(combat_bp)

@@ -32,6 +32,12 @@
                         <i class="bi bi-map me-1"></i>Campaign
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><h6 class="dropdown-header text-muted small">Adventure</h6></li>
+                        <li><a class="dropdown-item" href="{{ url_for('adventure_sites.list_sites') }}">
+                            <i class="bi bi-map-fill me-2"></i>Adventure Sites
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-muted small">People</h6></li>
                         <li><a class="dropdown-item" href="{{ url_for('npcs.list_npcs') }}">
                             <i class="bi bi-person me-2"></i>NPCs
                         </a></li>
@@ -41,10 +47,16 @@
                         <li><a class="dropdown-item" href="{{ url_for('factions.list_factions') }}">
                             <i class="bi bi-shield me-2"></i>Factions
                         </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-muted small">World</h6></li>
                         <li><a class="dropdown-item" href="{{ url_for('locations.list_locations') }}">
                             <i class="bi bi-geo-alt me-2"></i>Locations
                         </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('items.list_items') }}">
+                            <i class="bi bi-backpack me-2"></i>Items
+                        </a></li>
                         <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-muted small">Story</h6></li>
                         <li><a class="dropdown-item" href="{{ url_for('quests.list_quests') }}">
                             <i class="bi bi-flag me-2"></i>Quests
                         </a></li>
@@ -52,10 +64,7 @@
                             <i class="bi bi-calendar-event me-2"></i>Sessions
                         </a></li>
                         <li><a class="dropdown-item" href="{{ url_for('encounters.list_encounters') }}">
-                            <i class="bi bi-map me-2"></i>Encounters
-                        </a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('items.list_items') }}">
-                            <i class="bi bi-backpack me-2"></i>Items
+                            <i class="bi bi-crosshair me-2"></i>Encounters
                         </a></li>
                     </ul>
                 </li>
