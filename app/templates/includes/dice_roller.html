@@ -1,0 +1,49 @@
+<div class="offcanvas offcanvas-end bg-dark text-light" id="diceRollerOffcanvas" tabindex="-1"
+     aria-labelledby="diceRollerLabel" style="width:320px;">
+    <div class="offcanvas-header border-bottom border-secondary">
+        <h5 id="diceRollerLabel"><i class="bi bi-dice-5 me-2"></i>Dice Roller</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <!-- Custom expression input -->
+        <form id="dice-custom-form" class="mb-3">
+            <div class="input-group input-group-sm">
+                <input type="text" id="dice-custom-input" class="form-control bg-dark text-light border-secondary"
+                       placeholder="e.g. 2d6+3" autocomplete="off">
+                <button type="submit" class="btn btn-outline-warning">Roll</button>
+            </div>
+            <div class="invalid-feedback">Invalid expression. Use format: NdN+M</div>
+        </form>
+
+        <!-- Advantage / Disadvantage toggle -->
+        <div class="btn-group btn-group-sm w-100 mb-3" role="group" aria-label="Roll mode">
+            <input type="radio" class="btn-check" name="dice-mode" id="dice-mode-normal" value="normal" checked autocomplete="off">
+            <label class="btn btn-outline-secondary" for="dice-mode-normal">Normal</label>
+            <input type="radio" class="btn-check" name="dice-mode" id="dice-mode-adv" value="advantage" autocomplete="off">
+            <label class="btn btn-outline-success" for="dice-mode-adv">Advantage</label>
+            <input type="radio" class="btn-check" name="dice-mode" id="dice-mode-dis" value="disadvantage" autocomplete="off">
+            <label class="btn btn-outline-danger" for="dice-mode-dis">Disadvantage</label>
+        </div>
+
+        <!-- Quick-roll buttons -->
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <button type="button" class="btn btn-outline-light btn-sm" data-dice="1d4">d4</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-dice="1d6">d6</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-dice="1d8">d8</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-dice="1d10">d10</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-dice="1d12">d12</button>
+            <button type="button" class="btn btn-outline-warning btn-sm fw-bold" data-dice="1d20">d20</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-dice="1d100">d100</button>
+            <button type="button" class="btn btn-outline-info btn-sm" data-dice="2d6">2d6</button>
+        </div>
+
+        <!-- History header -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted fw-semibold">Roll History</small>
+            <button type="button" id="dice-clear-history" class="btn btn-link btn-sm text-muted p-0">Clear</button>
+        </div>
+
+        <!-- Roll history -->
+        <div id="dice-history" style="max-height:calc(100vh - 300px);overflow-y:auto;"></div>
+    </div>
+</div>

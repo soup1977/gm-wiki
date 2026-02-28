@@ -4,64 +4,141 @@
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-gear"></i> Settings</h2>
 
+<form method="POST" action="{{ url_for('settings.index') }}">
 <div class="row g-4">
 
     <!-- AI Configuration -->
-    <div class="col-md-6">
-        <div class="card bg-dark border-secondary h-100">
+    <div class="col-md-7">
+        <div class="card bg-dark border-secondary">
             <div class="card-header">
-                <i class="bi bi-cpu"></i> AI Smart Fill
+                <i class="bi bi-cpu"></i> AI Provider
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">
-                    Smart Fill uses the Claude API to extract structured fields from your raw notes.
-                    Paste text into any create/edit form and Claude will pre-fill the fields for you.
+                    Choose how AI features (Smart Fill, future NPC chat) connect.
+                    Ollama runs locally on your server for free. Anthropic uses the cloud API.
                 </p>
 
+                <!-- Provider selector -->
                 <div class="mb-3">
-                    <strong>Status:</strong>
-                    {% if ai_enabled %}
-                    <span class="badge bg-success ms-2">
-                        <i class="bi bi-check-circle"></i> API Key Configured
-                    </span>
-                    {% else %}
-                    <span class="badge bg-secondary ms-2">
-                        <i class="bi bi-x-circle"></i> Not Configured
-                    </span>
-                    {% endif %}
+                    <label class="form-label fw-semibold">Provider</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider"
+                                   id="provNone" value="none"
+                                   {{ 'checked' if ai_config.provider == 'none' }}
+                                   onchange="toggleProviderSections()">
+                            <label class="form-check-label" for="provNone">None</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider"
+                                   id="provOllama" value="ollama"
+                                   {{ 'checked' if ai_config.provider == 'ollama' }}
+                                   onchange="toggleProviderSections()">
+                            <label class="form-check-label" for="provOllama">
+                                Ollama <span class="badge bg-success ms-1">Local</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider"
+                                   id="provAnthropic" value="anthropic"
+                                   {{ 'checked' if ai_config.provider == 'anthropic' }}
+                                   onchange="toggleProviderSections()">
+                            <label class="form-check-label" for="provAnthropic">
+                                Anthropic <span class="badge bg-secondary ms-1">Cloud</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
-                {% if ai_enabled %}
-                <button class="btn btn-outline-secondary btn-sm mb-3" id="test-ai-btn"
-                        onclick="testAiConnection()">
-                    <i class="bi bi-wifi"></i> Test Connection
+                <!-- Ollama settings -->
+                <div id="ollama-section" class="border border-secondary rounded p-3 mb-3" style="display:none;">
+                    <h6 class="mb-3"><i class="bi bi-hdd-network me-1"></i> Ollama Settings</h6>
+                    <div class="mb-2">
+                        <label for="ollama_url" class="form-label small">Server URL</label>
+                        <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                               id="ollama_url" name="ollama_url"
+                               value="{{ ai_config.ollama_url }}"
+                               placeholder="http://localhost:11434">
+                        <div class="form-text">The URL where your Ollama server is running.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ollama_model" class="form-label small">Model Name</label>
+                        <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                               id="ollama_model" name="ollama_model"
+                               value="{{ ai_config.ollama_model }}"
+                               placeholder="llama3.1">
+                        <div class="form-text">The Ollama model to use (e.g. llama3.1, mistral, gemma2).</div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConnection('ollama')">
+                        <i class="bi bi-wifi"></i> Test Connection
+                    </button>
+                    <div id="test-ollama-result" class="small mt-2"></div>
+                </div>
+
+                <!-- Anthropic settings -->
+                <div id="anthropic-section" class="border border-secondary rounded p-3 mb-3" style="display:none;">
+                    <h6 class="mb-3"><i class="bi bi-cloud me-1"></i> Anthropic Settings</h6>
+                    <div class="mb-3">
+                        <label for="anthropic_api_key" class="form-label small">API Key</label>
+                        <input type="password" class="form-control form-control-sm bg-dark text-light border-secondary"
+                               id="anthropic_api_key" name="anthropic_api_key"
+                               value="{{ ai_config.anthropic_api_key }}"
+                               placeholder="sk-ant-...">
+                        <div class="form-text">
+                            Get a key at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
+                            Uses claude-haiku-4-5 (fast and affordable).
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConnection('anthropic')">
+                        <i class="bi bi-wifi"></i> Test Connection
+                    </button>
+                    <div id="test-anthropic-result" class="small mt-2"></div>
+                </div>
+
+                <!-- Image Generation -->
+                <div class="border border-secondary rounded p-3 mb-3">
+                    <h6 class="mb-3"><i class="bi bi-image me-1"></i> Image Generation</h6>
+                    <div class="mb-3">
+                        <label for="sd_url" class="form-label small">Stable Diffusion URL</label>
+                        <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                               id="sd_url" name="sd_url" value="{{ ai_config.sd_url }}"
+                               placeholder="http://localhost:7860">
+                        <div class="form-text">AUTOMATIC1111 WebUI with --api flag. Generates NPC portraits, location art, etc.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sd_model" class="form-label small">Model</label>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm bg-dark text-light border-secondary flex-grow-1"
+                                    id="sd_model" name="sd_model">
+                                {% if ai_config.sd_model %}
+                                <option value="{{ ai_config.sd_model }}" selected>{{ ai_config.sd_model }}</option>
+                                {% else %}
+                                <option value="">— Use active model —</option>
+                                {% endif %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadSdModels()">
+                                <i class="bi bi-arrow-repeat"></i> Load
+                            </button>
+                        </div>
+                        <div class="form-text">Click "Load" to fetch available models from your SD server.</div>
+                        <div id="sd-models-result" class="small mt-1"></div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConnection('sd')">
+                        <i class="bi bi-wifi"></i> Test Connection
+                    </button>
+                    <div id="test-sd-result" class="small mt-2"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> Save Settings
                 </button>
-                <div id="test-ai-result" class="small mt-2"></div>
-                {% else %}
-                <div class="alert alert-secondary py-2 small">
-                    <strong>How to enable Smart Fill:</strong>
-                    <ol class="mb-0 mt-1 ps-3">
-                        <li>Get an API key at
-                            <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>
-                        </li>
-                        <li>Add it to your environment:<br>
-                            <code class="text-light">ANTHROPIC_API_KEY=sk-ant-...</code>
-                        </li>
-                        <li>Restart the app</li>
-                    </ol>
-                </div>
-                {% endif %}
-
-                <p class="text-muted small mb-0 mt-2">
-                    Smart Fill uses <strong>claude-haiku-4-5</strong> — the fastest and most
-                    affordable Claude model. A typical Smart Fill costs a fraction of a cent.
-                </p>
             </div>
         </div>
     </div>
 
     <!-- App Stats -->
-    <div class="col-md-6">
+    <div class="col-md-5">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header">
                 <i class="bi bi-bar-chart"></i> Database Stats
@@ -108,17 +185,27 @@
     </div>
 
 </div>
+</form>
+{% endblock %}
 
-{% if ai_enabled %}
+{% block scripts %}
 <script>
-function testAiConnection() {
-    const btn = document.getElementById('test-ai-btn');
-    const result = document.getElementById('test-ai-result');
+function toggleProviderSections() {
+    const provider = document.querySelector('input[name="ai_provider"]:checked').value;
+    document.getElementById('ollama-section').style.display =
+        provider === 'ollama' ? 'block' : 'none';
+    document.getElementById('anthropic-section').style.display =
+        provider === 'anthropic' ? 'block' : 'none';
+}
+
+function testConnection(provider) {
+    const btn = event.target.closest('button');
+    const result = document.getElementById('test-' + provider + '-result');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing…';
     result.innerHTML = '';
 
-    fetch('/settings/test-ai')
+    fetch('/settings/test-' + provider)
         .then(r => r.json())
         .then(data => {
             if (data.ok) {
@@ -135,6 +222,43 @@ function testAiConnection() {
             btn.innerHTML = '<i class="bi bi-wifi"></i> Test Connection';
         });
 }
+
+function loadSdModels() {
+    const btn = event.target.closest('button');
+    const result = document.getElementById('sd-models-result');
+    const select = document.getElementById('sd_model');
+    const currentVal = select.value;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+    result.innerHTML = '';
+
+    fetch('/settings/sd-models')
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                select.innerHTML = '<option value="">— Use active model —</option>';
+                data.models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.title;
+                    opt.textContent = m.name;
+                    if (m.title === currentVal) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                result.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> ' + data.models.length + ' model(s) loaded</span>';
+            } else {
+                result.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> ' + data.message + '</span>';
+            }
+        })
+        .catch(() => {
+            result.innerHTML = '<span class="text-danger">Request failed.</span>';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Load';
+        });
+}
+
+// Show the right section on page load
+toggleProviderSections();
 </script>
-{% endif %}
 {% endblock %}

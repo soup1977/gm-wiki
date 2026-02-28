@@ -76,6 +76,7 @@ class Campaign(db.Model):
     system = db.Column(db.String(100))         # Free text — "D&D 5e", "ICRPG", whatever
     status = db.Column(db.String(50), default='active')   # active / on hiatus / complete
     description = db.Column(db.Text)
+    image_style_prompt = db.Column(db.Text)   # prepended to all SD image generation prompts
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -132,15 +133,22 @@ class PlayerCharacter(db.Model):
     status = db.Column(db.String(50), default='active')
     # Status values: active, inactive, retired, dead, npc
 
+    race_or_ancestry = db.Column(db.String(200))  # "Elf", "Android", "Human"
+    description = db.Column(db.Text)              # Physical appearance, personality
     backstory = db.Column(db.Text)               # Player-provided character background
     gm_hooks = db.Column(db.Text)                # Private GM notes on story hooks
     notes = db.Column(db.Text)                   # Ongoing GM notes
     portrait_filename = db.Column(db.String(255))
 
+    home_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     campaign = db.relationship('Campaign', backref='player_characters')
+    home_location = db.relationship('Location', backref='pcs_based_here', foreign_keys=[home_location_id])
+    claimed_by = db.relationship('User', backref='claimed_characters', foreign_keys=[user_id])
     stats = db.relationship('PlayerCharacterStat', backref='character',
                             cascade='all, delete-orphan')
     session_attendances = db.relationship('SessionAttendance', backref='character',
@@ -311,6 +319,7 @@ class Item(db.Model):
     rarity = db.Column(db.String(50))     # common / uncommon / rare / very rare / legendary / unique
     description = db.Column(db.Text)
     gm_notes = db.Column(db.Text)         # GM-only, never shown to players
+    image_filename = db.Column(db.String(255))
     is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
 
     # Who owns it — null means the party owns it
@@ -578,6 +587,45 @@ def get_or_create_tags(campaign_id, tag_string):
             db.session.add(tag)
         tags.append(tag)
     return tags
+
+
+class AppSetting(db.Model):
+    """Key-value store for application settings (AI provider, URLs, etc.).
+
+    Settings are stored in the database so they can be changed from the
+    browser without editing .env files or restarting the app.
+    """
+    __tablename__ = 'app_settings'
+
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text, nullable=True)
+
+    @staticmethod
+    def get(key, default=None):
+        """Get a setting value by key, returning default if not found."""
+        row = AppSetting.query.get(key)
+        if row is None:
+            return default
+        return row.value
+
+    @staticmethod
+    def set(key, value):
+        """Set a setting value, creating or updating the row."""
+        row = AppSetting.query.get(key)
+        if row:
+            row.value = value
+        else:
+            row = AppSetting(key=key, value=value)
+            db.session.add(row)
+        db.session.commit()
+
+    @staticmethod
+    def get_all_dict():
+        """Return all settings as a plain dict."""
+        return {s.key: s.value for s in AppSetting.query.all()}
+
+    def __repr__(self):
+        return f'<AppSetting {self.key}={self.value}>'
 
 
 class EntityMention(db.Model):

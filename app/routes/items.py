@@ -1,7 +1,7 @@
 from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
-from app import db
+from app import db, save_upload
 from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
@@ -84,6 +84,14 @@ def create_item():
         )
         item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         item.is_player_visible = 'is_player_visible' in request.form
+
+        image_file = request.files.get('image')
+        filename = save_upload(image_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
+        if filename:
+            item.image_filename = filename
+
         db.session.add(item)
         db.session.flush()
 
@@ -148,6 +156,13 @@ def edit_item(item_id):
         item.origin_location_id = int(origin_location_id) if origin_location_id else None
         item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         item.is_player_visible = 'is_player_visible' in request.form
+
+        image_file = request.files.get('image')
+        filename = save_upload(image_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
+        if filename:
+            item.image_filename = filename
 
         clear_mentions('item', item.id)
         for field in _ITEM_TEXT_FIELDS:

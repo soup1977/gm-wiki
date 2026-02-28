@@ -80,6 +80,72 @@
     </div>
 </div>
 
+{# ── Previous session recap (collapsible) ──────────────────────────────── #}
+{% if prev_session %}
+<details class="mb-3">
+    <summary class="list-unstyled d-flex justify-content-between align-items-center p-2 border border-secondary rounded text-muted small"
+             style="cursor:pointer;">
+        <span><i class="bi bi-clock-history me-1"></i>
+            Last Session{% if prev_session.number %} (#{{ prev_session.number }}){% endif %}:
+            {{ prev_session.title or 'Untitled' }}
+        </span>
+        <span class="text-muted">click to expand</span>
+    </summary>
+    <div class="border border-secondary border-top-0 rounded-bottom p-3 bg-dark">
+        {% if prev_session.summary %}
+        <div class="text-light mb-3" style="font-size:.9rem;">
+            {{ prev_session.summary | md | safe }}
+        </div>
+        {% else %}
+        <p class="text-muted small">No summary written yet.</p>
+        {% endif %}
+
+        {# Linked entities from previous session #}
+        {% if prev_session.npcs_featured %}
+        <div class="mb-2">
+            <small class="text-muted fw-semibold"><i class="bi bi-person me-1"></i>NPCs:</small>
+            {% for npc in prev_session.npcs_featured %}
+            <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}?from=session"
+               class="badge bg-secondary text-decoration-none ms-1">{{ npc.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if prev_session.locations_visited %}
+        <div class="mb-2">
+            <small class="text-muted fw-semibold"><i class="bi bi-geo-alt me-1"></i>Locations:</small>
+            {% for loc in prev_session.locations_visited %}
+            <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}?from=session"
+               class="badge bg-secondary text-decoration-none ms-1">{{ loc.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if prev_session.quests_touched %}
+        <div class="mb-2">
+            <small class="text-muted fw-semibold"><i class="bi bi-flag me-1"></i>Quests:</small>
+            {% for quest in prev_session.quests_touched %}
+            <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}?from=session"
+               class="badge bg-{{ 'success' if quest.status == 'completed' else 'warning' if quest.status == 'on_hold' else 'info' }} text-decoration-none ms-1">{{ quest.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if prev_session.items_mentioned %}
+        <div class="mb-2">
+            <small class="text-muted fw-semibold"><i class="bi bi-backpack me-1"></i>Items:</small>
+            {% for item in prev_session.items_mentioned %}
+            <a href="{{ url_for('items.item_detail', item_id=item.id) }}?from=session"
+               class="badge bg-secondary text-decoration-none ms-1">{{ item.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <a href="{{ url_for('sessions.session_detail', session_id=prev_session.id) }}?from=session"
+           class="btn btn-sm btn-outline-secondary mt-2">
+            <i class="bi bi-arrow-right-circle"></i> View Full Session
+        </a>
+    </div>
+</details>
+{% endif %}
+
 {# Session Plan (prep notes) — collapsible #}
 {% if game_session.prep_notes %}
 <details class="mb-3">
@@ -385,31 +451,13 @@
     </div>
 </div>
 
-{# ── Previous session summary ─────────────────────────────────────────────── #}
-{% if prev_session %}
-<div class="card bg-dark border-secondary mb-4">
-    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">
-            <i class="bi bi-clock-history me-1"></i>
-            Last Session{% if prev_session.number %} (#{{ prev_session.number }}){% endif %}:
-            {{ prev_session.title or 'Untitled' }}
-        </h6>
-        <a href="{{ url_for('sessions.session_detail', session_id=prev_session.id) }}?from=session"
-           class="btn btn-sm btn-outline-secondary">View</a>
-    </div>
-    {% if prev_session.summary %}
-    <div class="card-body">
-        <div class="text-light" style="font-size:.9rem;">
-            {{ prev_session.summary | md | safe }}
-        </div>
-    </div>
-    {% else %}
-    <div class="card-body">
-        <p class="text-muted small mb-0">No summary written yet.</p>
-    </div>
-    {% endif %}
+{# ── End Session button ───────────────────────────────────────────────────── #}
+<div class="text-center mt-4 mb-4">
+    <a href="{{ url_for('session_mode.post_session') }}"
+       class="btn btn-lg btn-outline-warning">
+        <i class="bi bi-stop-circle me-1"></i> End Session &amp; Wrap Up
+    </a>
 </div>
-{% endif %}
 
 {% endif %}{# end if game_session #}
 

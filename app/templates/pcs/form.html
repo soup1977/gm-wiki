@@ -16,7 +16,21 @@
             </ol>
         </nav>
 
-        <h2 class="mb-4">{{ 'Edit' if pc else 'New' }} Player Character</h2>
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <h2 class="mb-0">{{ 'Edit' if pc else 'New' }} Player Character</h2>
+            {% if ai_enabled %}
+            <button type="button" class="btn btn-outline-primary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#smartFillModal">
+                <i class="bi bi-stars"></i> Smart Fill
+            </button>
+            {% endif %}
+        </div>
+
+        {% if pc and pc.claimed_by %}
+        <div class="alert alert-info py-2">
+            <i class="bi bi-person-check me-1"></i> Claimed by: <strong>{{ pc.claimed_by.username }}</strong>
+        </div>
+        {% endif %}
 
         <form method="POST" enctype="multipart/form-data">
 
@@ -36,6 +50,12 @@
 
             <div class="row">
                 <div class="col-md-4 mb-3">
+                    <label for="race_or_ancestry" class="form-label">Race / Ancestry</label>
+                    <input type="text" class="form-control" id="race_or_ancestry" name="race_or_ancestry"
+                           value="{{ pc.race_or_ancestry if pc else '' }}"
+                           placeholder="e.g. Elf, Human, Android">
+                </div>
+                <div class="col-md-4 mb-3">
                     <label for="class_or_role" class="form-label">Class / Role</label>
                     <input type="text" class="form-control" id="class_or_role" name="class_or_role"
                            value="{{ pc.class_or_role if pc else '' }}"
@@ -47,7 +67,11 @@
                            value="{{ pc.level_or_rank if pc else '' }}"
                            placeholder="e.g. Level 5, Veteran">
                 </div>
-                <div class="col-md-4 mb-3">
+            </div>
+
+            <div class="row">
+                {% if not is_owner %}
+                <div class="col-md-6 mb-3">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select" id="status" name="status">
                         {% for choice in status_choices %}
@@ -60,6 +84,25 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label for="home_location_id" class="form-label">Home Location</label>
+                    <div class="d-flex gap-2 align-items-start">
+                        <select class="form-select flex-grow-1" id="home_location_id" name="home_location_id">
+                            <option value="">— None —</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}"
+                                    {% if pc and pc.home_location_id == loc.id %}selected{% endif %}>
+                                {{ loc.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-1 quick-create-btn"
+                                data-qc-entity="location" data-qc-target="home_location_id" data-qc-label="Location">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             {# Portrait #}
@@ -74,6 +117,28 @@
                 {% endif %}
                 <input type="file" class="form-control" id="portrait" name="portrait" accept="image/*">
                 <div class="form-text">Accepted formats: JPG, PNG, GIF, WebP.</div>
+                {% if sd_enabled %}
+                <div class="mt-2">
+                    <button type="button" id="sd-generate-btn" class="btn btn-outline-info btn-sm"
+                            onclick="sdGenerate('pc')">
+                        <i class="bi bi-image"></i> Generate Image
+                    </button>
+                    <div id="sd-generate-result" class="small mt-1"></div>
+                    <div style="display:none;" class="mt-2">
+                        <img id="sd-preview-img" class="img-thumbnail" style="max-height: 200px; display:none;" alt="Generated preview">
+                    </div>
+                    <input type="hidden" id="sd-generated-filename" name="sd_generated_filename" value="">
+                </div>
+                {% endif %}
+            </div>
+
+            {# Description #}
+            <div class="mb-4">
+                <label for="description" class="form-label">
+                    <i class="bi bi-body-text me-1"></i>Description
+                </label>
+                <textarea class="form-control" id="description" name="description" rows="4">{{ pc.description if pc else '' }}</textarea>
+                <div class="form-text">Physical appearance, personality traits. Also used as prompt for AI image generation. Markdown supported.</div>
             </div>
 
             {# Stat fields from the campaign template #}
@@ -96,7 +161,7 @@
             </p>
             {% endif %}
 
-            {# Backstory, GM Hooks, Ongoing Notes #}
+            {# Backstory #}
             <hr class="border-secondary my-4">
             <div class="mb-4">
                 <label for="backstory" class="form-label">
@@ -106,6 +171,8 @@
                 <div class="form-text">Character background — can be shared with players. Markdown supported.</div>
             </div>
 
+            {# GM-only fields — hidden from claiming players #}
+            {% if not is_owner %}
             <div class="mb-4">
                 <label for="gm_hooks" class="form-label text-warning">
                     <i class="bi bi-eye-slash me-1"></i>GM Hooks <span class="text-warning">(GM Only)</span>
@@ -119,6 +186,7 @@
                 <textarea class="form-control" id="notes" name="notes" rows="5">{{ pc.notes if pc else '' }}</textarea>
                 <div class="form-text">Current state, recent events, etc. Markdown supported.</div>
             </div>
+            {% endif %}
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-success">
@@ -134,4 +202,9 @@
         </form>
     </div>
 </div>
+
+{% if ai_enabled %}
+<script>window.SMART_FILL_ENTITY_TYPE = 'pc';</script>
+<script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+{% endif %}
 {% endblock %}

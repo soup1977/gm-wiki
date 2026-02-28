@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app import db, save_upload
-from app.models import PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate
+from app.models import PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate, Location
 
 pcs_bp = Blueprint('pcs', __name__, url_prefix='/pcs')
 
@@ -32,6 +32,21 @@ def _save_stats(pc, campaign_id):
                 template_field_id=field.id,
                 stat_value=value
             ))
+
+
+def _can_edit(pc):
+    """Check if the current user can edit this PC."""
+    if current_user.is_admin:
+        return True
+    if not pc.user_id:
+        return True  # Unclaimed — any logged-in user can edit
+    return pc.user_id == current_user.id
+
+
+def _is_owner(pc):
+    """True if the current user is the claiming player (not admin)."""
+    return (pc.user_id and pc.user_id == current_user.id
+            and not current_user.is_admin)
 
 
 @pcs_bp.route('/')
@@ -72,6 +87,8 @@ def create_pc():
 
     template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
         .order_by(CampaignStatTemplate.display_order).all()
+    locations = Location.query.filter_by(campaign_id=campaign_id)\
+        .order_by(Location.name).all()
 
     if request.method == 'POST':
         character_name = request.form.get('character_name', '').strip()
@@ -80,18 +97,25 @@ def create_pc():
             flash('Character name and player name are both required.', 'danger')
             return render_template('pcs/form.html', pc=None,
                                    template_fields=template_fields,
+                                   locations=locations, is_owner=False,
                                    status_choices=PC_STATUS_CHOICES)
+
+        home_id = request.form.get('home_location_id')
+        home_id = int(home_id) if home_id else None
 
         pc = PlayerCharacter(
             campaign_id=campaign_id,
             character_name=character_name,
             player_name=player_name,
+            race_or_ancestry=request.form.get('race_or_ancestry', '').strip() or None,
             level_or_rank=request.form.get('level_or_rank', '').strip(),
             class_or_role=request.form.get('class_or_role', '').strip(),
             status=request.form.get('status', 'active'),
+            description=request.form.get('description', '').strip() or None,
             backstory=request.form.get('backstory', '').strip() or None,
             gm_hooks=request.form.get('gm_hooks', '').strip() or None,
-            notes=request.form.get('notes', '').strip()
+            notes=request.form.get('notes', '').strip(),
+            home_location_id=home_id,
         )
         db.session.add(pc)
         db.session.flush()  # Assigns pc.id so we can create stat rows
@@ -100,6 +124,8 @@ def create_pc():
 
         portrait_file = request.files.get('portrait')
         filename = save_upload(portrait_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             pc.portrait_filename = filename
 
@@ -109,6 +135,7 @@ def create_pc():
 
     return render_template('pcs/form.html', pc=None,
                            template_fields=template_fields,
+                           locations=locations, is_owner=False,
                            status_choices=PC_STATUS_CHOICES)
 
 
@@ -135,7 +162,8 @@ def pc_detail(pc_id):
         for field in template_fields
     ]
 
-    return render_template('pcs/detail.html', pc=pc, stats_display=stats_display)
+    return render_template('pcs/detail.html', pc=pc, stats_display=stats_display,
+                           can_edit=_can_edit(pc))
 
 
 @pcs_bp.route('/<int:pc_id>/edit', methods=['GET', 'POST'])
@@ -147,8 +175,16 @@ def edit_pc(pc_id):
         flash('Character not found in this campaign.', 'danger')
         return redirect(url_for('pcs.list_pcs'))
 
+    if not _can_edit(pc):
+        flash('You do not have permission to edit this character.', 'danger')
+        return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+
+    owner = _is_owner(pc)
+
     template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
         .order_by(CampaignStatTemplate.display_order).all()
+    locations = Location.query.filter_by(campaign_id=campaign_id)\
+        .order_by(Location.name).all()
 
     if request.method == 'POST':
         character_name = request.form.get('character_name', '').strip()
@@ -157,21 +193,32 @@ def edit_pc(pc_id):
             flash('Character name and player name are both required.', 'danger')
             return render_template('pcs/form.html', pc=pc,
                                    template_fields=template_fields,
+                                   locations=locations, is_owner=owner,
                                    status_choices=PC_STATUS_CHOICES)
 
+        # Player-editable fields (always saved)
         pc.character_name = character_name
         pc.player_name = player_name
-        pc.level_or_rank = request.form.get('level_or_rank', '').strip()
+        pc.race_or_ancestry = request.form.get('race_or_ancestry', '').strip() or None
         pc.class_or_role = request.form.get('class_or_role', '').strip()
-        pc.status = request.form.get('status', 'active')
+        pc.level_or_rank = request.form.get('level_or_rank', '').strip()
+        pc.description = request.form.get('description', '').strip() or None
         pc.backstory = request.form.get('backstory', '').strip() or None
-        pc.gm_hooks = request.form.get('gm_hooks', '').strip() or None
-        pc.notes = request.form.get('notes', '').strip()
+
+        # GM-only fields (skip if player is editing their own claimed PC)
+        if not owner:
+            pc.status = request.form.get('status', 'active')
+            pc.gm_hooks = request.form.get('gm_hooks', '').strip() or None
+            pc.notes = request.form.get('notes', '').strip()
+            home_id = request.form.get('home_location_id')
+            pc.home_location_id = int(home_id) if home_id else None
 
         _save_stats(pc, campaign_id)
 
         portrait_file = request.files.get('portrait')
         filename = save_upload(portrait_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             pc.portrait_filename = filename
 
@@ -184,6 +231,7 @@ def edit_pc(pc_id):
     return render_template('pcs/form.html', pc=pc,
                            template_fields=template_fields,
                            stat_values=stat_values,
+                           locations=locations, is_owner=owner,
                            status_choices=PC_STATUS_CHOICES)
 
 
@@ -203,3 +251,37 @@ def delete_pc(pc_id):
 
     flash(f'"{name}" deleted.', 'warning')
     return redirect(url_for('pcs.list_pcs'))
+
+
+@pcs_bp.route('/<int:pc_id>/claim', methods=['POST'])
+@login_required
+def claim_pc(pc_id):
+    campaign_id = get_active_campaign_id()
+    pc = PlayerCharacter.query.get_or_404(pc_id)
+    if pc.campaign_id != campaign_id:
+        flash('Character not found in this campaign.', 'danger')
+        return redirect(url_for('pcs.list_pcs'))
+    if pc.user_id:
+        flash('This character is already claimed.', 'warning')
+        return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+    pc.user_id = current_user.id
+    db.session.commit()
+    flash(f'You claimed "{pc.character_name}"!', 'success')
+    return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+
+
+@pcs_bp.route('/<int:pc_id>/unclaim', methods=['POST'])
+@login_required
+def unclaim_pc(pc_id):
+    campaign_id = get_active_campaign_id()
+    pc = PlayerCharacter.query.get_or_404(pc_id)
+    if pc.campaign_id != campaign_id:
+        flash('Character not found in this campaign.', 'danger')
+        return redirect(url_for('pcs.list_pcs'))
+    if pc.user_id != current_user.id and not current_user.is_admin:
+        flash('You can only unclaim your own character.', 'danger')
+        return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+    pc.user_id = None
+    db.session.commit()
+    flash(f'"{pc.character_name}" is now unclaimed.', 'info')
+    return redirect(url_for('pcs.pc_detail', pc_id=pc.id))

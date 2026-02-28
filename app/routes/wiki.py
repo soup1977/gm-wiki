@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, request
 from app.models import (
     Campaign, NPC, Location, Quest, Item, Session,
-    CompendiumEntry, BestiaryEntry
+    CompendiumEntry, BestiaryEntry, PlayerCharacter,
+    CampaignStatTemplate
 )
 
 wiki_bp = Blueprint('wiki', __name__, url_prefix='/wiki')
@@ -165,11 +166,30 @@ def wiki_session_detail(campaign_id, session_id):
 @wiki_bp.route('/<int:campaign_id>/compendium')
 def wiki_compendium(campaign_id):
     campaign = Campaign.query.get_or_404(campaign_id)
-    entries = CompendiumEntry.query.filter_by(
+    all_entries = CompendiumEntry.query.filter_by(
         campaign_id=campaign_id, is_gm_only=False
     ).order_by(CompendiumEntry.category, CompendiumEntry.title).all()
+
+    categories = sorted({e.category or 'Uncategorized' for e in all_entries})
+    active_category = request.args.get('category', '').strip() or None
+
+    if active_category:
+        if active_category == 'Uncategorized':
+            entries = [e for e in all_entries if not e.category]
+        else:
+            entries = [e for e in all_entries if e.category == active_category]
+    else:
+        entries = all_entries
+
+    cat_counts = {}
+    for e in all_entries:
+        key = e.category or 'Uncategorized'
+        cat_counts[key] = cat_counts.get(key, 0) + 1
+
     return render_template(
-        'wiki/compendium/index.html', campaign=campaign, entries=entries
+        'wiki/compendium/index.html', campaign=campaign, entries=entries,
+        categories=categories, cat_counts=cat_counts,
+        active_category=active_category
     )
 
 
@@ -208,3 +228,33 @@ def wiki_bestiary_detail(campaign_id, entry_id):
     return render_template(
         'wiki/bestiary/detail.html', campaign=campaign, entry=entry
     )
+
+
+# ---------------------------------------------------------------------------
+# Player Characters
+# ---------------------------------------------------------------------------
+
+@wiki_bp.route('/<int:campaign_id>/pcs')
+def wiki_pcs(campaign_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    pcs = PlayerCharacter.query.filter_by(
+        campaign_id=campaign_id
+    ).order_by(PlayerCharacter.character_name).all()
+    return render_template('wiki/pcs/index.html', campaign=campaign, pcs=pcs)
+
+
+@wiki_bp.route('/<int:campaign_id>/pcs/<int:pc_id>')
+def wiki_pc_detail(campaign_id, pc_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    pc = PlayerCharacter.query.filter_by(
+        id=pc_id, campaign_id=campaign_id
+    ).first_or_404()
+    template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
+        .order_by(CampaignStatTemplate.display_order).all()
+    stat_lookup = {s.template_field_id: s.stat_value for s in pc.stats}
+    stats_display = [
+        (field.stat_name, stat_lookup.get(field.id, ''))
+        for field in template_fields
+    ]
+    return render_template('wiki/pcs/detail.html', campaign=campaign,
+                           pc=pc, stats_display=stats_display)

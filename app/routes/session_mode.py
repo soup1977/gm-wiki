@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db
-from app.models import Session as GameSession, Quest, Location, Encounter
+from app.models import Session as GameSession, Quest, Location, Encounter, NPC, Item
 
 session_mode_bp = Blueprint('session_mode', __name__, url_prefix='/session-mode')
 
@@ -155,3 +155,74 @@ def add_note():
         flash('Note added to session.', 'success')
 
     return redirect(url_for('session_mode.dashboard'))
+
+
+@session_mode_bp.route('/post-session')
+@login_required
+def post_session():
+    """Post-session wrap-up page — lets the GM quickly update quest/NPC statuses
+    and write a session summary without navigating to each entity individually."""
+    campaign_id = get_active_campaign_id()
+    current_session_id = session.get('current_session_id')
+    if not campaign_id or not current_session_id:
+        flash('No active session to wrap up.', 'warning')
+        return redirect(url_for('session_mode.dashboard'))
+
+    game_session = GameSession.query.filter_by(
+        id=current_session_id, campaign_id=campaign_id
+    ).first_or_404()
+
+    return render_template(
+        'session_mode/post_session.html',
+        game_session=game_session,
+    )
+
+
+@session_mode_bp.route('/save-post-session', methods=['POST'])
+@login_required
+def save_post_session():
+    """Process bulk updates from the post-session wrap-up form."""
+    campaign_id = get_active_campaign_id()
+    current_session_id = session.get('current_session_id')
+    if not campaign_id or not current_session_id:
+        return redirect(url_for('session_mode.dashboard'))
+
+    game_session = GameSession.query.filter_by(
+        id=current_session_id, campaign_id=campaign_id
+    ).first_or_404()
+
+    # Update session summary
+    summary = request.form.get('summary', '').strip()
+    if summary:
+        game_session.summary = summary
+
+    # Update quest statuses
+    for quest in game_session.quests_touched:
+        new_status = request.form.get(f'quest_status_{quest.id}')
+        if new_status and new_status in ('active', 'completed', 'failed', 'on_hold'):
+            quest.status = new_status
+
+    # Update NPC statuses
+    for npc in game_session.npcs_featured:
+        new_status = request.form.get(f'npc_status_{npc.id}')
+        if new_status and new_status in ('alive', 'dead', 'missing', 'unknown'):
+            npc.status = new_status
+
+    # Update item notes
+    for item in game_session.items_mentioned:
+        note = request.form.get(f'item_note_{item.id}', '').strip()
+        if note:
+            if item.description:
+                item.description = item.description + '\n\n' + note
+            else:
+                item.description = note
+
+    db.session.commit()
+
+    # Clear session mode
+    session.pop('in_session_mode', None)
+    session.pop('current_session_id', None)
+    session.pop('session_title', None)
+
+    flash('Session wrapped up! All updates saved.', 'success')
+    return redirect(url_for('sessions.session_detail', session_id=game_session.id))

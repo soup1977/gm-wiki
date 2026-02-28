@@ -194,6 +194,9 @@ def create_app():
     from app.routes.factions import factions_bp
     from app.routes.quick_create import quick_create_bp
     from app.routes.admin import admin_bp
+    from app.routes.global_search import global_search_bp
+    from app.routes.srd_import import srd_import_bp
+    from app.routes.sd_generate import sd_generate_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -221,9 +224,12 @@ def create_app():
     app.register_blueprint(factions_bp)
     app.register_blueprint(quick_create_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(global_search_bp)
+    app.register_blueprint(srd_import_bp)
+    app.register_blueprint(sd_generate_bp)
 
-    # Context processor — makes active_campaign available in EVERY template
-    # automatically, so we don't have to pass it in every route
+    # Context processor — makes active_campaign and ai_enabled available
+    # in EVERY template automatically, so we don't have to pass them in every route
     @app.context_processor
     def inject_active_campaign():
         from flask import session as flask_session
@@ -239,5 +245,48 @@ def create_app():
                     flask_session.pop('active_campaign_id', None)
                     active_campaign = None
         return dict(active_campaign=active_campaign)
+
+    @app.context_processor
+    def inject_ai_status():
+        from app.ai_provider import is_ai_enabled
+        from app.sd_provider import is_sd_enabled
+        try:
+            return dict(ai_enabled=is_ai_enabled(), sd_enabled=is_sd_enabled())
+        except Exception:
+            return dict(ai_enabled=False, sd_enabled=False)
+
+    # CLI command: flask seed-icrpg
+    # Loads ICRPG bestiary entries from the bundled JSON seed data.
+    # Bestiary entries are global (no campaign_id), so this only needs to run once.
+    @app.cli.command('seed-icrpg')
+    def seed_icrpg():
+        """Load ICRPG bestiary seed data into the database."""
+        import json as _json
+        from app.models import BestiaryEntry
+
+        seed_path = os.path.join(app.root_path, 'seed_data', 'icrpg_bestiary.json')
+        with open(seed_path) as f:
+            entries = _json.load(f)
+
+        imported = 0
+        skipped = 0
+        for entry in entries:
+            name = entry['name']
+            if BestiaryEntry.query.filter_by(name=name, system='ICRPG').first():
+                skipped += 1
+                continue
+            be = BestiaryEntry(
+                name=name,
+                system=entry.get('system', 'ICRPG'),
+                stat_block=entry.get('stat_block', ''),
+                cr_level=entry.get('cr_level', ''),
+                source=entry.get('source', 'ICRPG Master Edition'),
+                tags=entry.get('tags', ''),
+            )
+            db.session.add(be)
+            imported += 1
+
+        db.session.commit()
+        print(f'Imported {imported} ICRPG bestiary entries. Skipped {skipped} duplicates.')
 
     return app

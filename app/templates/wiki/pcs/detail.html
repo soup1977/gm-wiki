@@ -1,0 +1,87 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ pc.character_name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_pcs', campaign_id=campaign.id) }}">PCs</a>
+        </li>
+        <li class="breadcrumb-item active">{{ pc.character_name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>{{ pc.character_name }}</h2>
+    <p class="text-muted mb-1">
+        Player: <strong class="text-light">{{ pc.player_name }}</strong>
+        {% if pc.race_or_ancestry %} &mdash; {{ pc.race_or_ancestry }}{% endif %}
+        {% if pc.class_or_role %} {{ pc.class_or_role }}{% endif %}
+        {% if pc.level_or_rank %} ({{ pc.level_or_rank }}){% endif %}
+    </p>
+    <div class="mt-2">
+        {% if pc.status == 'active' %}
+            <span class="badge bg-success">{{ pc.status }}</span>
+        {% elif pc.status == 'dead' %}
+            <span class="badge bg-danger">{{ pc.status }}</span>
+        {% elif pc.status == 'retired' %}
+            <span class="badge bg-secondary">{{ pc.status }}</span>
+        {% else %}
+            <span class="badge bg-secondary">{{ pc.status }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        {% if pc.portrait_filename %}
+        <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
+             alt="{{ pc.character_name }}" class="img-fluid rounded mb-4"
+             style="max-height: 350px; width: 100%; object-fit: cover;">
+        {% endif %}
+
+        {% if pc.home_location %}
+        <div class="mb-3">
+            <strong class="text-muted">Home Location</strong><br>
+            <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=pc.home_location.id) }}">
+                <i class="bi bi-geo-alt me-1"></i>{{ pc.home_location.name }}
+            </a>
+        </div>
+        {% endif %}
+
+        {% if stats_display %}
+        <div class="card bg-dark border-secondary">
+            <div class="card-header">Stats</div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-sm mb-0">
+                    <tbody>
+                        {% for stat_name, stat_value in stats_display %}
+                        <tr>
+                            <td class="text-muted">{{ stat_name }}</td>
+                            <td class="fw-bold text-end">{{ stat_value or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        {% if pc.description %}
+        <div class="mb-4">
+            <h5><i class="bi bi-body-text me-1"></i>Description</h5>
+            <div>{{ pc.description | md | safe }}</div>
+        </div>
+        {% endif %}
+
+        {% if pc.backstory %}
+        <div class="mb-4">
+            <h5><i class="bi bi-journal-text me-1"></i>Backstory</h5>
+            <div>{{ pc.backstory | md | safe }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

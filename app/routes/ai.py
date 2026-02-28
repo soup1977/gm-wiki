@@ -1,21 +1,17 @@
 """
-app/routes/ai.py — AI Smart Fill endpoint
+app/routes/ai.py — AI Smart Fill + Generate Entry endpoints
 
-This Blueprint provides one JSON API endpoint:
-  POST /api/ai/smart-fill
+This Blueprint provides two JSON API endpoints:
+  POST /api/ai/smart-fill      — extract fields from raw notes
+  POST /api/ai/generate-entry  — create a complete entry from a concept prompt
 
-The client sends:
-  { "entity_type": "npc", "text": "raw notes about the entity" }
-
-The server asks Claude to extract structured fields and returns JSON:
-  { "name": "...", "role": "...", ... }
-
-If ANTHROPIC_API_KEY is not set, the endpoint returns a 403.
+If no AI provider is configured, both endpoints return a 403.
 """
 
 import json
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from flask_login import login_required
+from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -23,8 +19,8 @@ ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 # Per-entity prompts and field schemas
 # ---------------------------------------------------------------------------
 
-# These tell Claude exactly what to extract and what valid values look like.
-# The field descriptions help Claude make good guesses from ambiguous text.
+# These tell the AI exactly what to extract and what valid values look like.
+# The field descriptions help the model make good guesses from ambiguous text.
 
 ENTITY_SCHEMAS = {
     'npc': {
@@ -79,7 +75,7 @@ ENTITY_SCHEMAS = {
 
 
 def _build_prompt(entity_type, text):
-    """Build the Claude messages list for a Smart Fill extraction."""
+    """Build the system prompt and messages list for a Smart Fill extraction."""
     schema = ENTITY_SCHEMAS.get(entity_type)
     if not schema:
         return None
@@ -103,9 +99,11 @@ Rules:
 - Keep field values as plain text (no Markdown formatting unless it's notes/description).
 """
 
-    return [
+    messages = [
         {'role': 'user', 'content': f"Extract {entity_type} data from these notes:\n\n{text}"}
-    ], system_prompt
+    ]
+
+    return messages, system_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -119,8 +117,8 @@ def smart_fill():
     Accepts JSON body: { "entity_type": "npc", "text": "..." }
     Returns JSON: { "name": "...", "role": "...", ... }
     """
-    if not current_app.config.get('AI_ENABLED'):
-        return jsonify({'error': 'AI features are not configured. Set ANTHROPIC_API_KEY in your environment.'}), 403
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
 
     data = request.get_json(silent=True)
     if not data:
@@ -139,17 +137,9 @@ def smart_fill():
     messages, system_prompt = _build_prompt(entity_type, text)
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=current_app.config['ANTHROPIC_API_KEY'])
-        response = client.messages.create(
-            model='claude-haiku-4-5-20251001',
-            max_tokens=1024,
-            system=system_prompt,
-            messages=messages,
-        )
-        raw = response.content[0].text.strip()
+        raw = ai_chat(system_prompt, messages, max_tokens=1024)
 
-        # Strip markdown code fences if Claude added them despite instructions
+        # Strip markdown code fences if the model added them despite instructions
         if raw.startswith('```'):
             raw = raw.split('\n', 1)[-1]
             if raw.endswith('```'):
@@ -159,9 +149,88 @@ def smart_fill():
         return jsonify(result)
 
     except json.JSONDecodeError:
-        return jsonify({'error': 'Claude returned unexpected output. Try again.'}), 500
-    except Exception as e:
-        error_msg = str(e)
-        if 'authentication' in error_msg.lower() or 'api_key' in error_msg.lower():
-            return jsonify({'error': 'Invalid API key. Check your ANTHROPIC_API_KEY setting.'}), 403
-        return jsonify({'error': f'AI request failed: {error_msg}'}), 500
+        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Generate Entry — create a complete entry from a short concept prompt
+# ---------------------------------------------------------------------------
+
+def _build_generate_prompt(entity_type, concept):
+    """Build the system prompt and messages for creative entity generation."""
+    schema = ENTITY_SCHEMAS.get(entity_type)
+    if not schema:
+        return None
+
+    field_lines = '\n'.join(
+        f'  "{k}": {v}'
+        for k, v in schema['fields'].items()
+    )
+
+    system_prompt = f"""You are a creative assistant for a tabletop RPG Game Master.
+Your job is to invent a complete, detailed {entity_type.upper()} based on a short concept or idea.
+
+Fill in ALL of the following fields:
+{field_lines}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Be creative and detailed — flesh out every field with interesting, usable content.
+- For fields with specific allowed values (like status or rarity), only use those values.
+- Descriptions, notes, and personality fields should be 2-4 sentences minimum.
+- Secrets and GM notes should contain plot hooks, hidden motivations, or things the players don't know.
+- Keep the tone consistent with dark/epic fantasy unless the concept suggests otherwise.
+- The result should be immediately usable in a game session with no editing needed.
+"""
+
+    messages = [
+        {'role': 'user', 'content': f"Create a {entity_type} based on this concept:\n\n{concept}"}
+    ]
+
+    return messages, system_prompt
+
+
+@ai_bp.route('/generate-entry', methods=['POST'])
+@login_required
+def generate_entry():
+    """
+    Accepts JSON body: { "entity_type": "npc", "prompt": "a grizzled dwarven blacksmith" }
+    Returns JSON: { "name": "...", "role": "...", ... }
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Request must be JSON.'}), 400
+
+    entity_type = data.get('entity_type', '').strip().lower()
+    concept = data.get('prompt', '').strip()
+
+    if entity_type not in ENTITY_SCHEMAS:
+        return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
+    if not concept:
+        return jsonify({'error': 'No concept provided.'}), 400
+    if len(concept) > 2000:
+        return jsonify({'error': 'Concept is too long (max ~2000 characters).'}), 400
+
+    messages, system_prompt = _build_generate_prompt(entity_type, concept)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=2048)
+
+        # Strip markdown code fences if the model added them despite instructions
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[-1]
+            if raw.endswith('```'):
+                raw = raw[:-3].strip()
+
+        result = json.loads(raw)
+        return jsonify(result)
+
+    except json.JSONDecodeError:
+        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500

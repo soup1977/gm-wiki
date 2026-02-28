@@ -92,6 +92,8 @@ def create_location():
 
         map_file = request.files.get('map_image')
         filename = save_upload(map_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             location.map_filename = filename
 
@@ -180,6 +182,8 @@ def edit_location(location_id):
 
         map_file = request.files.get('map_image')
         filename = save_upload(map_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             location.map_filename = filename
 
