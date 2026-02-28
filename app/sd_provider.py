@@ -39,14 +39,26 @@ def is_sd_enabled():
     return bool(_get_sd_url())
 
 
-def sd_generate(prompt, negative_prompt='', width=512, height=768):
+def _get_sd_settings():
+    """Read SD generation settings from database, with sensible defaults."""
+    from app.models import AppSetting
+    return {
+        'steps': int(AppSetting.get('sd_steps', '4')),
+        'cfg_scale': float(AppSetting.get('sd_cfg_scale', '2')),
+        'sampler_name': AppSetting.get('sd_sampler', 'DPM++ SDE Karras'),
+        'width': int(AppSetting.get('sd_width', '768')),
+        'height': int(AppSetting.get('sd_height', '1024')),
+    }
+
+
+def sd_generate(prompt, negative_prompt='', width=None, height=None):
     """Generate an image via AUTOMATIC1111 txt2img API.
 
     Args:
         prompt: The text prompt describing the image to generate.
         negative_prompt: What to exclude from the image.
-        width: Image width in pixels (default 512).
-        height: Image height in pixels (default 768 for portraits).
+        width: Image width in pixels (overrides saved setting if provided).
+        height: Image height in pixels (overrides saved setting if provided).
 
     Returns:
         The saved filename (e.g. 'a1b2c3d4.png') in the uploads folder.
@@ -59,6 +71,7 @@ def sd_generate(prompt, negative_prompt='', width=512, height=768):
         raise SDProviderError('Stable Diffusion URL is not configured. Go to Settings to set it up.')
 
     url = url.rstrip('/')
+    settings = _get_sd_settings()
 
     # Default negative prompt if none provided
     if not negative_prompt:
@@ -67,11 +80,11 @@ def sd_generate(prompt, negative_prompt='', width=512, height=768):
     payload = {
         'prompt': prompt,
         'negative_prompt': negative_prompt,
-        'steps': 25,
-        'width': width,
-        'height': height,
-        'cfg_scale': 7,
-        'sampler_name': 'Euler a',
+        'steps': settings['steps'],
+        'width': width or settings['width'],
+        'height': height or settings['height'],
+        'cfg_scale': settings['cfg_scale'],
+        'sampler_name': settings['sampler_name'],
         'seed': -1,
     }
 

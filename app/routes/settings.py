@@ -5,12 +5,14 @@ from app import db
 from app.models import (Campaign, NPC, Location, Quest, Item, Session,
                         BestiaryEntry, CompendiumEntry, AppSetting)
 from app.ai_provider import get_ai_config, ai_chat, AIProviderError
+from app.routes.admin import admin_required
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
 
 @settings_bp.route('/', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def index():
     if request.method == 'POST':
         # Save settings from form
@@ -20,6 +22,11 @@ def index():
         AppSetting.set('anthropic_api_key', request.form.get('anthropic_api_key', '').strip())
         AppSetting.set('sd_url', request.form.get('sd_url', '').strip())
         AppSetting.set('sd_model', request.form.get('sd_model', '').strip())
+        AppSetting.set('sd_sampler', request.form.get('sd_sampler', 'DPM++ SDE Karras').strip())
+        AppSetting.set('sd_steps', request.form.get('sd_steps', '4').strip())
+        AppSetting.set('sd_cfg_scale', request.form.get('sd_cfg_scale', '2').strip())
+        AppSetting.set('sd_width', request.form.get('sd_width', '768').strip())
+        AppSetting.set('sd_height', request.form.get('sd_height', '1024').strip())
         flash('Settings saved.', 'success')
         return redirect(url_for('settings.index'))
 
@@ -41,6 +48,7 @@ def index():
 
 @settings_bp.route('/test-ollama')
 @login_required
+@admin_required
 def test_ollama():
     """AJAX endpoint: test Ollama connection with a simple prompt."""
     try:
@@ -56,6 +64,7 @@ def test_ollama():
 
 @settings_bp.route('/test-anthropic')
 @login_required
+@admin_required
 def test_anthropic():
     """AJAX endpoint: test Anthropic API key."""
     config = get_ai_config()
@@ -75,6 +84,7 @@ def test_anthropic():
 
 @settings_bp.route('/test-sd')
 @login_required
+@admin_required
 def test_sd():
     """AJAX endpoint: test Stable Diffusion connection."""
     config = get_ai_config()
@@ -98,6 +108,7 @@ def test_sd():
 
 @settings_bp.route('/sd-models')
 @login_required
+@admin_required
 def sd_models():
     """AJAX endpoint: fetch available SD models for the dropdown."""
     config = get_ai_config()

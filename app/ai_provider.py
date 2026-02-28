@@ -51,6 +51,11 @@ def get_ai_config():
         'anthropic_api_key': settings.get('anthropic_api_key', ''),
         'sd_url': settings.get('sd_url', ''),
         'sd_model': settings.get('sd_model', ''),
+        'sd_sampler': settings.get('sd_sampler', 'DPM++ SDE Karras'),
+        'sd_steps': settings.get('sd_steps', '4'),
+        'sd_cfg_scale': settings.get('sd_cfg_scale', '2'),
+        'sd_width': settings.get('sd_width', '768'),
+        'sd_height': settings.get('sd_height', '1024'),
     }
 
 

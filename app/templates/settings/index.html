@@ -124,6 +124,48 @@
                         <div class="form-text">Click "Load" to fetch available models from your SD server.</div>
                         <div id="sd-models-result" class="small mt-1"></div>
                     </div>
+                    <hr class="border-secondary my-3">
+                    <h6 class="mb-3"><i class="bi bi-sliders me-1"></i> Generation Parameters</h6>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label for="sd_sampler" class="form-label small">Sampler</label>
+                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="sd_sampler" name="sd_sampler"
+                                   value="{{ ai_config.sd_sampler or 'DPM++ SDE Karras' }}"
+                                   placeholder="DPM++ SDE Karras">
+                        </div>
+                        <div class="col-3">
+                            <label for="sd_steps" class="form-label small">Steps</label>
+                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="sd_steps" name="sd_steps" min="1" max="100"
+                                   value="{{ ai_config.sd_steps or '4' }}">
+                        </div>
+                        <div class="col-3">
+                            <label for="sd_cfg_scale" class="form-label small">CFG Scale</label>
+                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="sd_cfg_scale" name="sd_cfg_scale" min="1" max="30" step="0.5"
+                                   value="{{ ai_config.sd_cfg_scale or '2' }}">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="sd_width" class="form-label small">Width</label>
+                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="sd_width" name="sd_width" min="256" max="2048" step="64"
+                                   value="{{ ai_config.sd_width or '768' }}">
+                        </div>
+                        <div class="col-6">
+                            <label for="sd_height" class="form-label small">Height</label>
+                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="sd_height" name="sd_height" min="256" max="2048" step="64"
+                                   value="{{ ai_config.sd_height or '1024' }}">
+                        </div>
+                    </div>
+                    <div class="form-text mb-3">
+                        Defaults are tuned for SDXL Lightning models (low steps, low CFG).
+                        For SD 1.5 models, try Steps: 25, CFG: 7, Sampler: Euler a, Width: 512.
+                    </div>
+
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConnection('sd')">
                         <i class="bi bi-wifi"></i> Test Connection
                     </button>
@@ -257,6 +299,46 @@ function loadSdModels() {
             btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Load';
         });
 }
+
+// Auto-detect model type and suggest settings when model changes
+const SD_PRESETS = [
+    { match: ['lightning', 'turbo', 'lcm'], label: 'Lightning/Turbo',
+      steps: 4, cfg: 2, sampler: 'DPM++ SDE Karras' },
+    { match: ['xl', 'sdxl', 'pony'], label: 'SDXL',
+      steps: 20, cfg: 5, sampler: 'DPM++ 2M Karras' },
+    { match: [], label: 'SD 1.5 (default)',
+      steps: 25, cfg: 7, sampler: 'Euler a' },
+];
+
+function detectModelPreset(modelName) {
+    const name = modelName.toLowerCase();
+    for (const preset of SD_PRESETS) {
+        if (preset.match.length && preset.match.some(kw => name.includes(kw))) {
+            return preset;
+        }
+    }
+    // If the name contains 'xl' patterns via dimensions, check width hints
+    return SD_PRESETS[SD_PRESETS.length - 1]; // fallback to SD 1.5
+}
+
+document.getElementById('sd_model').addEventListener('change', function() {
+    const modelName = this.options[this.selectedIndex]?.textContent || this.value;
+    if (!modelName || modelName.startsWith('—')) return;
+
+    const preset = detectModelPreset(modelName);
+    const isXL = modelName.toLowerCase().includes('xl') ||
+                 modelName.toLowerCase().includes('pony');
+
+    document.getElementById('sd_steps').value = preset.steps;
+    document.getElementById('sd_cfg_scale').value = preset.cfg;
+    document.getElementById('sd_sampler').value = preset.sampler;
+    document.getElementById('sd_width').value = isXL ? 768 : 512;
+    document.getElementById('sd_height').value = isXL ? 1024 : 768;
+
+    const result = document.getElementById('sd-models-result');
+    result.innerHTML = '<span class="text-info"><i class="bi bi-info-circle"></i> ' +
+        'Detected <strong>' + preset.label + '</strong> — parameters updated. Review and save.</span>';
+});
 
 // Show the right section on page load
 toggleProviderSections();
