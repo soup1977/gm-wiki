@@ -132,8 +132,8 @@
                             <label for="sd_sampler" class="form-label small">Sampler</label>
                             <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
                                    id="sd_sampler" name="sd_sampler"
-                                   value="{{ ai_config.sd_sampler or 'DPM++ SDE Karras' }}"
-                                   placeholder="DPM++ SDE Karras">
+                                   value="{{ ai_config.sd_sampler or 'DPM++ SDE' }}"
+                                   placeholder="DPM++ SDE">
                         </div>
                         <div class="col-3">
                             <label for="sd_steps" class="form-label small">Steps</label>
@@ -320,9 +320,9 @@ function loadSdModels() {
 // Auto-detect model type and suggest settings when model changes
 const SD_PRESETS = [
     { match: ['lightning', 'turbo', 'lcm'], label: 'Lightning/Turbo',
-      steps: 4, cfg: 2, sampler: 'DPM++ SDE Karras' },
+      steps: 4, cfg: 2, sampler: 'DPM++ SDE' },
     { match: ['xl', 'sdxl', 'pony'], label: 'SDXL',
-      steps: 20, cfg: 5, sampler: 'DPM++ 2M Karras' },
+      steps: 20, cfg: 5, sampler: 'DPM++ 2M' },
     { match: [], label: 'SD 1.5 (default)',
       steps: 25, cfg: 7, sampler: 'Euler a' },
 ];

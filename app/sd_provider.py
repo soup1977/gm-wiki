@@ -45,7 +45,7 @@ def _get_sd_settings():
     return {
         'steps': int(AppSetting.get('sd_steps', '4')),
         'cfg_scale': float(AppSetting.get('sd_cfg_scale', '2')),
-        'sampler_name': AppSetting.get('sd_sampler', 'DPM++ SDE Karras'),
+        'sampler_name': AppSetting.get('sd_sampler', 'DPM++ SDE'),
         'width': int(AppSetting.get('sd_width', '768')),
         'height': int(AppSetting.get('sd_height', '1024')),
     }

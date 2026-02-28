@@ -22,7 +22,7 @@ def index():
         AppSetting.set('anthropic_api_key', request.form.get('anthropic_api_key', '').strip())
         AppSetting.set('sd_url', request.form.get('sd_url', '').strip())
         AppSetting.set('sd_model', request.form.get('sd_model', '').strip())
-        AppSetting.set('sd_sampler', request.form.get('sd_sampler', 'DPM++ SDE Karras').strip())
+        AppSetting.set('sd_sampler', request.form.get('sd_sampler', 'DPM++ SDE').strip())
         AppSetting.set('sd_steps', request.form.get('sd_steps', '4').strip())
         AppSetting.set('sd_cfg_scale', request.form.get('sd_cfg_scale', '2').strip())
         AppSetting.set('sd_width', request.form.get('sd_width', '768').strip())
