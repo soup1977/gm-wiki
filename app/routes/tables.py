@@ -1,7 +1,9 @@
+import json as _json
+import os
 import random
 from datetime import datetime
 from flask import (Blueprint, render_template, redirect, url_for,
-                   request, flash, session, jsonify)
+                   request, flash, session, jsonify, current_app)
 from flask_login import login_required
 from app import db
 from app.models import RandomTable, TableRow
@@ -284,3 +286,185 @@ def roll(table_id):
         'result': selected.content,
         'timestamp': datetime.utcnow().isoformat()
     })
+
+
+# ── ICRPG seed / clear ──────────────────────────────────────────────────────
+
+@tables_bp.route('/seed-icrpg', methods=['POST'])
+@login_required
+def seed_icrpg_tables():
+    """Load ICRPG roll tables and loot tables as built-in rollable tables."""
+    seed_dir = os.path.join(current_app.root_path, 'seed_data')
+    imported = 0
+    skipped = 0
+
+    def _seed_table(name, category, description, entries):
+        nonlocal imported, skipped
+        if RandomTable.query.filter_by(name=name, is_builtin=True).first():
+            skipped += 1
+            return
+        table = RandomTable(name=name, category=category,
+                            description=description, is_builtin=True)
+        db.session.add(table)
+        db.session.flush()
+        for i, content in enumerate(entries):
+            db.session.add(TableRow(table_id=table.id, content=content,
+                                    weight=1, display_order=i))
+        imported += 1
+
+    # --- d20 Roll Tables (icrpg_tables.json) ---
+    tables_path = os.path.join(seed_dir, 'icrpg_tables.json')
+    if os.path.exists(tables_path):
+        with open(tables_path) as f:
+            for t in _json.load(f):
+                entries = []
+                for e in t['entries']:
+                    if e.get('name'):
+                        entries.append(f"**{e['name']}** — {e['description']}")
+                    else:
+                        entries.append(e['description'])
+                cat = f"ICRPG - {t.get('category', 'General')}"
+                desc = f"{t['die']} table — {t.get('setting', 'ICRPG')}"
+                _seed_table(t['table_name'], cat, desc, entries)
+
+    # --- d100 Loot Tables (icrpg_loot.json) ---
+    loot_path = os.path.join(seed_dir, 'icrpg_loot.json')
+    if os.path.exists(loot_path):
+        with open(loot_path) as f:
+            for t in _json.load(f):
+                entries = []
+                for e in t['entries']:
+                    entries.append(f"**{e['name']}** ({e['type']}) — {e['description']}")
+                _seed_table(t['table_name'], 'ICRPG - Loot', 'd100 loot table', entries)
+
+    # --- Starter Loot (icrpg_starter_loot.json) ---
+    starter_path = os.path.join(seed_dir, 'icrpg_starter_loot.json')
+    if os.path.exists(starter_path):
+        with open(starter_path) as f:
+            for t in _json.load(f):
+                entries = []
+                for e in t['entries']:
+                    entries.append(f"**{e['name']}** ({e['type']}) — {e['description']}")
+                cat = f"ICRPG - Starter Loot"
+                desc = f"{t.get('setting', 'ICRPG')} starter gear"
+                _seed_table(t['table_name'], cat, desc, entries)
+
+    db.session.commit()
+    msg = f'Loaded {imported} ICRPG rollable tables.'
+    if skipped:
+        msg += f' Skipped {skipped} duplicates.'
+    flash(msg, 'success')
+    return redirect(url_for('tables.list_tables'))
+
+
+@tables_bp.route('/clear-icrpg', methods=['POST'])
+@login_required
+def clear_icrpg_tables():
+    """Delete all ICRPG built-in rollable tables."""
+    tables = RandomTable.query.filter(
+        RandomTable.is_builtin == True,
+        RandomTable.category.like('ICRPG%')
+    ).all()
+    count = len(tables)
+    for t in tables:
+        db.session.delete(t)  # cascade deletes rows
+    db.session.commit()
+    flash(f'Deleted {count} ICRPG rollable tables.', 'success')
+    return redirect(url_for('tables.list_tables'))
+
+
+# ── Import table from URL ────────────────────────────────────────────────────
+
+@tables_bp.route('/import-url', methods=['POST'])
+@login_required
+def import_from_url():
+    """Fetch a URL, use AI to extract a rollable table, return JSON preview."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError
+    import urllib.request
+    import re
+
+    data = request.get_json(silent=True)
+    if not data or not data.get('url'):
+        return jsonify({'error': 'URL is required.'}), 400
+
+    url = data['url'].strip()
+    if not url.startswith(('http://', 'https://')):
+        return jsonify({'error': 'URL must start with http:// or https://'}), 400
+
+    # Fetch the page content
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read().decode('utf-8', errors='replace')
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch URL: {str(e)}'}), 400
+
+    # Strip HTML tags for a rough text extraction
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)
+    text = re.sub(r'<[^>]+>', '\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    # Limit to ~6000 chars to avoid blowing token limits
+    if len(text) > 6000:
+        text = text[:6000]
+
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. URL import requires an AI provider.'}), 403
+
+    system_prompt = """You extract rollable random tables from web page text.
+Return ONLY valid JSON, no explanation, no markdown fences.
+Format: {"name": "Table Name", "entries": ["entry 1", "entry 2", ...]}
+- Each entry should be a short, self-contained result suitable for rolling.
+- If entries have numbers (like "1. ...", "2. ..."), strip the numbers.
+- If the page has multiple tables, pick the largest or most interesting one.
+- If no table is found, return: {"error": "No rollable table found on this page."}"""
+
+    messages = [{'role': 'user', 'content': f'Extract a rollable table from this page:\n\n{text}'}]
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True)
+        if raw.startswith('```'):
+            raw = raw.split('\n', 1)[-1]
+            if raw.endswith('```'):
+                raw = raw[:-3].strip()
+        result = _json.loads(raw)
+        return jsonify(result)
+    except _json.JSONDecodeError:
+        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@tables_bp.route('/import-save', methods=['POST'])
+@login_required
+def import_save():
+    """Save a previewed URL-imported table as a custom RandomTable."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'Select a campaign first.'}), 400
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Invalid request.'}), 400
+
+    name = (data.get('name') or '').strip()
+    entries = data.get('entries', [])
+
+    if not name:
+        return jsonify({'error': 'Table name is required.'}), 400
+    if not entries:
+        return jsonify({'error': 'No entries to import.'}), 400
+
+    table = RandomTable(campaign_id=campaign_id, name=name,
+                        category=data.get('category', '').strip() or 'Imported',
+                        description=data.get('description', '').strip() or None,
+                        is_builtin=False)
+    db.session.add(table)
+    db.session.flush()
+    for i, content in enumerate(entries):
+        db.session.add(TableRow(table_id=table.id,
+                                content=str(content).strip(),
+                                weight=1, display_order=i))
+    db.session.commit()
+    return jsonify({'success': True, 'table_id': table.id,
+                    'redirect': url_for('tables.table_detail', table_id=table.id)})

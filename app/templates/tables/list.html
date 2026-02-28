@@ -4,11 +4,32 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Random Tables</h2>
-    {% if active_campaign %}
-    <a href="{{ url_for('tables.create_table') }}" class="btn btn-success">
-        <i class="bi bi-plus-circle"></i> New Table
-    </a>
-    {% endif %}
+    <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('tables.seed_icrpg_tables') }}" class="d-inline"
+              onsubmit="return confirm('Load ICRPG roll tables and loot tables?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-database-add"></i> Load ICRPG Tables
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('tables.clear_icrpg_tables') }}" class="d-inline"
+              onsubmit="return confirm('Delete ALL ICRPG rollable tables? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Clear ICRPG Tables
+            </button>
+        </form>
+        {% if ai_enabled %}
+        <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#importUrlModal">
+            <i class="bi bi-link-45deg"></i> Import from URL
+        </button>
+        {% endif %}
+        {% if active_campaign %}
+        <a href="{{ url_for('tables.create_table') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> New Table
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 {# Tabs: All / Built-in / Custom #}
@@ -138,6 +159,60 @@
 </div>
 {% endif %}
 
+{% if ai_enabled %}
+{# Import from URL modal #}
+<div class="modal fade" id="importUrlModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="bi bi-link-45deg"></i> Import Table from URL</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Paste a URL containing a random table</label>
+                    <div class="input-group">
+                        <input type="url" id="importUrl" class="form-control bg-dark text-light border-secondary"
+                               placeholder="https://example.com/d20-encounter-table">
+                        <button class="btn btn-info" id="importFetchBtn" onclick="fetchUrlTable()">
+                            <i class="bi bi-download"></i> Fetch
+                        </button>
+                    </div>
+                    <div class="form-text">AI will extract the table entries from the page.</div>
+                </div>
+                <div id="importLoading" style="display:none" class="text-center py-3">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="text-muted mt-2">Fetching and parsing table...</p>
+                </div>
+                <div id="importError" style="display:none" class="alert alert-danger"></div>
+                <div id="importPreview" style="display:none">
+                    <div class="mb-3">
+                        <label class="form-label">Table Name</label>
+                        <input type="text" id="importName" class="form-control bg-dark text-light border-secondary">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <input type="text" id="importCategory" class="form-control bg-dark text-light border-secondary"
+                               placeholder="Optional">
+                    </div>
+                    <label class="form-label">Entries (<span id="importCount">0</span>)</label>
+                    <div id="importEntries" class="border border-secondary rounded p-2 mb-3"
+                         style="max-height:300px;overflow-y:auto;font-size:0.85rem;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="importSaveBtn" style="display:none"
+                        onclick="saveImportedTable()">
+                    <i class="bi bi-check-circle"></i> Import Table
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <script>
 let _currentRollTableId = null;
 
@@ -164,6 +239,85 @@ function fetchRoll(tableId) {
         .catch(() => {
             document.getElementById('roll-panel-text').textContent = 'Error rolling on table.';
         });
+}
+
+/* ── Import from URL ── */
+let _importedEntries = [];
+
+function fetchUrlTable() {
+    const url = document.getElementById('importUrl').value.trim();
+    if (!url) return;
+
+    document.getElementById('importLoading').style.display = '';
+    document.getElementById('importError').style.display = 'none';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importSaveBtn').style.display = 'none';
+    document.getElementById('importFetchBtn').disabled = true;
+
+    fetch('/random-tables/import-url', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({url})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('importLoading').style.display = 'none';
+        document.getElementById('importFetchBtn').disabled = false;
+
+        if (data.error) {
+            document.getElementById('importError').textContent = data.error;
+            document.getElementById('importError').style.display = '';
+            return;
+        }
+
+        _importedEntries = data.entries || [];
+        document.getElementById('importName').value = data.name || 'Imported Table';
+        document.getElementById('importCount').textContent = _importedEntries.length;
+
+        const list = document.getElementById('importEntries');
+        list.innerHTML = _importedEntries.map((e, i) =>
+            `<div class="py-1 ${i > 0 ? 'border-top border-secondary' : ''}">${i+1}. ${e}</div>`
+        ).join('');
+
+        document.getElementById('importPreview').style.display = '';
+        document.getElementById('importSaveBtn').style.display = '';
+    })
+    .catch(() => {
+        document.getElementById('importLoading').style.display = 'none';
+        document.getElementById('importFetchBtn').disabled = false;
+        document.getElementById('importError').textContent = 'Network error. Please try again.';
+        document.getElementById('importError').style.display = '';
+    });
+}
+
+function saveImportedTable() {
+    const name = document.getElementById('importName').value.trim();
+    if (!name || !_importedEntries.length) return;
+
+    document.getElementById('importSaveBtn').disabled = true;
+
+    fetch('/random-tables/import-save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({
+            name,
+            category: document.getElementById('importCategory').value.trim(),
+            entries: _importedEntries
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.redirect) {
+            window.location = data.redirect;
+        } else {
+            document.getElementById('importSaveBtn').disabled = false;
+            alert(data.error || 'Import failed.');
+        }
+    })
+    .catch(() => {
+        document.getElementById('importSaveBtn').disabled = false;
+        alert('Network error. Please try again.');
+    });
 }
 </script>
 {% endblock %}

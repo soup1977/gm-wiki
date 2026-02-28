@@ -155,7 +155,8 @@ def delete_entry(entry_id):
 @compendium_bp.route('/compendium/seed-icrpg', methods=['POST'])
 @login_required
 def seed_icrpg_compendium():
-    """Load all ICRPG seed data (rules, spells, loot, tables) into the active campaign."""
+    """Load ICRPG rules and spells into the active campaign's compendium.
+    (Loot tables, roll tables, and starter loot go into Rollable Tables instead.)"""
     campaign_id = get_active_campaign_id()
     if not campaign_id:
         flash('Select a campaign first.', 'warning')
@@ -179,7 +180,7 @@ def seed_icrpg_compendium():
 
     seed_dir = os.path.join(current_app.root_path, 'seed_data')
 
-    # --- Rules ---
+    # --- Rules + Classes ---
     rules_path = os.path.join(seed_dir, 'icrpg_compendium.json')
     if os.path.exists(rules_path):
         with open(rules_path) as f:
@@ -202,51 +203,8 @@ def seed_icrpg_compendium():
                     content += f"\n\n*{sp['flavor']}*"
                 _add(sp['name'], f"ICRPG - Spell ({sp['type']})", content)
 
-    # --- Loot tables ---
-    loot_path = os.path.join(seed_dir, 'icrpg_loot.json')
-    if os.path.exists(loot_path):
-        with open(loot_path) as f:
-            for table in _json.load(f):
-                lines = [f"# {table['table_name']}\n",
-                         "| Roll | Name | Type | Description |",
-                         "|------|------|------|-------------|"]
-                for e in table['entries']:
-                    lines.append(f"| {e['roll']} | {e['name']} | {e['type']} | {e['description']} |")
-                _add(table['table_name'], 'ICRPG - Loot Table', '\n'.join(lines))
-
-    # --- Roll tables ---
-    tables_path = os.path.join(seed_dir, 'icrpg_tables.json')
-    if os.path.exists(tables_path):
-        with open(tables_path) as f:
-            for table in _json.load(f):
-                lines = [f"# {table['table_name']}\n",
-                         f"*{table['die']} — {table.get('setting', 'ICRPG')}*\n"]
-                has_names = any('name' in e for e in table['entries'])
-                if has_names:
-                    lines += ["| Roll | Name | Description |", "|------|------|-------------|"]
-                    for e in table['entries']:
-                        lines.append(f"| {e['roll']} | {e.get('name', '')} | {e['description']} |")
-                else:
-                    lines += ["| Roll | Description |", "|------|-------------|"]
-                    for e in table['entries']:
-                        lines.append(f"| {e['roll']} | {e['description']} |")
-                _add(table['table_name'], f"ICRPG - Roll Table ({table.get('category', 'General')})", '\n'.join(lines))
-
-    # --- Starter loot ---
-    starter_path = os.path.join(seed_dir, 'icrpg_starter_loot.json')
-    if os.path.exists(starter_path):
-        with open(starter_path) as f:
-            for table in _json.load(f):
-                lines = [f"# {table['table_name']}\n",
-                         f"*{table.get('setting', 'ICRPG')} — Starter Loot*\n",
-                         "| Name | Type | Description |",
-                         "|------|------|-------------|"]
-                for e in table['entries']:
-                    lines.append(f"| {e['name']} | {e['type']} | {e['description']} |")
-                _add(table['table_name'], f"ICRPG - Starter Loot ({table.get('setting', 'ICRPG')})", '\n'.join(lines))
-
     db.session.commit()
-    msg = f'Imported {imported} ICRPG entries.'
+    msg = f'Imported {imported} ICRPG compendium entries.'
     if skipped:
         msg += f' Skipped {skipped} duplicates.'
     flash(msg, 'success')
