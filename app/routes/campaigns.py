@@ -120,6 +120,7 @@ def edit_campaign(campaign_id):
         campaign.system = request.form.get('system', '').strip()
         campaign.status = request.form.get('status', 'active')
         campaign.description = request.form.get('description', '').strip()
+        campaign.image_style_prompt = request.form.get('image_style_prompt', '').strip() or None
         db.session.commit()
         flash(f'Campaign "{campaign.name}" updated.', 'success')
         return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign.id))

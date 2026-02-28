@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Goblin",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Armor:** 10\n**Actions:** Rusty Blade (Weapon Effort), Scurry (move NEAR and hide)\n**Loot:** 1d4 coin, rusty blade\n\nSmall, green-skinned scavengers. Always found in groups. Cowardly alone, dangerous in packs.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,goblinoid,easy"
+  },
+  {
+    "name": "Skeleton",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Armor:** 12\n**Actions:** Bone Blade (Weapon Effort), Reassemble (if destroyed, roll 1d6 — on 5-6 it reforms next round)\n**Loot:** Ancient coin, bone fragment\n\nUndead warriors animated by dark magic. They fight silently, relentlessly, until destroyed or their master falls.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,easy"
+  },
+  {
+    "name": "Giant Rat",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 0.5 Heart (5 HP)\n**Armor:** 10\n**Actions:** Bite (Basic Effort), Disease (on a natural 1 defense, target is poisoned)\n**Loot:** Rat tail, mangy pelt\n\nOversized vermin found in sewers, cellars, and ruins. Travel in swarms.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,vermin,easy"
+  },
+  {
+    "name": "Zombie",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Armor:** 8\n**Actions:** Slam (Weapon Effort), Grab (STR check or target is grabbed, can't move)\n**Loot:** Rotting gear, 1d4 coin\n\nSlow but tough. Hard to put down. They keep coming. What they lack in speed they make up in relentlessness.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,easy"
+  },
+  {
+    "name": "Bandit",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Armor:** 12 (leather)\n**Actions:** Short Sword (Weapon Effort), Crossbow (Weapon Effort at FAR), Dirty Trick (target rolls DEX or is blinded for 1 round)\n**Loot:** 2d6 coin, short sword, leather armor\n\nDesperados, highwaymen, and cutthroats. Usually want your money, not your life — unless cornered.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,easy"
+  },
+  {
+    "name": "Wolf",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Armor:** 10\n**Actions:** Bite (Weapon Effort), Pack Tactics (if 2+ wolves attack same target, +3 to hit)\n**Loot:** Wolf pelt, fangs\n\nClever pack hunters. Rarely attack groups unless starving. Can be tamed by skilled handlers.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,easy"
+  },
+  {
+    "name": "Orc Warrior",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Armor:** 14 (chain + shield)\n**Actions:** War Axe (Weapon Effort +2), Shield Bash (target rolls STR or falls prone), Battle Cry (allies within NEAR get +2 on next attack)\n**Loot:** 3d6 coin, war axe, chain armor, shield\n\nBrutal fighters who live for combat. Stronger and tougher than goblins. Organized into war bands with clear hierarchy.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,orc,medium"
+  },
+  {
+    "name": "Giant Spider",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Armor:** 12\n**Actions:** Bite (Weapon Effort + poison: CON check or 1d4 damage per round for 3 rounds), Web (DEX check or stuck until freed with STR check)\n**Loot:** Spider silk, venom sac\n\nCar-sized arachnids lurking in webs in dark places. They wait patiently for prey to stumble in.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,spider,medium"
+  },
+  {
+    "name": "Ogre",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Armor:** 12 (thick skin)\n**Actions:** Club Smash (Ultimate Effort), Throw Rock (Weapon Effort at FAR), Stomp (all CLOSE targets roll DEX or take Basic Effort)\n**Loot:** 4d6 coin, ogre teeth, big club\n\nMassive, dim-witted brutes. One ogre is a serious threat. They collect shiny things and are easily tricked — but not easily stopped.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "giant,hard"
+  },
+  {
+    "name": "Mimic",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Armor:** 15 (hard shell)\n**Actions:** Bite (Weapon Effort), Adhesive (first attack sticks weapon to it — STR check to free), Surprise (always acts first in round 1)\n**Loot:** Whatever it was pretending to be, plus 2d6 coin\n\nShapeshifting predators disguised as treasure chests, doors, or furniture. They wait for someone to touch them, then strike.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "monstrosity,medium,dungeon"
+  },
+  {
+    "name": "Troll",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Armor:** 12\n**Actions:** Claw/Claw/Bite (3 attacks at Weapon Effort), Regeneration (heals 5 HP per round unless burned)\n**Weakness:** Fire stops regeneration for 1 round\n**Loot:** Troll blood (alchemy ingredient), 3d6 coin\n\nLanky, green-skinned horrors that regenerate from almost any wound. Fire is the answer.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "giant,hard,regeneration"
+  },
+  {
+    "name": "Wraith",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Armor:** 14 (incorporeal — only magic weapons hit fully)\n**Actions:** Life Drain (Magic Effort, target loses that many max HP until long rest), Phase (can move through walls)\n**Loot:** Cursed ring, soul gem\n\nIncorporeal undead bound to a location or object. Physical weapons deal half damage. Their touch drains life force.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,incorporeal,hard"
+  },
+  {
+    "name": "Wyvern",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Armor:** 15 (scales)\n**Actions:** Bite (Ultimate Effort), Tail Sting (Weapon Effort + poison: CON check or paralyzed 1 round), Flyby (move FAR and attack without provoking)\n**Loot:** Wyvern scales, poison stinger, 5d6 coin\n\nLesser dragon-kin with a deadly poisoned stinger. Territorial and aggressive. Can carry off a full-grown human.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "dragon,flying,hard"
+  },
+  {
+    "name": "Lich",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 5 Hearts (50 HP)\n**Armor:** 18 (magical wards)\n**Actions:** Eldritch Blast (Ultimate Effort at FAR), Summon Undead (2d4 skeletons appear), Power Word (one target rolls WIS or is stunned 1 round), Teleport (move anywhere within FAR)\n**Phylactery:** Cannot be permanently killed unless phylactery is destroyed\n**Loot:** Staff of power, spellbook, phylactery clue, 10d6 coin\n\nAncient sorcerers who traded their mortality for eternal undeath. Brilliant, patient, and terrifying. Always have a plan within a plan.",
+    "cr_level": "Boss",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,boss,spellcaster"
+  },
+  {
+    "name": "Dragon (Adult)",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 6 Hearts (60 HP)\n**Armor:** 18 (dragon scales)\n**Actions:** Bite (Ultimate Effort +3), Claw/Claw (2x Weapon Effort), Breath Weapon (all in a NEAR cone take Ultimate Effort, DEX check for half — recharges on 5-6 each round), Tail Sweep (all CLOSE targets roll DEX or are knocked FAR and take Weapon Effort), Frightful Presence (all within FAR roll WIS or are frightened 1 round)\n**Loot:** Dragon hoard (massive), dragon scales, dragon blood\n\nThe apex predator. Ancient, intelligent, and devastating. A dragon encounter should be a campaign-defining event.",
+    "cr_level": "Boss",
+    "source": "ICRPG Master Edition",
+    "tags": "dragon,boss,flying"
+  }
+]

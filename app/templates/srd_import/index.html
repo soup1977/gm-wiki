@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}D&D 5e SRD Import — GM Wiki{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+        <li class="breadcrumb-item active">D&D 5e SRD Import</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4"><i class="bi bi-cloud-download me-2"></i>D&D 5e SRD Import</h2>
+<p class="text-muted mb-4">
+    Browse the free D&D 5e System Reference Document and import spells, items, equipment,
+    conditions, and rules directly into your campaign's Compendium.
+</p>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for cat in categories %}
+    <div class="col">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ cat.label }}</h5>
+                <p class="text-muted small">
+                    {{ cat.count }} entries available
+                    {% if cat.imported %}
+                    <br><span class="text-success">{{ cat.imported }} already imported</span>
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('srd_import.browse', category=cat.key) }}"
+                   class="btn btn-outline-primary mt-auto">
+                    <i class="bi bi-search me-1"></i> Browse &amp; Import
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -17,10 +17,14 @@
 
 <div class="d-flex align-items-center gap-3 mb-4">
     <h2 class="mb-0">{{ 'Edit' if location else 'New' }} Location</h2>
-    {% if config.AI_ENABLED %}
+    {% if ai_enabled %}
     <button type="button" class="btn btn-outline-primary btn-sm"
             data-bs-toggle="modal" data-bs-target="#smartFillModal">
         <i class="bi bi-stars"></i> Smart Fill
+    </button>
+    <button type="button" class="btn btn-outline-info btn-sm"
+            data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
+        <i class="bi bi-magic"></i> Generate Entry
     </button>
     {% endif %}
 </div>
@@ -115,6 +119,19 @@
                         {% endif %}
                         <input type="file" class="form-control" id="map_image" name="map_image" accept="image/*">
                         <div class="form-text">JPG, PNG, GIF, WebP.</div>
+                        {% if sd_enabled %}
+                        <div class="mt-2">
+                            <button type="button" id="sd-generate-btn" class="btn btn-outline-info btn-sm"
+                                    onclick="sdGenerate('location')">
+                                <i class="bi bi-image"></i> Generate Image
+                            </button>
+                            <div id="sd-generate-result" class="small mt-1"></div>
+                            <div style="display:none;" class="mt-2">
+                                <img id="sd-preview-img" class="img-thumbnail" style="max-height: 200px; display:none;" alt="Generated preview">
+                            </div>
+                            <input type="hidden" id="sd-generated-filename" name="sd_generated_filename" value="">
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div>
@@ -181,8 +198,10 @@
     </div>
 </form>
 
-{% if config.AI_ENABLED %}
+{% if ai_enabled %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'location';</script>
+<script>window.AI_GENERATE_ENTITY_TYPE = 'location';</script>
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_generate.js') }}"></script>
 {% endif %}
 {% endblock %}

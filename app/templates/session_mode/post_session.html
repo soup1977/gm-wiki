@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Wrap Up Session — GM Wiki{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-stop-circle me-2 text-warning"></i>
+        Wrap Up: {% if game_session.number %}#{{ game_session.number }} — {% endif %}{{ game_session.title or 'Untitled Session' }}
+    </h2>
+    <a href="{{ url_for('session_mode.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Session
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('session_mode.save_post_session') }}">
+
+    {# ── Session Summary ────────────────────────────────────────────────── #}
+    <div class="card bg-dark border-secondary mb-4">
+        <div class="card-header border-secondary">
+            <h5 class="mb-0"><i class="bi bi-journal-text me-1"></i> Session Summary</h5>
+        </div>
+        <div class="card-body">
+            <textarea name="summary" rows="5"
+                      class="form-control bg-dark text-light border-secondary"
+                      placeholder="What happened this session? This will be the summary players see in the wiki.">{{ game_session.summary or '' }}</textarea>
+        </div>
+    </div>
+
+    <div class="row g-3">
+
+        {# ── Quest Status Updates ───────────────────────────────────────── #}
+        {% if game_session.quests_touched %}
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0"><i class="bi bi-flag me-1"></i> Quest Updates</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for quest in game_session.quests_touched %}
+                        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">{{ quest.name }}</span>
+                            <select name="quest_status_{{ quest.id }}"
+                                    class="form-select form-select-sm bg-dark text-light border-secondary"
+                                    style="max-width:160px;">
+                                <option value="active" {% if quest.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="completed" {% if quest.status == 'completed' %}selected{% endif %}>Completed</option>
+                                <option value="failed" {% if quest.status == 'failed' %}selected{% endif %}>Failed</option>
+                                <option value="on_hold" {% if quest.status == 'on_hold' %}selected{% endif %}>On Hold</option>
+                            </select>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── NPC Status Updates ─────────────────────────────────────────── #}
+        {% if game_session.npcs_featured %}
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0"><i class="bi bi-person me-1"></i> NPC Updates</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for npc in game_session.npcs_featured %}
+                        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">{{ npc.name }}</span>
+                            <select name="npc_status_{{ npc.id }}"
+                                    class="form-select form-select-sm bg-dark text-light border-secondary"
+                                    style="max-width:160px;">
+                                <option value="alive" {% if npc.status == 'alive' %}selected{% endif %}>Alive</option>
+                                <option value="dead" {% if npc.status == 'dead' %}selected{% endif %}>Dead</option>
+                                <option value="missing" {% if npc.status == 'missing' %}selected{% endif %}>Missing</option>
+                                <option value="unknown" {% if npc.status == 'unknown' %}selected{% endif %}>Unknown</option>
+                            </select>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    {# ── Item Notes ─────────────────────────────────────────────────────── #}
+    {% if game_session.items_mentioned %}
+    <div class="card bg-dark border-secondary mt-3 mb-4">
+        <div class="card-header border-secondary">
+            <h5 class="mb-0"><i class="bi bi-backpack me-1"></i> Item Notes</h5>
+        </div>
+        <div class="card-body">
+            {% for item in game_session.items_mentioned %}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ item.name }}
+                    {% if item.rarity %}<span class="badge bg-secondary ms-1">{{ item.rarity }}</span>{% endif %}
+                </label>
+                <input type="text" name="item_note_{{ item.id }}"
+                       class="form-control form-control-sm bg-dark text-light border-secondary"
+                       placeholder="Any notes? (appended to item description)">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Submit ─────────────────────────────────────────────────────────── #}
+    <div class="d-flex gap-2 mt-4 mb-4">
+        <button type="submit" class="btn btn-lg btn-success">
+            <i class="bi bi-check-circle me-1"></i> Save &amp; Finish
+        </button>
+        <a href="{{ url_for('session_mode.dashboard') }}" class="btn btn-lg btn-outline-secondary">
+            Cancel
+        </a>
+    </div>
+
+</form>
+
+{% endblock %}

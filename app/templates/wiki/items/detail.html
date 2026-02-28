@@ -37,6 +37,13 @@
     </div>
 </div>
 
+{% if item.image_filename %}
+<div class="mb-4">
+    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+         alt="{{ item.name }}" class="img-fluid rounded" style="max-height: 350px;">
+</div>
+{% endif %}
+
 {% if item.description %}
 <div class="mb-4">
     <div>{{ item.description | md | safe }}</div>

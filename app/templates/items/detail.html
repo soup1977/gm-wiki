@@ -93,6 +93,14 @@
 
     <!-- Sidebar -->
     <div class="col-md-4">
+        {% if item.image_filename %}
+        <div class="mb-3">
+            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                 alt="{{ item.name }}" class="img-fluid rounded"
+                 style="max-height: 350px; width: 100%; object-fit: cover;">
+        </div>
+        {% endif %}
+
         <div class="card bg-dark border-secondary mb-3">
             <div class="card-header">Owner</div>
             <div class="card-body">

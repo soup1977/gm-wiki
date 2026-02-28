@@ -1,6 +1,14 @@
 /* Minor tweaks on top of Bootstrap dark theme */
 body {
     background-color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Main content area grows to push footer down on short pages */
+.main-content {
+    flex: 1;
 }
 
 .navbar-brand {

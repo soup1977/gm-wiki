@@ -16,15 +16,19 @@
 
 <div class="d-flex align-items-center gap-3 mb-4">
     <h2 class="mb-0">{% if item %}Edit Item{% else %}New Item{% endif %}</h2>
-    {% if config.AI_ENABLED %}
+    {% if ai_enabled %}
     <button type="button" class="btn btn-outline-primary btn-sm"
             data-bs-toggle="modal" data-bs-target="#smartFillModal">
         <i class="bi bi-stars"></i> Smart Fill
     </button>
+    <button type="button" class="btn btn-outline-info btn-sm"
+            data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
+        <i class="bi bi-magic"></i> Generate Entry
+    </button>
     {% endif %}
 </div>
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
     <div class="row g-4">
 
         <!-- LEFT COLUMN: metadata and relationships -->
@@ -96,6 +100,32 @@
                     </div>
 
                     <div>
+                        <label for="image" class="form-label">Image</label>
+                        {% if item and item.image_filename %}
+                        <div class="mb-2">
+                            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                                 alt="Current image" class="img-thumbnail" style="max-height: 120px;">
+                            <div class="form-text">Upload below to replace.</div>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                        <div class="form-text">JPG, PNG, GIF, WebP.</div>
+                        {% if sd_enabled %}
+                        <div class="mt-2">
+                            <button type="button" id="sd-generate-btn" class="btn btn-outline-info btn-sm"
+                                    onclick="sdGenerate('item')">
+                                <i class="bi bi-image"></i> Generate Image
+                            </button>
+                            <div id="sd-generate-result" class="small mt-1"></div>
+                            <div style="display:none;" class="mt-2">
+                                <img id="sd-preview-img" class="img-thumbnail" style="max-height: 200px; display:none;" alt="Generated preview">
+                            </div>
+                            <input type="hidden" id="sd-generated-filename" name="sd_generated_filename" value="">
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
                         <label for="tags" class="form-label">Tags</label>
                         <input type="text" class="form-control" id="tags" name="tags"
                                value="{{ item.tags | map(attribute='name') | join(', ') if item else '' }}"
@@ -149,8 +179,10 @@
            class="btn btn-outline-secondary">Cancel</a>
     </div>
 </form>
-{% if config.AI_ENABLED %}
+{% if ai_enabled %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'item';</script>
+<script>window.AI_GENERATE_ENTITY_TYPE = 'item';</script>
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_generate.js') }}"></script>
 {% endif %}
 {% endblock %}

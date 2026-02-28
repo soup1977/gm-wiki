@@ -109,6 +109,8 @@ def create_entry():
 
         image_file = request.files.get('image')
         filename = save_upload(image_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             entry.image_path = filename
 
@@ -174,6 +176,8 @@ def edit_entry(entry_id):
 
         image_file = request.files.get('image')
         filename = save_upload(image_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             entry.image_path = filename
 

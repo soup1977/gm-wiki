@@ -1,0 +1,122 @@
+[
+  {
+    "title": "Target Number (TN)",
+    "category": "ICRPG - Rule",
+    "content": "The GM sets a single **Target Number** for the entire room or scene. All checks in that area use the same TN.\n\n- **Easy room:** TN 10\n- **Normal room:** TN 12\n- **Hard room:** TN 15\n- **Insane room:** TN 18\n\nThis replaces individual DCs for every action. One number, every roll. Simple."
+  },
+  {
+    "title": "Effort System",
+    "category": "ICRPG - Rule",
+    "content": "When you succeed on a check, you roll **Effort** to see how much progress you make. Tasks have HP (Hearts), and your Effort chips away at them.\n\n**Effort Types:**\n- **Basic Effort (d4):** Simple tasks — persuasion, searching, healing\n- **Weapon Effort (d6):** Melee and ranged attacks with normal weapons\n- **Gun Effort (d8):** Firearms, high-tech weapons\n- **Magic Effort (d10):** Spells, supernatural abilities\n- **Ultimate Effort (d12):** Critical hits, legendary actions, divine power\n\nWhen total Effort equals the task's HP, it's done."
+  },
+  {
+    "title": "Hearts (HP)",
+    "category": "ICRPG - Rule",
+    "content": "Everything in ICRPG is measured in **Hearts**. One Heart = 10 HP.\n\n- **Players** typically start with 1 Heart (10 HP)\n- **Tough enemies** might have 2-4 Hearts\n- **Bosses** can have 5+ Hearts\n- **Tasks** also have Hearts — picking a lock might be 1 Heart of Effort, deciphering an ancient text might be 2 Hearts\n\nThis makes HP math fast and intuitive. \"That ogre has 3 Hearts\" is easier to track than \"that ogre has 37 HP.\""
+  },
+  {
+    "title": "Timers",
+    "category": "ICRPG - Rule",
+    "content": "Timers create urgency. The GM places a **d4** on the table. Each round, it counts down by 1. When it hits zero, something happens.\n\n**Examples:**\n- The ceiling collapses (d4 timer)\n- Reinforcements arrive (d6 timer)\n- The ritual completes (d8 timer)\n- The bridge breaks (d4 timer)\n\nTimers keep players moving and prevent analysis paralysis. Every round matters."
+  },
+  {
+    "title": "NEAR and FAR",
+    "category": "ICRPG - Rule",
+    "content": "ICRPG uses abstract distances instead of a grid:\n\n- **CLOSE:** Within arm's reach. Melee range.\n- **NEAR:** A short jog away. About 25 feet. One move action to get there.\n- **FAR:** Across the room or field. About 50 feet. Takes a full turn to move there.\n- **OUT OF RANGE:** Too far to interact with this round.\n\nA character can move **NEAR** and still take an action, OR move **FAR** as their entire turn."
+  },
+  {
+    "title": "Loot",
+    "category": "ICRPG - Rule",
+    "content": "Loot is the primary way characters grow in power. Instead of class abilities unlocking at certain levels, characters find **Loot** that grants new abilities.\n\n**Loot can:**\n- Grant +1 to +3 bonuses to stats or Effort\n- Give new abilities (fly, breathe underwater, cast a spell)\n- Provide armor or damage bonuses\n- Unlock story elements\n\n**Starter Loot:** Each class starts with one piece of loot that defines their role.\n\nThe GM controls power progression through what loot appears in the world."
+  },
+  {
+    "title": "Turns and Rounds",
+    "category": "ICRPG - Rule",
+    "content": "**On your turn, you get:**\n1. **One Move** — move NEAR (or FAR if you skip your action)\n2. **One Action** — attack, cast a spell, use an ability, attempt a check\n\n**Turn order** is determined at the start of combat. Everyone rolls, and turns go from highest to lowest. This order stays fixed for the encounter.\n\n**Important:** There are no bonus actions, reactions, or opportunity attacks in ICRPG. One move, one action. Clean and fast."
+  },
+  {
+    "title": "Dying and Recovery",
+    "category": "ICRPG - Rule",
+    "content": "When you hit **0 HP**, you're **Dying**.\n\n- Each round while Dying, you roll a **CON check** against the room's Target Number\n- **Success:** You stabilize at 1 HP\n- **Failure:** You take 1 damage. At -5 HP, you're dead.\n\n**Recovery:**\n- An ally can attempt to heal you (INT check + Basic Effort for HP restored)\n- A healing potion restores 1 Heart instantly\n- A rest restores all HP and Effort"
+  },
+  {
+    "title": "Warrior",
+    "category": "ICRPG - Class",
+    "content": "**Starting Stats:** +2 STR, +1 CON\n**Starter Loot:** Choose one — Warrior's Blade (+2 Weapon Effort), Shield of Valor (+2 Armor), Berserker Helm (when below half HP, +3 to all attack rolls)\n\n**Role:** Front-line fighter. High durability, consistent damage. The backbone of any adventuring party.\n\n**Play Style:** Get in close, hit hard, protect your allies. Warriors shine when the fight is thickest."
+  },
+  {
+    "title": "Mage",
+    "category": "ICRPG - Class",
+    "content": "**Starting Stats:** +2 INT, +1 WIS\n**Starter Loot:** Choose one — Staff of Fire (cast Fireball: all NEAR targets take Magic Effort), Tome of Wards (+3 to all ally armor within NEAR for 1 round), Crystal of Sight (see invisible, detect magic, read any language)\n\n**Role:** Ranged damage and utility. Glass cannon with powerful area effects.\n\n**Play Style:** Stay at FAR range, control the battlefield, solve problems with knowledge and power."
+  },
+  {
+    "title": "Priest",
+    "category": "ICRPG - Class",
+    "content": "**Starting Stats:** +2 WIS, +1 CHA\n**Starter Loot:** Choose one — Holy Symbol (heal 1 Heart to an ally within NEAR as an action), Blessed Mace (+2 Weapon Effort vs undead), Banner of Light (all allies within NEAR get +2 to all checks for 1 round)\n\n**Role:** Healer and support. Keeps the party alive and buffs allies.\n\n**Play Style:** Stay mid-range, heal and buff allies, turn undead, be the moral compass."
+  },
+  {
+    "title": "Thief",
+    "category": "ICRPG - Class",
+    "content": "**Starting Stats:** +2 DEX, +1 CHA\n**Starter Loot:** Choose one — Shadow Cloak (become invisible for 1 round, once per encounter), Lockpick Set (+3 to all DEX checks for locks and traps), Poisoned Blade (on hit, target takes +1d4 poison damage for 3 rounds)\n\n**Role:** Skill monkey and burst damage. Handles traps, locks, and stealth.\n\n**Play Style:** Scout ahead, disable traps, strike from surprise, talk your way out of trouble."
+  },
+  {
+    "title": "Fireball",
+    "category": "ICRPG - Arcane Spell",
+    "content": "**Type:** Arcane Spell\n**Range:** FAR\n**Effort:** Magic Effort to all targets in a NEAR area\n\nLaunch a ball of fire that explodes on impact. All creatures in the blast radius take Magic Effort damage. Objects and terrain may catch fire.\n\nThe classic. Point. Boom. Problem solved (usually)."
+  },
+  {
+    "title": "Shield",
+    "category": "ICRPG - Arcane Spell",
+    "content": "**Type:** Arcane Spell\n**Range:** CLOSE (self or ally)\n**Duration:** 1 round\n\nCreate a shimmering barrier of magical force. Target gains +5 Armor until your next turn. Can be cast as a reaction when hit."
+  },
+  {
+    "title": "Lightning Bolt",
+    "category": "ICRPG - Arcane Spell",
+    "content": "**Type:** Arcane Spell\n**Range:** FAR (line)\n**Effort:** Magic Effort to all targets in a line\n\nA bolt of lightning streaks from your hand in a straight line. All creatures in the line take Magic Effort damage. Metal armor conducts — targets in metal take +3 damage."
+  },
+  {
+    "title": "Invisibility",
+    "category": "ICRPG - Arcane Spell",
+    "content": "**Type:** Arcane Spell\n**Range:** CLOSE (self or ally)\n**Duration:** Until you attack or cast another spell\n\nThe target becomes invisible. Enemies cannot target them directly. Moving while invisible requires a DEX check (room TN) to remain silent."
+  },
+  {
+    "title": "Heal",
+    "category": "ICRPG - Holy Spell",
+    "content": "**Type:** Holy Spell\n**Range:** NEAR\n**Effort:** Magic Effort (restored as HP to target)\n\nChannel divine energy to mend wounds. Roll Magic Effort — the target regains that many HP. Can stabilize a dying ally without a check."
+  },
+  {
+    "title": "Turn Undead",
+    "category": "ICRPG - Holy Spell",
+    "content": "**Type:** Holy Spell\n**Range:** NEAR (all undead)\n\nRaise your holy symbol and channel divine wrath. All undead within NEAR must roll WIS against the room TN or flee for 1d4 rounds. Undead with fewer Hearts than your level are destroyed outright."
+  },
+  {
+    "title": "Bless",
+    "category": "ICRPG - Holy Spell",
+    "content": "**Type:** Holy Spell\n**Range:** NEAR (all allies)\n**Duration:** 3 rounds\n\nCall upon divine favor. All allies within NEAR gain +2 to all checks for the duration. A staple support spell."
+  },
+  {
+    "title": "Smite",
+    "category": "ICRPG - Holy Spell",
+    "content": "**Type:** Holy Spell\n**Range:** CLOSE (melee weapon)\n**Effort:** Weapon Effort + Magic Effort combined\n\nChannel divine wrath through your weapon. Your next melee hit deals both Weapon and Magic Effort combined. Double damage against undead and fiends."
+  },
+  {
+    "title": "Hellfire",
+    "category": "ICRPG - Infernal Spell",
+    "content": "**Type:** Infernal Spell\n**Range:** FAR\n**Effort:** Magic Effort + 1d4 (dark flames)\n\nSummon flames from the lower planes. Deals Magic Effort + 1d4 to a single target. The fire burns black and cannot be extinguished by water — only by magic or waiting 1d4 rounds."
+  },
+  {
+    "title": "Soul Drain",
+    "category": "ICRPG - Infernal Spell",
+    "content": "**Type:** Infernal Spell\n**Range:** NEAR\n**Effort:** Magic Effort\n\nReach out with dark tendrils and drain life force. Deal Magic Effort damage to the target — you heal for half the damage dealt (rounded down). The target feels a creeping cold."
+  },
+  {
+    "title": "Shadow Step",
+    "category": "ICRPG - Infernal Spell",
+    "content": "**Type:** Infernal Spell\n**Range:** FAR\n\nStep into shadows and emerge from any other shadow within FAR range. This counts as your move. If used to attack from surprise, gain +3 to hit on your next attack this turn."
+  },
+  {
+    "title": "Summon Fiend",
+    "category": "ICRPG - Infernal Spell",
+    "content": "**Type:** Infernal Spell\n**Range:** NEAR\n**Duration:** 3 rounds or until destroyed\n\nCall a minor fiend from the lower planes. It has 1 Heart, Armor 12, and attacks with Weapon Effort. It obeys your commands but may act unpredictably on a natural 1. When the duration ends, it returns to its plane."
+  }
+]

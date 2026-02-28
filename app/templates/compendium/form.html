@@ -34,8 +34,14 @@
                         <label for="category" class="form-label">Category</label>
                         <input type="text" class="form-control" id="category" name="category"
                                value="{{ entry.category if entry else '' }}"
-                               placeholder="e.g. Combat, Magic, House Rules">
-                        <div class="form-text">Groups entries on the list.</div>
+                               placeholder="e.g. Combat, Magic, House Rules"
+                               list="category-list" autocomplete="off">
+                        <datalist id="category-list">
+                            {% for cat in existing_categories %}
+                            <option value="{{ cat }}">
+                            {% endfor %}
+                        </datalist>
+                        <div class="form-text">Pick an existing category or type a new one.</div>
                     </div>
 
                     <div class="form-check">

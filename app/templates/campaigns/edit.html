@@ -40,6 +40,15 @@
         <textarea class="form-control" id="description" name="description" rows="4">{{ campaign.description or '' }}</textarea>
     </div>
 
+    {% if sd_enabled %}
+    <div class="mb-3">
+        <label for="image_style_prompt" class="form-label">Image Style Prompt</label>
+        <textarea class="form-control" id="image_style_prompt" name="image_style_prompt" rows="2"
+                  placeholder="e.g. dark fantasy oil painting, dramatic lighting, medieval">{{ campaign.image_style_prompt or '' }}</textarea>
+        <div class="form-text">Prepended to all AI-generated images for this campaign. Sets the visual tone for portraits, locations, and items.</div>
+    </div>
+    {% endif %}
+
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-circle"></i> Save Changes

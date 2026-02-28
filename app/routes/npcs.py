@@ -82,6 +82,8 @@ def create_npc():
 
         portrait_file = request.files.get('portrait')
         filename = save_upload(portrait_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             npc.portrait_filename = filename
 
@@ -163,6 +165,8 @@ def edit_npc(npc_id):
 
         portrait_file = request.files.get('portrait')
         filename = save_upload(portrait_file)
+        if not filename:
+            filename = request.form.get('sd_generated_filename', '').strip() or None
         if filename:
             npc.portrait_filename = filename
 
