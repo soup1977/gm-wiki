@@ -1,0 +1,278 @@
+[
+  {
+    "table_name": "Alfheim Basic Loot - Packs & Armor",
+    "setting": "Alfheim",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Adventurer's Pack",
+        "type": "Pack",
+        "description": "A torch, bedroll, scrap of jerky, apple, pipe, and rope. This rucksack has been through so much, you're not sure what's inside."
+      },
+      {
+        "name": "Miner's Pack",
+        "type": "Pack",
+        "description": "Pick hammer, lantern, fire-starting oil and flint, compass, breather mask. A heavy duty canvas pack scuffed with coal and chalk."
+      },
+      {
+        "name": "Polar Pack",
+        "type": "Pack",
+        "description": "This fur-lined pack is built into a warm seal skin cloak. It contains a fire pot, fur mittens, snow-blind goggles, ski poles, boots and rope."
+      },
+      {
+        "name": "Fisherman's Satchel",
+        "type": "Pack",
+        "description": "Mesh creel, two fishing poles, tackle box, fillet knife and basket snare. Also includes swim fins and a clumsy glass diving mask."
+      },
+      {
+        "name": "Mender's Toolbox",
+        "type": "Tool",
+        "description": "Hammer and pliers, rivets, scrap steel, leather strips, spare buckles and iron nails. Use for anything from armor to boat repair."
+      },
+      {
+        "name": "Healer's Case",
+        "type": "Tool",
+        "description": "Using this kit of bandages, tinctures and serums, heal 1 HP on an ally with an INT or WIS roll. Includes bottles, scalpel, and anti-venom."
+      },
+      {
+        "name": "Climbing Gear",
+        "type": "Tool",
+        "description": "Grapple hooks, extreme rope, steel belt clips, 2 pairs of boot crampons, iron spikes and hammer. Worn over one shoulder."
+      },
+      {
+        "name": "Mixed Armor Garb",
+        "type": "Armor",
+        "description": "Common garb for adventurers, a mix of padded gambeson, leather belts, and armor odds & ends. +2 DEFENSE"
+      },
+      {
+        "name": "Heavy Plate and Chain Armor",
+        "type": "Armor",
+        "description": "A cumbersome set of steel plates, chainmail, and steel boots for heavy combat. +4 DEFENSE, DEX rolls always HARD"
+      },
+      {
+        "name": "Common Shield",
+        "type": "Shield",
+        "description": "A round wooden shield and strap suited for travel on foot. +2 DEFENSE. If hit, sacrifice the shield to absorb all of any 1 attack."
+      },
+      {
+        "name": "Iron Shield",
+        "type": "Shield",
+        "description": "This heavy shield is steel with iron bands. +3 DEFENSE. While using this shield, you cannot use one hand, occupies 2 inventory spaces."
+      },
+      {
+        "name": "Traveler's Garb",
+        "type": "Armor",
+        "description": "A lighter, more comfortable set of clothes for travelers. Only +1 DEFENSE, but includes 2 extra spaces for inventory."
+      }
+    ]
+  },
+  {
+    "table_name": "Alfheim Basic Loot - Weapons & Items",
+    "setting": "Alfheim",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Sword and Scabbard",
+        "type": "Weapon",
+        "description": "A trusty blade of whatever size or make suits your training, leather sheath, belts, and sharpening kit if the blade is damaged."
+      },
+      {
+        "name": "Battle Axe and Harness",
+        "type": "Weapon",
+        "description": "A huge chopping weapon of one or two blades. Damage timbers or structures, but impossible to conceal."
+      },
+      {
+        "name": "Spearman's Kit",
+        "type": "Weapon",
+        "description": "A ten foot oak shaft with swappable blade tip that can be switched to hook, spearhead, or glaive. Can attack targets up to NEAR range."
+      },
+      {
+        "name": "Bow and Quiver",
+        "type": "Weapon",
+        "description": "A recurve bow, either short for small spaces or long for outdoor use. Quiver empty on attack rolls of natural 1. Carry a spare quiver if possible!"
+      },
+      {
+        "name": "Crossbow and Bolt Kit",
+        "type": "Weapon",
+        "description": "A powerful mechanical weapon. Critical hits on natural 19 or 20. The bolt kit allows for incendiary, smoke, or flare tips."
+      },
+      {
+        "name": "Warhammer",
+        "type": "Weapon",
+        "description": "A hefty, blocky weapon for smashing. Hits of 5-10 damage destroy 1 point of enemy DEFENSE, 10+ also stuns the target for 1 ROUND."
+      },
+      {
+        "name": "Great Sword",
+        "type": "Weapon",
+        "description": "A tremendous two-handed blade 5 feet long. This weapon occupies 3 inventory spaces, but always inflicts ULTIMATE damage."
+      },
+      {
+        "name": "Knife Belt",
+        "type": "Weapon",
+        "description": "A sling of sorts which holds up to 8 daggers and throwing knives in concealed scabbards. One scabbard includes a poison-protective sheath."
+      },
+      {
+        "name": "Knight's Weapon Kit",
+        "type": "Weapon",
+        "description": "A heavy black belt with a spiked mace and chain flail on steel rings. Used against shields, degrades DEFENSE by 1 on each hit."
+      },
+      {
+        "name": "Quarter Staff and Wraps",
+        "type": "Weapon",
+        "description": "A wooden walking staff fire tempered for hardness, 4 feet in length. Includes fist-wraps for unarmed fighters."
+      },
+      {
+        "name": "Exotic Weaponry",
+        "type": "Weapon",
+        "description": "Strange or unusual weapons from far away lands include chain whips, nunchaku, segment staff, and sword-of-rings. Work with your GM!"
+      },
+      {
+        "name": "Maps",
+        "type": "Item",
+        "description": "A humble wooden tube filled with regional maps and specific location plan views. Roll INT to check for a useful map once per location."
+      }
+    ]
+  },
+  {
+    "table_name": "Warp Shell Basic Loot - Packs & Armor",
+    "setting": "Warp Shell",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Scan Unit",
+        "type": "Tool",
+        "description": "A compact, comprehensive scanner and electronics unit. Use 1 TURN to 'run a scan.' The data gathered reduces the current TARGET by 1."
+      },
+      {
+        "name": "Away Team Pack",
+        "type": "Pack",
+        "description": "Belt pouch with hand lamp, micro cutting torch, reel of cable, leak sealant slap-patch, 10 minute air canister, and emergency locator beacon."
+      },
+      {
+        "name": "Salvage Kit",
+        "type": "Pack",
+        "description": "A backpack for deep space retrieval. Heavy winch grappler, heavy cutting torch, 2 magnet anchors, pick hammer, 2 magnetic flood lights."
+      },
+      {
+        "name": "Xeno Response Pack",
+        "type": "Pack",
+        "description": "Tools for collecting / analyzing biological specimens. Collapsible clear tube, respirator, dissection kit, sample vials."
+      },
+      {
+        "name": "Medical Kit",
+        "type": "Tool",
+        "description": "Emergency first aid with bandages and antidotes. Roll WIS or INT to heal an ally for 1 HP. On a natural 1, the kit is empty. Refill on any ship."
+      },
+      {
+        "name": "Vac Suit",
+        "type": "Armor",
+        "description": "+1 DEFENSE. Nanotechnology integrates into any clothing for deep space operation, including energy helmet, gloves, and x-wave radio unit."
+      },
+      {
+        "name": "Hard Suit",
+        "type": "Armor",
+        "description": "+3 DEFENSE. A vac suit with an armored exterior for dangerous space work. DEX rolls are never EASY, stealth rolls only succeed on natural 20."
+      },
+      {
+        "name": "Link Armor",
+        "type": "Armor",
+        "description": "+1 DEFENSE. A light reinforcement to any clothing made from tiny links of nonmetallic ceramic material."
+      },
+      {
+        "name": "Plasteel Armor",
+        "type": "Armor",
+        "description": "+3 DEFENSE. Heavy armor plating ignores any attack of 2 or less damage, but the bulk of it makes DEX rolls always HARD."
+      },
+      {
+        "name": "Energy Shield",
+        "type": "Shield",
+        "description": "A small wrist unit that is activated to emit a glowing round force shield. +2 DEFENSE. DEFENSE rolls against energy weapons are EASY."
+      },
+      {
+        "name": "Vibro Blade",
+        "type": "Weapon",
+        "description": "A duranium blade with vibrating nano-blades to enhance cutting effect. Critical success on natural 19 or 20. Also unbreakable by physical means."
+      },
+      {
+        "name": "Energy Blade",
+        "type": "Weapon",
+        "description": "An elegant weapon from a civilized time. Does ENERGY damage. On a natural 1, the weightless blade cuts its user for 1 HP damage."
+      }
+    ]
+  },
+  {
+    "table_name": "Warp Shell Basic Loot - Weapons & Items",
+    "setting": "Warp Shell",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Pulse Rifle",
+        "type": "Weapon",
+        "description": "Advanced Reptoid war tech, uses a power cell as ammo. It never runs out. On a natural 1, the rifle goes wild, hitting a random target."
+      },
+      {
+        "name": "Particle Cannon",
+        "type": "Weapon",
+        "description": "A heavy military weapon. Occupies 3 inventory slots. Sprays of fire hit 1D4 enemy targets on a successful attack, each taking the damage rolled."
+      },
+      {
+        "name": "Blast Rifle",
+        "type": "Weapon",
+        "description": "A classic, reliable long gun. Spend 1 TURN aiming to either hit with no roll or inflict maximum damage on a rolled hit."
+      },
+      {
+        "name": "Blaster",
+        "type": "Weapon",
+        "description": "The sturdy, basic sidearm of space. Easily concealed under any armor or clothes. Occupies NO inventory space. 'Spacer's best friend.'"
+      },
+      {
+        "name": "Chem Rail",
+        "type": "Weapon",
+        "description": "A charged ion rail gun that slowly builds powerful shots. Add another GUN damage die for each TURN spent powering up a single shot."
+      },
+      {
+        "name": "Ripsaw",
+        "type": "Weapon",
+        "description": "A carbon-toothed chainsaw weapon designed to tear apart armor and equipment. For each 5 damage inflicted, remove 1 DEFENSE, or destroy 1 item."
+      },
+      {
+        "name": "Ion Grenade Sling",
+        "type": "Weapon",
+        "description": "A bandolier of 6 explosives which can work on a D4 ROUND fuse or be set to explode on impact. ULTIMATE damage in a NEAR radius."
+      },
+      {
+        "name": "Karambit Blades",
+        "type": "Weapon",
+        "description": "Small talon knives designed for killing. Occupies no inventory space. Easily concealed. Natural 20 inflicts maximum + ULTIMATE."
+      },
+      {
+        "name": "Blip Module",
+        "type": "Item",
+        "description": "A phase-movement augment. When you move, you do not pass through the space between the two locations."
+      },
+      {
+        "name": "Cybernetics Loadout",
+        "type": "Augment",
+        "description": "Your limbs and skeleton are augmented with nano fibers and duranium scaffolds. All forms of blunt impact inflict no damage."
+      },
+      {
+        "name": "Zurin Symbiote",
+        "type": "Augment",
+        "description": "The Zurin primordial form. This tiny organism binds to the spinal cord and enhances subtle empathy. 'Don't Die on me, man!' rolls are always EASY."
+      },
+      {
+        "name": "Jump Pack",
+        "type": "Item",
+        "description": "A miniaturized ion thruster worn as a small backpack. Move twice on your TURN, even when taking an action or making an attack."
+      }
+    ]
+  }
+]

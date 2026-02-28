@@ -1,0 +1,394 @@
+[
+  {
+    "name": "Agnar",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +5 STR, +3 ALL OTHERS\n**Actions:**\n- **Lie In Wait:** Disguised as a green rock, free surprise Chomp attack on CLOSE passers-by\n- **Chomp:** Weapon Effort, all CLOSE enemies\n- **Flying Leap:** Leap to move FAR, then ULTIMATE Effort against any enemies CLOSE to landing impact\n- **Spin-Thrash:** Weapon Effort, all NEAR enemies. NEAR enemies DEX Check to halve the damage, then Agnar recovers 5 HP\n\nThe all-eater, or 'supermouth,' of Kath. This jungle-dwelling beast has an odd spherical body/head lined on all sides with chomping teeth. Ravenously hungry at all times. Terrified and enraged by fire in any form.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,kath,hard"
+  },
+  {
+    "name": "Angel",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Variable\n**Rolls:** +6 STATS, +4 EFFORT\n**Actions:**\n- **Sun Sword:** ULTIMATE weapon ignores ARMOR, strikes all CLOSE enemies. Natural 12s explode\n- **Sun Fury:** Ray of pure nuclear fire, functions like the sword but with 1 mile range\n- **Radiant Nova:** Glows bright as a white star. Demons, undead, infernals and evil-doers must roll CHA or flee for 1D4 TURNS\n- **Judgement:** Chooses a single creature. In 1D4 TURNS, it is torn apart atom by atom\n\nIndestructible servants of infinity. Absolute, indisputable LAWGIVERS of the multiverse.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "celestial,legendary"
+  },
+  {
+    "name": "Avenger",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 5 Hearts (50 HP)\n**Rolls:** +5 STATS, +8 WEAPON EFFORT\n**Actions:**\n- **Execute:** Axe slices through objects, walls, or creatures CLOSE to the target. Creatures/objects hit reduced to 0 HP\n- **Retrieve:** Grapples foe and returns to origin. HARD STR rolls are the only escape\n- **Prism Blades:** All creatures within FAR must roll DEX to evade or take ULTIMATE damage\n- **Mist Stone:** MAGIC does half damage against them\n\nPrisoners of their purpose. Conjured into existence only to fulfill some grave task, vow, or obey a powerful wizard. Dissipate when task is complete.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "construct,hard"
+  },
+  {
+    "name": "Ant Men",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Rolls:** +2 ALL ROLLS, 2 Actions per Turn\n**Actions:**\n- **Slash:** Sword attack. Seldom use ranged weapons\n- **Dismembering Bite:** WEAPON. If more than 6 damage dealt, the target loses a limb\n- **Acid Mist:** Corrosive mist from pores in exoskeleton. All enemies within NEAR roll CON or suffer WEAPON damage to themselves AND 1 piece of equipment\n\nFound anywhere the land is hollow. Live to protect their queen (one per thousand square miles). Work as a team in vast numbers. Primary food source is fungus farmed in deep tunnels.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,insectoid,medium"
+  },
+  {
+    "name": "Banshee",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +2 ALL ROLLS\n**Actions:**\n- **Claws:** Spectral Slash, MAGIC\n- **Deafening Howl (INT Spell):** NEAR enemies roll CON or be disabled, plagued by visions of horror. Continues until Banshee is injured or stops\n- **Blink:** Move up to FAR distance without traveling the space between\n- **Drain (INT Spell):** Drain MAGIC EFFORT of HP from a target to heal itself\n- **Spectral Substance:** Only magical weaponry and magic can harm them\n\nTormented souls, poor wretches driven by confusion and envy of the living. Often found terrorizing a small town where they were betrayed in life.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,spectral,medium"
+  },
+  {
+    "name": "Black Drake",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 5 Hearts (50 HP)\n**Rolls:** +5 ALL ROLLS, 3 Actions per Turn\n**Actions:**\n- **Crushing Bite:** NEAR WEAPON, if victim dropped to 0 HP, devoured\n- **Take Wing:** Flies straight up. At altitude, glides 1D4 ROUNDS, recovering full HP\n- **Whipping Tail:** All enemies NEAR make DEX Check or take WEAPON damage\n- **Breath of Fire:** All enemies within FAR in front roll CON to avoid. DOUBLE ULTIMATE\n- **Spell Stealer (INT Spell):** On a Hard Attempt, can utilize any INT spell used by opponents\n- **Immune to fire in all forms**\n\nMost sinister of the Drakes. Live to feed on lesser beings, hoard treasure, and dominate volcanic realms, demanding worship from all.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "dragon,alfheim,hard"
+  },
+  {
+    "name": "Blind Horror",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +5 DEX\n**Actions:**\n- **Spiked Tail:** WEAPON, rolls with DEX, ignores armor (rolls on TARGET rather than DEFENSE)\n- **Fire Ray:** MAGIC ranged attack at FAR range. Those hit also take 1D4 burn damage next TURN\n- **Heal With Flames (WIS Spell):** Heals itself with MAGIC\n- **Gather Power:** Use an Action to gather power, doubling any EFFORT on next TURN\n\nSightless fiends that prowl the pits. Demonic in nature, channel fire energy, hunt with smell and sound. Servants of Devilish masters.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "demon,medium"
+  },
+  {
+    "name": "Bore Worm",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Rolls:** +3 ALL ROLLS, 2 Actions per Turn\n**Actions:**\n- **Tongue Lash:** WEAPON, can also destroy any inanimate object\n- **Stone Bite:** WEAPON, if over 8 EFFORT in one attack, destroy one item on target\n- **Venom Scent (INT Spell):** CLOSE enemies roll CON or become dizzy with noxious gas. Causes 3 Poison Damage and makes rolls HARD\n\nNot pure evil but territorial. Hate all man-made things. Reproduce by spraying prey with tiny digging grubs that pierce the skin.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,worm,medium"
+  },
+  {
+    "name": "Brain Horror",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +3 ALL ROLLS\n**Actions:**\n- **Stinging Tentacles:** WEAPON, Poisonous (take damage until successful CON Check)\n- **Levitate:** Always in flight, can rise up to FAR height, silent\n- **Betrayal (INT Spell):** All NEAR enemies make INT Check or turn against an ally for 1 ROUND\n- **Psychic Blast (INT Spell):** Single target, any range, ULTIMATE, compels target to walk toward the Brain Horror for 1 turn\n- **Feed (INT Spell):** CLOSE, single target, do MAGIC against touched enemy, heal that HP\n\nConstruct of a mad sorcerer in forgotten times. Tormented thing, unable to communicate except through dark visions.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "aberration,psionic,medium"
+  },
+  {
+    "name": "Carrion Crab",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +2 ALL ROLLS, 2 Actions per Turn\n**Actions:**\n- **Giant Claws:** WEAPON, CLOSE\n- **Dig In:** Pulls legs inward and grips the ground. Utterly immovable by any physical means\n- **Passive Spines and Spikes:** Covered in armor, swords, and spears. Any successful melee attack against them inflicts WEAPON Damage on the attacker\n\nBattlefield prowlers that feed on the dead, leather belts, horse flesh, and all debris of battle. Stack and arrange equipment of the fallen onto massive shells. Can be looted several times.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,scavenger,medium"
+  },
+  {
+    "name": "Cave Roper",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +4 ALL ROLLS\n**Actions:**\n- **Lash:** WEAPON attack, NEAR reach, barbed tongue whips and flays\n- **Grapple:** Single NEAR target can resist with HARD STR roll or be dragged in and held as food\n- **Chew:** With no roll, chews on held prey as an action. Victim can use HARD CON check to halve damage\n\nCamouflaged, immovable cavern predators disguised as stalagmites. Thoughtless, hateful things dwelling in large colonies. Also known as 'Miner's Bane' or 'Cave Chewer.'",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,underground,medium"
+  },
+  {
+    "name": "Child of Azatoth",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +8 ALL ROLLS\n**Actions:**\n- **Confusion (INT Spell):** All intelligent creatures within FAR make ALL rolls as HARD, overrides all abilities\n- **Spell Eater:** Destroy any INT spell used by opponents, removing it from the caster's memory\n- **Telekinesis:** Move objects, even huge ones, with INT check. Objects are its only physical weapons\n- **Memory Eater (INT Spell):** Targets single victim and robs them of one key memory\n- **Aura of Offerings:** Any CLOSE creature must make CHA check. If failed, must offer one LOOT as tribute\n\nNeither living creature nor inanimate statue. An effigy of the unseen horrors that predate the universe.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "aberration,eldritch,hard"
+  },
+  {
+    "name": "Corroder",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +2 STATS, +1 WEAPON EFFORT\n**Actions:**\n- **Grabbers:** Snatch one piece of GEAR from a target\n- **Chomp:** Eats stolen gear. Devour 1 piece per action. For each piece eaten, returns to full HEARTS\n- **Lash:** Sharp claw weapon\n- **Climb:** MOVE actions on any surface\n\nSword eaters! Stone chewers! Dwarves' bane! Deep-dwellers that devour all metal, refined stone, wood, glass, gems, and artificially honed material. Move in large numbers.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,underground,medium"
+  },
+  {
+    "name": "Crystal Worm",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Rolls:** +4 STATS, +2 WEAPON EFFORT\n**Actions:**\n- **Mandibles:** WEAPON, target rolls competing STR check or is restrained by huge jaws\n- **Web Shock (INT Spell):** All NEAR enemies make DEX check or take MAGIC as crimson shockwave. Those who fail are also glued where they stand until STR check to break free\n- **Psionic Call:** After first round of combat, vibrates antennae. 1D4 more worms answer in 1D4 ROUNDS\n\nMassive tunneling arthropods that eat crystal. Spotted by their glowing eyes. Hate intruders and patrol their hives day and night.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,worm,underground,medium"
+  },
+  {
+    "name": "Demon",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +4 STATS, +2 EFFORT\n**Actions:**\n- **Razor Claws:** MAGIC rippers\n- **Scream:** 1D4 more Demons appear from any smoke or nearby darkness\n- **Smoke Walk:** Move between any smoke as a MOVE. Smoke heals them with MAGIC\n- **True Name:** If a demon's true name is learned, it can be commanded\n\nTake myriad forms but abide by ancient laws. Intelligent but lack mercy, remorse, or comprehension of redemption. Live in constant rage, pain, and misguided wrath.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "demon,infernal,medium"
+  },
+  {
+    "name": "Devil Dust",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Variable by mass\n**Rolls:** NO ROLLS, Actions variable by mass\n**Actions:**\n- **Devour:** Roll 1D6, on 4-5-6, consumes a human or animal per volume category, then gains 1 volume\n- **Keeps Growing:** Min volume 3. Volume 3: cart | 4: wagon | 5: room | 10: castle | 20: city\n\nSentient gas or microparticles that move with intelligent motion regardless of wind. Wherever gas or air can go, it can go. Cannot be destroyed but dissipates in time. An immense cloud can destroy an entire city.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "elemental,swarm,hard"
+  },
+  {
+    "name": "Direhorn",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 5 Hearts (50 HP)\n**Rolls:** +5 STATS, +2 EFFORT\n**Actions:**\n- **Ram:** Smash everything in a straight line to FAR. Nothing stops it besides solid bedrock. Anything in the path takes ULTIMATE damage\n- **Trample:** Move double FAR, running over creatures or small structures. WEAPON damage with no roll\n- **Iron Hide:** Regenerate 10 HP. Attacks become HARD until it is hit\n\nHuge animals reigning supreme on great plains and steppes. Bigger than a wagon, faster than any horse. No tolerance for two-legged races.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,hard"
+  },
+  {
+    "name": "Eye Beast",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +6 STATS, +4 MAGIC EFFORT, 2 Beams per Turn\n**Actions:**\n- **Magic Beams:** Roll 2D4, fire two beams at random targets:\n  1. Death Ray: Drops target to 0 HP\n  2. Magic Nullifier: Target can't use MAGIC for 1D4 ROUNDS\n  3. Energy Fist: WEAPON damage, shove target away until impacting solid surface\n  4. Gaze of Stone: Petrify for 1D6 hours. If statue is left behind, effect is permanent\n\nDreaded rulers of the underworld. Highly intelligent, construct strongholds below. Enslave other monsters, devise devious lures, plan multi-dimensional doomsday schemes.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "aberration,underground,hard"
+  },
+  {
+    "name": "Feeder",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +1 ALL ROLLS, 2 Actions per Turn\n**Actions:**\n- **Chew:** A WEAPON attack\n- **Phase:** Turn immaterial as an action with no roll\n- **Soul Eater:** Victim must make CON roll or the bite inflicts 1 point of permanent STAT damage. Choose STAT at random\n\nLive only to serve their lord, even unto death. Hard to tell if they are beasts or supernatural things.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "fiend,medium"
+  },
+  {
+    "name": "Fiend",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Rolls:** +8 STATS, +4 EFFORT, 2 Actions per Turn\n**Actions:**\n- **Magma Beam:** Deadly eye ray. All in a FAR straight line reduced to 0 HP\n- **Scatter Spell:** Casts SPELLS through victims. Target rolls INT or is used as conduit\n- **Ion Sword:** MAGIC slash. Pure plasma-state ions, ignores all ARMOR\n- **Thunder Wing:** Rush of air is concussive. All within FAR roll DEX or fall, take 1 HP, lose next TURN. Heals Fiend with MAGIC\n- **Doorway:** If near defeat, uses Doorway SPELL to escape\n- **Summon:** No roll, summon 1D4 Feeders, Imps, Shadow Lashers or Flame Kin\n\nMastermind complex schemes and world-ending plots. No love even for other Fiends. Their feuds are never ending.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "fiend,infernal,hard"
+  },
+  {
+    "name": "Flame Kin",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Rolls:** +3 STATS\n**Actions:**\n- **Fire Claw:** WEAPON. If used against flammable materials, will ignite\n- **Healed by Fire:** Gain 1D6 HP from any open flames or fire magic they touch\n- **Flame Door:** Any open flame in sight used to teleport\n\nFew beings are more ubiquitous in the cosmos. Dwell in volcanic hells, on the surface of suns, and in long-burning forest fires.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "elemental,fire,easy"
+  },
+  {
+    "name": "Flaming Skull",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +2 STATS, +4 MAGIC EFFORT\n**Actions:**\n- **Levitate:** Always in flight, can rise to FAR height\n- **Paralyze (INT Spell):** Single target rendered totally motionless for 2 ROUNDS\n- **Fire Sword:** Conjures a blazing spectral sword that engages combatants. Cannot be harmed\n- **Magma Bomb:** Spit glowing blob at target. All NEAR impact site for 4 ROUNDS must make DEX Check or take MAGIC Fire Damage. Successful checks halve damage\n\nWhen the soul of a fallen villain is too hateful to enter the afterworld. If destroyed, reforms in 1D4 hours.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,fire,medium"
+  },
+  {
+    "name": "Flimes",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Rolls:** +1 ALL ROLLS per Flime\n**Actions:**\n- **Bite:** CLOSE Weapon Effort\n- **Elemental Dwellers:** Fire, ice, earth, metal, wood, air, etc. Dunking in their element heals to full HP\n- **Divide and Destroy:** If reduced to less than 3 HP but not killed, divides into 2 Flimes, each with a full HEART\n\nFlying Slimes (Flimes) are primordial life forms driven by hunger alone. Reproduce by division, which can only occur in battle, driving them to fight constantly.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "ooze,elemental,easy"
+  },
+  {
+    "name": "Gargoleth",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 6 Hearts (60 HP)\n**Rolls:** +8 ALL ROLLS, 3 Actions per Turn\n**Actions:**\n- **Tentacle:** Hits all targets NEAR point of attack. Inflicts ship/CHUNK damage, ULTIMATE effort\n- **Crushing Beak:** ULTIMATE Effort on single NEAR target. If target reduced to zero HP, devoured whole\n- **Wave Surge:** Convulses body to form huge wave. Creatures in path must make HARD STR check or be swept away\n- **Storms:** When it approaches, sea conditions become perilous. All navigation becomes HARD\n\nRavenous, insatiable behemoth from the depths. Devours entire ships. Nature's most terrible creation.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,aquatic,legendary"
+  },
+  {
+    "name": "Ghost",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Rolls:** +2 STATS, +6 ULTIMATE\n**Actions:**\n- **Terrify:** Roll CHA against this action, or spend next TURN fleeing\n- **Visions:** All living creatures within FAR must roll INT or lose next TURN completely, lost in despair and grief\n- **Lure:** Unless target beats the Ghost's INT roll, must spend next MOVE going where the Ghost beckons. Ghosts often lure the living to terrible fates\n\nLiving souls who lost their lives in sudden, frightful, or heinous tragedy. Anger incarnate, lost and confused. Emit terrible unnatural cold, truly immaterial. Continue to pick at the living until the wrong is undone.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,spectral,medium"
+  },
+  {
+    "name": "Gerblin Traitors",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP) or 1 HP\n**Rolls:** +2 STR, +2 DEX\n**Actions:**\n- **Crummy Weapon:** WEAPON, with equipment no one wants to steal\n- **Home Made Bow:** WEAPON, cannot shoot beyond NEAR distance\n- **Yell for Help:** On next turn, even if dead, 1D4 Goblin friends arrive\n- **Flee and Hide:** Run away! Can hide almost anywhere. If they reach a hidey hole, vanish and recover full HP\n\nNasty, fiendish, tribal, semi-sentient rodent-people inhabiting all corners of all worlds. Reproduce like mice or rabbits, infesting places left unchecked.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,goblinoid,easy"
+  },
+  {
+    "name": "Hellion",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 6 Hearts (60 HP)\n**Rolls:** +8 STATS, +6 EFFORT, 3 Actions per Turn\n**Actions:**\n- **Volcanic Roar:** Column of white hot chemical fire, deafening ULTIMATE ray\n- **Bite:** ULTIMATE damage, grappling up to 3 victims\n- **Crushing Claw:** ULTIMATE damage NEAR\n- **Spell Eater:** Absorb 1 SPELL from a target. Target loses that SPELL\n- **Eyes of Death:** Searing stare reduces single target in sight to 0 HP, no roll. CON roll leaves victim with 1 HP\n- **Immune to non-MAGIC**\n\nWhen a truly evil dragon dies, it is confined to the nether realms as a Hellion. Burns with eternal rage. Only weakness is a thirst for ash. Made entirely of fire and hatred.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "dragon,infernal,legendary"
+  },
+  {
+    "name": "Imps",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Variable\n**Rolls:** Variable, Actions Variable\n**Actions:**\n- **Bite:** WEAPON. Bitey\n- **All For One:** Imps act as a group. If biting, they ALL bite\n- **A Tide of Death:** Start at 1 HP/+1 rolls (Tier 1). When slain, STATS increase by one TIER, up to 4. Spawn roll 1D4: 1) 1D12 Imps, 2) 2D20 Imps, 3) 1D100 Imps, 4) Near infinite, 100 per ROUND\n\nThe rats of the nether have laid waste to entire realms with their wanton chaos. Sometimes the small can be mighty. Mighty annoying.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "fiend,swarm,easy"
+  },
+  {
+    "name": "Ley Walker",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 11 Hearts (110 HP)\n**Rolls:** +10 ALL ROLLS\n**Actions:**\n- **Endless March:** Slides forward, crushing or leveling anything in its path. Moves NEAR each TURN. If caught under it, drop to 0 HP instantly\n- **Scour:** Anything directly below is totally annihilated. No structure, material, or living thing can survive\n- **Waypoint:** Finds a new ley line and travels that way\n- **Regenerate:** Repairs all damage done to it so far\n\nOne of the strangest and most colossal beings in the cosmos. A sky-darkening archway or gate made of marble and duranium. As old as the stars. Sweeps entire worlds clean of life.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "construct,colossal,legendary"
+  },
+  {
+    "name": "Mainframe",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Indestructible\n**Rolls:** DOES NOT ROLL\n**Actions:**\n- **Wait:** Becomes inert, silent, dormant\n- **Grow:** Casts Grasp of the Ogdru at no COST and increases size by DOUBLE (or summon 1D8 Tentacles)\n- **Reveal:** All creatures within 1 mile see a vision placed in their minds\n- **Vent:** Vents open, hot air jets out. Regenerates any damage taken\n- **Doorway:** Cast Doorway, returning to a previous location\n\nBio-mechanical cubic computers of unknown origin. Purpose unknown, but seem to appear in times of calamity or disaster.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "construct,eldritch,legendary"
+  },
+  {
+    "name": "Minotaur",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +3 STR, +3 WEAPON EFFORT\n**Actions:**\n- **Battle Axe:** WEAPON Damage, a huge brutal weapon\n- **Headlong Charge:** Move FAR in a straight line. Anything between origin and destination is smashed. All enemies must use DEX to evade or take ULTIMATE impact\n- **Cleave:** Bracing and spinning its massive axe, hits all CLOSE enemies with a Weapon attack\n\nCreated by elder magic as enslaved guardians, these beasts were once human. The rage in their confused minds drives them wild. Not evil, but simply enraged and bound by powerful spells.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,medium"
+  },
+  {
+    "name": "Ogre",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Rolls:** +8 STR, +4 WEAPON, -3 INT, 2 Actions per Turn\n**Actions:**\n- **Spiked Club:** Weapon Damage NEAR reach. Even on a missed Attack, inflicts 3 Damage\n- **Body Slam:** Roll DEX or suffer DOUBLE Weapon Damage / immobilized under creature\n- **Seismic Hammer:** Seismic area attack. All NEAR enemies must make CON check or be shaken senseless and lose next turn\n\nSomewhere between Hill-men and Giants. Diverse as Goblins. Most known as clumsy, angry, territorial oafs who terrorize travelers to eat their horses.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "giant,medium"
+  },
+  {
+    "name": "Outsider",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +3 ALL ROLLS, 1 Action per Turn\n**Actions:**\n- **Guns:** Materialize a weapon of choice and fire\n- **Gas Cloud:** Emit FAR cloud of green gas, toxic to all life and machines. Roll CON or take 1D8 damage for 1D4 ROUNDS\n- **Membrane:** Creates impervious time-space bubble around an object up to 10 feet across. Inside, time is slowed to a crawl\n- **Stasis:** Using gas, paralyze single NEAR target into hypersleep. HARD CON roll to break free\n- **Stargate:** Open split-second wormhole to almost any location in the universe\n\nOtherworldly beings with glowing eyes, armored legs and strange hoses. Transfixing and terrifying.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "alien,warp-shell,medium"
+  },
+  {
+    "name": "Phase Hulk",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +6 STATS, +3 EFFORT, 2 Actions per Turn\n**Actions:**\n- **Phase Pierce:** Moves through target while momentarily de-phasing. Inflicts MAGIC, knocks victim backward NEAR distance\n- **Bite (Material):** In solid form, ULTIMATE attack sprung from behind a target\n- **Bite (Phase):** Phasic bite drains STATS. On successful hit, drain 1 point of random STAT\n- **Prism Ray:** Dizzying array of colors. Increase current TARGET by 1D4 until killed\n\nCoagulating from pure astral ooze, Phase Hulks feed on any living matter. Driven by hunger more than will of wizards.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "aberration,phasic,medium"
+  },
+  {
+    "name": "Primal",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Rolls:** +4 ALL ROLLS, 2 Actions per Turn\n**Actions:**\n- **INT Spells:** Ice Missile, Death Nova, Lightning Bolt, Doorway \u2014 uses ancient form of magic\n- **Force Blast:** Ray of concussive energy with FAR range, ULTIMATE damage\n- **Reflect:** Can REFLECT any SPELL, WEAPON attack, or incoming energy AT ANY MOMENT with an INT roll\n- **Frozen Touch:** Touch inflicts MAGIC and freezes target in its tracks for 1 ROUND\n\nOriginally the workers who enacted the will of creation. Ancient beings now dwindling in number. Fierce will to live refuses to sleep.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "ancient,hard"
+  },
+  {
+    "name": "Razor Pod",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Rolls:** +8 STATS, +2 EFFORT, 3 Actions per Turn\n**Actions:**\n- **Stinging Grappler:** WEAPON damage and entangling victim with STR\n- **Crushing Jaws:** CLOSE. ULTIMATE damage. If bite inflicts 10+, victim is engulfed\n- **Flying Nettles:** Cloud of thorns. Creatures within FAR roll DEX or take WEAPON damage\n- **Sprout:** If near death, fires a spore pod within FAR, spawning a new Razor Pod with 2 HEARTS\n\nEvil of the Dead Lands has poisoned the plants, filling them with oily slime and deadly hunger. K'Tul fishmen sacrifice captives to these horrors.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "plant,dead-lands,hard"
+  },
+  {
+    "name": "Rings",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Indestructible\n**Rolls:** +1 ALL ROLLS per Ring\n**Actions:**\n- **Carve:** Form a boring machine. Carve through 1D100 feet of any solid matter per ROUND\n- **Move:** Break apart and reform at new location. Range is DOUBLE FAR\n- **Guard:** Barrier of interlocked circlets. Inside, up to 4 humanoid creatures enjoy +10 ARMOR\n- **How Many Rings:** Formed of 3D12 rings\n\nThe most abstract entity in the multiverse. Made of pure duranium, possibly the first occurrence of that metal. A total mystery.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "construct,eldritch,legendary"
+  },
+  {
+    "name": "Scarecrow",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +3 ALL ROLLS\n**Actions:**\n- **Psychic Insult:** Deepest doubts and darkness exposed. Target rolls CHA or loses next TURN\n- **Beacon:** Signals the surrounding area of the heroes' intent\n- **Ill News:** Delights in delivering news of doom or darkness. Cackles and taunts, warning of impending death\n\nDurathrax the undying has three known forms: a colossal black dragon, an old hag, and these Scarecrow creatures. Act as her eyes and ears, and harbingers of her destructive arrival.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "construct,durathrax,medium"
+  },
+  {
+    "name": "Seraph",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts per Arm\n**Rolls:** +4 STATS per Arm, 1 Action per Turn per Arm\n**Actions:**\n- **Energy Cannon:** Each hand opens emitting a ray of ULTIMATE energy\n- **Melt:** Pulse of atomic heat liquifies metal objects. Targets roll DEX or lose 1D4 metal LOOT\n- **Nova:** All creatures within FAR hit with concussive force. No way to avoid. ULTIMATE damage\n- **Kneel:** Speaks in 3-4 word statements. So ominous, all who hear roll CHA or fall to knees for 1D4 ROUNDS\n\nLight energy from dying stars solidified into a living being. Driven by divine purpose: protect the cosmic balance of good and evil at all costs.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "celestial,legendary"
+  },
+  {
+    "name": "Shadow Lasher",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +5 DEX, +2 ALL OTHERS, 2 Actions per Turn\n**Actions:**\n- **Lash:** WEAPON, NEAR reach\n- **Pounce:** Leaps onto prey, pinning down with STR\n- **Blink:** Move NEAR without passing between locations\n- **Vibrating Targets:** Partly in phase, attacks against it are HARD each ROUND until hit once\n\nLethal, panther-like pack hunters with the ability to phase between locations. Natural beasts with abilities beyond any normal predator.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "beast,phasic,medium"
+  },
+  {
+    "name": "Skeleton",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 1 Heart (10 HP)\n**Rolls:** +1 ALL ROLLS\n**Actions:**\n- **Stab:** WEAPON. On any critical fail, weapon breaks and must resort to BASIC attacks\n- **Death Touch:** Grasps bare skin, burning with cold. MAGIC\n- **Slow as Death:** Can never move FAR in an action. Clumsily plods along\n\nThe dead are in the employ of haunts and hellions the world over. Devoid of souls, only bone and steel remain. Alone fragile and foolish, but in great numbers a terrifying force.",
+    "cr_level": "Easy",
+    "source": "ICRPG Master Edition",
+    "tags": "undead,easy"
+  },
+  {
+    "name": "Slime Cube",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +5 STR, +5 CON\n**Actions:**\n- **Move:** Uses Action to move NEAR. Chooses random direction or moves toward sound and light\n- **Sticky Acidic Absorption:** Anything besides stone that touches it becomes stuck. In 1D4 ROUNDS, if not escaped, absorbed into interior\n- **Absorbed:** Once absorbed, creatures take Ultimate Acid Damage each TURN. Suffocate in 4 ROUNDS regardless of HEARTS\n- **Loot Within:** Magically protected objects and Chests can survive inside\n\nSilently slide through lairs in timeless, tireless effort to dissolve all debris. Driven by evil magic, totally soulless blobs of acid death.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "ooze,underground,medium"
+  },
+  {
+    "name": "Snake Men",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 3 Hearts (30 HP)\n**Rolls:** +4 STATS, +6 MAGIC EFFORT, 2 Actions per Turn\n**Actions:**\n- **Fire Missile (INT Spell):** Deadly dagger of pure flame, MAGIC\n- **Counterspell (INT Spell):** Cunning fighters, confound enemies with crippling strategies\n- **Healing Touch (WIS Spell):** Used to heal itself most often, or those fighting for it\n- **Howling Hiss:** All who can hear must make CHA roll or be terrified, using entire next TURN running away\n\nStill haunt deep tombs and unholy places, enduring in unlife. Powerful magicians, hoarders of magical knowledge, or seething trap-layers with sadistic plans.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,reptilian,medium"
+  },
+  {
+    "name": "Swarm",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Variable (1-4 Hearts by size)\n**Rolls:** NO ROLLS, 1 Action per TURN per HEART\n**Actions:**\n- **Determining Hearts:** Horse-sized: 1 HEART; wagon: 2; house: 3; bigger: 4 HEARTS\n- **Attack:** Descends on targets, compressing to CLOSE range. 1-3 HEARTS: 1D6 damage, 4+ HEARTS: ULTIMATE\n- **Baffling Cloud:** Any being within CLOSE makes HARD rolls\n- **Disperse and Regroup:** Spread apart and reform anywhere within FAR\n- **Proliferate:** Add 1 HEART\n\nWhether cloud of insects or whirl of bats. Only harmed by area effects or attacks.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "swarm,medium"
+  },
+  {
+    "name": "Tentacle",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +4 ALL ROLLS\n**Actions:**\n- **Lash:** WEAPON, NEAR reach\n- **Grapple:** Wraps around single victim, competing STR rolls. Those overcome are squeezed and must roll CON or be winded, losing next turn\n- **Drag Down:** Grappled victims pulled into depths. Waggles for 1D4 ROUNDS before doing so\n- **Hurl:** If grappled victim is held and Tentacle takes damage, hurls victim to FAR location\n\nSometimes the pseudopod of a huge Gargoleth, sometimes the conjuration of a mad wizard. Inhuman, elder things existing only to kill.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "aberration,aquatic,medium"
+  },
+  {
+    "name": "Terror",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 4 Hearts (40 HP)\n**Rolls:** +2 STR, +2 DEX\n**Actions:**\n- **Stone Tooth:** A bite WEAPON\n- **Cloud of Spines:** Stone plates obey bio-gravity field. All within FAR roll DEX or take ULTIMATE effect\n- **Devour Machines:** Drawn to small, edible machines. On successful attack, devours 1 mechanical LOOT\n- **Radiation:** Any creatures NEAR must roll CON each TURN or absorb 1D12 radiation damage\n\nStone-fleshed abominations prowling the vacuums of desolate moons. Made of ice-cold igneous rock, ravenous for heat energy in living things. Fire and warm machines especially lure them.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "aberration,warp-shell,medium"
+  },
+  {
+    "name": "Tree of Death",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 5 Hearts (50 HP)\n**Rolls:** NO ROLLS, 2 Actions per Turn\n**Actions:**\n- **Cloud of Seeds:** Anything within FAR roll 1D4. In that many ROUNDS, breathe seeds and take 5 Poison damage every TURN thereafter\n- **Root Corpse:** Pushes animated corpses up with roots. Attack as 1 HEART monsters, 1D4 spawn at a time\n- **Blight:** If agitated, issues bursts of subsurface poison. Taints water and soil for 1 mile for 1D4 years\n\nIn places where tragedy has saturated the land, from this scar grows the Tree of Death. An inert totem of evil that blights the land. Must be destroyed and every root burned to ash.",
+    "cr_level": "Hard",
+    "source": "ICRPG Master Edition",
+    "tags": "plant,undead,hard"
+  },
+  {
+    "name": "What Were Once Men",
+    "system": "ICRPG",
+    "stat_block": "**HP:** 2 Hearts (20 HP)\n**Rolls:** +2 ALL ROLLS\n**Actions:**\n- **Lash:** Ragged set of webbed claws. WEAPON wound will itch and burn\n- **Drown:** Drags you below the water. Disappear in the murk, taking WEAPON DAMAGE each ROUND below. CON roll to hold breath and negate damage, or STR roll to break free. If taking drowning damage twice, stunned for 1 ROUND\n\nDevotees of Ogdru who bathe in muck below the world, slowly turning to big-eyed freaks. Kill to feed their hideous master the bodies of the innocent.",
+    "cr_level": "Medium",
+    "source": "ICRPG Master Edition",
+    "tags": "humanoid,corrupted,aquatic,medium"
+  },
+  {
+    "name": "Durathrax",
+    "system": "ICRPG",
+    "stat_block": "**HP:** Variable (World-Ender)\n**Rolls:** Create custom stats \u2014 she is a supreme enemy\n**Actions:**\n1. **Firebreather:** Total destruction. ENDS A SCENE ENTIRELY\n2. **Take Wing:** Flies up, returns after 1 ROUND, healed fully\n3. **Crush Terrain:** Crumble crags, shatter ledges, topple ruins\n4. **Talons:** Grabs 1D4 heroes, flings them to their death\n5. **Spell Nova:** Casts any 4 SPELLS at no COST and no roll\n6. **Melt:** Breath weapon of corrosion, destroys all metal\n7. **Speak:** If below 2 HEARTS, deceives mortals with parley\n8. **Tail Drag:** Tail as big as a town, scrapes ground clean\n9. **Frenzy:** Takes 5 actions per TURN once frenzied\n10. **Lure:** Roll HARD CHA or be dazed, walking toward her\n11. **Roar:** Deafening. Run for your life!\n12. **Blood Feast:** Roll natural 20 or are eaten\n\nMother of All Evils. Daughter of Hydranax. Cruel, cannibalistic, lawless titan. Her bloody fangs ended the age of dragons. The supreme world-ender of Alfheim.",
+    "cr_level": "Legendary",
+    "source": "ICRPG Master Edition",
+    "tags": "dragon,alfheim,boss,legendary"
+  }
+]
