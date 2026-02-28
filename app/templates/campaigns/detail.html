@@ -184,5 +184,21 @@
 
 </div>
 
+<hr class="border-secondary mt-4 mb-3">
+
+<!-- Campaign Assistant CTA -->
+<div class="card bg-dark border-secondary" style="max-width: 500px;">
+    <div class="card-body d-flex align-items-center gap-3">
+        <i class="bi bi-robot text-success" style="font-size: 2rem; flex-shrink: 0;"></i>
+        <div>
+            <p class="mb-1 fw-semibold">Campaign Assistant</p>
+            <p class="text-muted small mb-2">Use AI to brainstorm ideas, create NPCs, locations, quests, and more for this campaign.</p>
+            <a href="{{ url_for('campaign_assistant.chat') }}" class="btn btn-sm btn-success">
+                <i class="bi bi-robot me-1"></i>Open Assistant
+            </a>
+        </div>
+    </div>
+</div>
+
 <p class="text-muted small mt-4">Created {{ campaign.created_at.strftime('%Y-%m-%d') }}</p>
 {% endblock %}

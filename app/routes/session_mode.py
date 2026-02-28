@@ -1,8 +1,8 @@
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import login_required
 from app import db
-from app.models import Session as GameSession, Quest, Location, Encounter, NPC, Item
+from app.models import Session as GameSession, Quest, Location, Encounter, NPC, Item, Campaign
 
 session_mode_bp = Blueprint('session_mode', __name__, url_prefix='/session-mode')
 
@@ -59,6 +59,11 @@ def dashboard():
                 .first()
             )
 
+    # Providers available for the NPC chat toggle
+    from app.ai_provider import get_available_providers, get_ai_config
+    available_providers = get_available_providers()
+    active_provider = get_ai_config()['provider']
+
     # Active quests for this campaign
     active_quests = (
         Quest.query
@@ -99,6 +104,8 @@ def dashboard():
         session_encounters=session_encounters,
         session_quests=session_quests,
         other_active_count=other_active_count,
+        available_providers=available_providers,
+        active_provider=active_provider,
     )
 
 
@@ -226,3 +233,76 @@ def save_post_session():
 
     flash('Session wrapped up! All updates saved.', 'success')
     return redirect(url_for('sessions.session_detail', session_id=game_session.id))
+
+
+@session_mode_bp.route('/npc-chat', methods=['POST'])
+@login_required
+def npc_chat():
+    """Quick NPC dialogue generator — takes a situation and returns in-character lines."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError
+
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Go to Settings to set up a provider.'}), 403
+
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    npc_id = data.get('npc_id')
+    situation = (data.get('situation') or '').strip()
+    requested_provider = data.get('provider')
+    if requested_provider not in ('ollama', 'anthropic', None):
+        requested_provider = None
+
+    if not npc_id or not situation:
+        return jsonify({'error': 'NPC and situation are required.'}), 400
+
+    npc = NPC.query.filter_by(id=npc_id, campaign_id=campaign_id).first()
+    if not npc:
+        return jsonify({'error': 'NPC not found in this campaign.'}), 404
+
+    # Build the character context from NPC data
+    campaign = Campaign.query.get(campaign_id)
+    current_session_id = session.get('current_session_id')
+    game_session = GameSession.query.get(current_session_id) if current_session_id else None
+
+    parts = [f'You are roleplaying as {npc.name}']
+    if npc.role:
+        parts[0] += f', a {npc.role}'
+    parts[0] += ' in a tabletop RPG.'
+
+    if npc.personality:
+        parts.append(f'Personality: {npc.personality}')
+    if npc.physical_description:
+        parts.append(f'Physical appearance: {npc.physical_description}')
+    if npc.faction_rel:
+        faction_info = npc.faction_rel.name
+        if npc.faction_rel.disposition:
+            faction_info += f' ({npc.faction_rel.disposition})'
+        parts.append(f'Faction: {faction_info}')
+    if npc.secrets:
+        parts.append(f'Secrets you know (use subtly, do not reveal directly): {npc.secrets}')
+    if npc.notes:
+        parts.append(f'Additional background: {npc.notes}')
+    if game_session and game_session.active_location:
+        parts.append(f'Current location: {game_session.active_location.name}')
+    if campaign and campaign.ai_world_context:
+        parts.append(f'World context: {campaign.ai_world_context}')
+
+    parts.append(
+        '\nWhen the GM describes a situation, respond with 3-4 short lines of dialogue '
+        'that this character would say. Stay in character. Be concise — this is for '
+        'quick reference at the game table, not prose. Include mannerisms or speech '
+        'patterns that fit the personality. Each line should be a separate thing the '
+        'NPC might say, giving the GM options to choose from.'
+    )
+
+    system_prompt = '\n\n'.join(parts)
+    messages = [{'role': 'user', 'content': situation}]
+
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=512, provider=requested_provider)
+        return jsonify({'response': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502

@@ -39,7 +39,14 @@
                 </a>
             </td>
             <td>{{ sess.date_played.strftime('%b %d, %Y') if sess.date_played else '—' }}</td>
-            <td class="text-end">
+            <td class="text-end d-flex justify-content-end gap-1">
+                <form method="POST" action="{{ url_for('session_mode.set_session') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="session_id" value="{{ sess.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Launch Session Mode">
+                        <i class="bi bi-broadcast"></i>
+                    </button>
+                </form>
                 <form method="POST" action="{{ url_for('sessions.delete_session', session_id=sess.id) }}"
                       onsubmit="return confirm('Delete this session? This cannot be undone.')" class="d-inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

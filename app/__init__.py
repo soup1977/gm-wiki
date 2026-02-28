@@ -252,6 +252,7 @@ def create_app():
     from app.routes.global_search import global_search_bp
     from app.routes.srd_import import srd_import_bp
     from app.routes.sd_generate import sd_generate_bp
+    from app.routes.campaign_assistant import campaign_assistant_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -282,12 +283,14 @@ def create_app():
     app.register_blueprint(global_search_bp)
     app.register_blueprint(srd_import_bp)
     app.register_blueprint(sd_generate_bp)
+    app.register_blueprint(campaign_assistant_bp)
 
     # Exempt AJAX-only blueprints from CSRF — these are called from JavaScript
     # using fetch() and are already protected by same-origin policy + login_required
     csrf.exempt(ai_bp)
     csrf.exempt(quick_create_bp)
     csrf.exempt(sd_generate_bp)
+    csrf.exempt(campaign_assistant_bp)
 
     # Context processor — makes active_campaign and ai_enabled available
     # in EVERY template automatically, so we don't have to pass them in every route
