@@ -9,6 +9,15 @@
  *   - #sd-generate-result    — <div> for error messages
  */
 
+// Status messages for image generation
+const SD_STATUS_MESSAGES = [
+    { after: 0,  text: 'Sending to Stable Diffusion...' },
+    { after: 5,  text: 'Rendering image...' },
+    { after: 15, text: 'Still rendering — images can take a minute...' },
+    { after: 30, text: 'Almost there — hang tight...' },
+    { after: 60, text: 'Still processing — high-res images take longer...' },
+];
+
 // Prompt builders per entity type — reads form fields and returns a prompt string
 const SD_PROMPT_BUILDERS = {
     npc: function() {
@@ -63,6 +72,8 @@ const SD_PROMPT_BUILDERS = {
     }
 };
 
+let sdElapsedTimer = null;
+
 function sdGenerate(entityType) {
     const btn = document.getElementById('sd-generate-btn');
     const resultEl = document.getElementById('sd-generate-result');
@@ -82,10 +93,30 @@ function sdGenerate(entityType) {
         return;
     }
 
-    // Show spinner
+    // Show spinner with status updates
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating…';
-    resultEl.innerHTML = '<span class="text-muted small">This may take 10-30 seconds…</span>';
+
+    const startTime = Date.now();
+    resultEl.innerHTML = '<span class="text-muted small"><span class="spinner-border spinner-border-sm me-1"></span> <span id="sd-status-text">' + SD_STATUS_MESSAGES[0].text + '</span> <span id="sd-elapsed" class="ms-2 text-secondary">0:00</span></span>';
+
+    sdElapsedTimer = setInterval(function () {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        const elapsedEl = document.getElementById('sd-elapsed');
+        const statusEl = document.getElementById('sd-status-text');
+        if (elapsedEl) elapsedEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+        if (statusEl) {
+            for (let i = SD_STATUS_MESSAGES.length - 1; i >= 0; i--) {
+                if (elapsed >= SD_STATUS_MESSAGES[i].after) {
+                    statusEl.textContent = SD_STATUS_MESSAGES[i].text;
+                    break;
+                }
+            }
+        }
+    }, 1000);
 
     fetch('/api/sd/generate', {
         method: 'POST',
@@ -113,6 +144,7 @@ function sdGenerate(entityType) {
         resultEl.innerHTML = '<span class="text-danger">Request failed: ' + err.message + '</span>';
     })
     .finally(() => {
+        if (sdElapsedTimer) { clearInterval(sdElapsedTimer); sdElapsedTimer = null; }
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-image"></i> Generate Image';
     });

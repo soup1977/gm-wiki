@@ -14,6 +14,19 @@
     'use strict';
 
     // -----------------------------------------------------------------------
+    // Status messages shown while waiting for AI response
+    // -----------------------------------------------------------------------
+    const STATUS_MESSAGES = [
+        { after: 0,  text: 'Thinking...' },
+        { after: 5,  text: 'Generating content...' },
+        { after: 15, text: 'Still working — LLMs can take a minute...' },
+        { after: 30, text: 'Almost there — hang tight...' },
+        { after: 60, text: 'Still processing — complex entries take longer...' },
+    ];
+
+    let elapsedTimer = null;
+
+    // -----------------------------------------------------------------------
     // Build and inject the modal HTML once
     // -----------------------------------------------------------------------
     const modalHtml = `
@@ -33,6 +46,11 @@
                     </p>
                     <textarea id="ai-generate-prompt" class="form-control bg-dark border-secondary text-light"
                               rows="3" placeholder="e.g. A grizzled dwarven blacksmith who secretly works for the thieves' guild"></textarea>
+                    <div id="ai-generate-status" class="text-muted small mt-2 d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                        <span id="ai-generate-status-text"></span>
+                        <span id="ai-generate-elapsed" class="ms-2 text-secondary"></span>
+                    </div>
                     <div id="ai-generate-error" class="alert alert-danger mt-2 d-none"></div>
                 </div>
                 <div class="modal-footer border-secondary">
@@ -51,6 +69,9 @@
     const promptInput = document.getElementById('ai-generate-prompt');
     const errorDiv = document.getElementById('ai-generate-error');
     const submitBtn = document.getElementById('ai-generate-submit');
+    const statusDiv = document.getElementById('ai-generate-status');
+    const statusText = document.getElementById('ai-generate-status-text');
+    const elapsedSpan = document.getElementById('ai-generate-elapsed');
 
     // -----------------------------------------------------------------------
     // Submit handler
@@ -70,6 +91,7 @@
 
         setLoading(true);
         clearError();
+        startStatusUpdates();
 
         fetch('/api/ai/generate-entry', {
             method: 'POST',
@@ -88,13 +110,17 @@
             .catch(() => {
                 showError('Request failed — check your connection and try again.');
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                setLoading(false);
+                stopStatusUpdates();
+            });
     });
 
     // Reset prompt and errors each time the modal opens
     modalEl.addEventListener('show.bs.modal', function () {
         promptInput.value = '';
         clearError();
+        stopStatusUpdates();
     });
 
     // -----------------------------------------------------------------------
@@ -119,6 +145,35 @@
                 el.value = value;
             }
         });
+    }
+
+    // -----------------------------------------------------------------------
+    // Status message rotation + elapsed timer
+    // -----------------------------------------------------------------------
+    function startStatusUpdates() {
+        const startTime = Date.now();
+        statusDiv.classList.remove('d-none');
+        statusText.textContent = STATUS_MESSAGES[0].text;
+        elapsedSpan.textContent = '0:00';
+
+        elapsedTimer = setInterval(function () {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            elapsedSpan.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+            for (let i = STATUS_MESSAGES.length - 1; i >= 0; i--) {
+                if (elapsed >= STATUS_MESSAGES[i].after) {
+                    statusText.textContent = STATUS_MESSAGES[i].text;
+                    break;
+                }
+            }
+        }, 1000);
+    }
+
+    function stopStatusUpdates() {
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+        statusDiv.classList.add('d-none');
     }
 
     // -----------------------------------------------------------------------

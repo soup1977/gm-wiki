@@ -14,6 +14,20 @@
     'use strict';
 
     // -----------------------------------------------------------------------
+    // Status messages shown while waiting for AI response
+    // -----------------------------------------------------------------------
+    const STATUS_MESSAGES = [
+        { after: 0,  text: 'Reading your notes...' },
+        { after: 5,  text: 'Extracting fields...' },
+        { after: 15, text: 'Still working — LLMs can take a minute...' },
+        { after: 30, text: 'Almost there — hang tight...' },
+        { after: 60, text: 'Still processing — large notes take longer...' },
+    ];
+
+    let statusTimer = null;
+    let elapsedTimer = null;
+
+    // -----------------------------------------------------------------------
     // Build and inject the modal HTML once
     // -----------------------------------------------------------------------
     const modalHtml = `
@@ -33,6 +47,11 @@
                     </p>
                     <textarea id="smart-fill-text" class="form-control bg-dark border-secondary text-light font-monospace"
                               rows="10" placeholder="Paste your notes here…"></textarea>
+                    <div id="smart-fill-status" class="text-muted small mt-2 d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                        <span id="smart-fill-status-text"></span>
+                        <span id="smart-fill-elapsed" class="ms-2 text-secondary"></span>
+                    </div>
                     <div id="smart-fill-error" class="alert alert-danger mt-2 d-none"></div>
                 </div>
                 <div class="modal-footer border-secondary">
@@ -51,6 +70,9 @@
     const textArea = document.getElementById('smart-fill-text');
     const errorDiv = document.getElementById('smart-fill-error');
     const submitBtn = document.getElementById('smart-fill-submit');
+    const statusDiv = document.getElementById('smart-fill-status');
+    const statusText = document.getElementById('smart-fill-status-text');
+    const elapsedSpan = document.getElementById('smart-fill-elapsed');
 
     // -----------------------------------------------------------------------
     // Submit handler
@@ -70,6 +92,7 @@
 
         setLoading(true);
         clearError();
+        startStatusUpdates();
 
         fetch('/api/ai/smart-fill', {
             method: 'POST',
@@ -89,13 +112,17 @@
             .catch(() => {
                 showError('Request failed — check your connection and try again.');
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                setLoading(false);
+                stopStatusUpdates();
+            });
     });
 
     // Reset textarea and errors each time the modal opens
     modalEl.addEventListener('show.bs.modal', function () {
         textArea.value = '';
         clearError();
+        stopStatusUpdates();
     });
 
     // -----------------------------------------------------------------------
@@ -122,6 +149,38 @@
                 el.value = value;
             }
         });
+    }
+
+    // -----------------------------------------------------------------------
+    // Status message rotation + elapsed timer
+    // -----------------------------------------------------------------------
+    function startStatusUpdates() {
+        const startTime = Date.now();
+        statusDiv.classList.remove('d-none');
+        statusText.textContent = STATUS_MESSAGES[0].text;
+        elapsedSpan.textContent = '0:00';
+
+        // Update elapsed time every second
+        elapsedTimer = setInterval(function () {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            elapsedSpan.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+            // Update status message based on elapsed time
+            for (let i = STATUS_MESSAGES.length - 1; i >= 0; i--) {
+                if (elapsed >= STATUS_MESSAGES[i].after) {
+                    statusText.textContent = STATUS_MESSAGES[i].text;
+                    break;
+                }
+            }
+        }, 1000);
+    }
+
+    function stopStatusUpdates() {
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+        if (statusTimer) { clearTimeout(statusTimer); statusTimer = null; }
+        statusDiv.classList.add('d-none');
     }
 
     // -----------------------------------------------------------------------
