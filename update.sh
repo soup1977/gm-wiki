@@ -1,11 +1,11 @@
 #!/bin/bash
-# GM Wiki — pull latest code, rebuild Docker image, restart container
+# The War Table — pull latest code, rebuild Docker image, restart container
 # Run from the Unraid server: bash /mnt/user/appdata/gm-wiki/update.sh
 
 set -e
 cd "$(dirname "$0")"
 
-echo "=== GM Wiki Update ==="
+echo "=== The War Table Update ==="
 echo ""
 
 echo "Pulling latest code from GitHub..."
