@@ -74,7 +74,8 @@ def create_campaign():
             name=name,
             system=request.form.get('system', '').strip(),
             status=request.form.get('status', 'active'),
-            description=request.form.get('description', '').strip()
+            description=request.form.get('description', '').strip(),
+            image_style_prompt=request.form.get('image_style_prompt', '').strip() or None
         )
         db.session.add(campaign)
         db.session.flush()  # Assigns campaign.id before we create child records

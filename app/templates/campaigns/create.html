@@ -27,6 +27,15 @@
                 <textarea class="form-control" id="description" name="description" rows="4"></textarea>
             </div>
 
+            {% if sd_enabled %}
+            <div class="mb-4">
+                <label for="image_style_prompt" class="form-label">Image Style Prompt</label>
+                <textarea class="form-control" id="image_style_prompt" name="image_style_prompt" rows="2"
+                          placeholder="e.g. dark fantasy oil painting, dramatic lighting, medieval"></textarea>
+                <div class="form-text">Prepended to all AI-generated images for this campaign. Sets the visual tone for portraits, locations, and items.</div>
+            </div>
+            {% endif %}
+
             <hr class="border-secondary mb-4">
 
             <h5 class="mb-3">Player Character Stat Fields</h5>
