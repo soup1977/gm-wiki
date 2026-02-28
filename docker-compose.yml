@@ -1,5 +1,6 @@
 services:
   gm-wiki:
+    container_name: war-table
     build: .
     ports:
       - "5001:5001"
