@@ -52,6 +52,45 @@
                     </div>
                 </div>
 
+                {% if available_providers | length > 1 %}
+                <!-- Per-feature provider overrides (only shown when both providers are configured) -->
+                <div class="border border-info rounded p-3 mb-3">
+                    <h6 class="mb-1 text-info"><i class="bi bi-sliders me-1"></i> Per-Feature Provider</h6>
+                    <p class="text-muted small mb-3">Both providers are configured. You can assign each feature to a specific one, or leave it on the global setting above.</p>
+                    <div class="row g-2">
+                        {% set feature_labels = {
+                            'smart_fill': ('Smart Fill',    'bi-magic',       'Extract fields from pasted notes'),
+                            'generate':   ('Generate Entry','bi-stars',       'Create a full entity from a concept'),
+                            'assistant':  ('Campaign Asst.','bi-robot',       'Multi-turn campaign chat'),
+                            'npc_chat':   ('NPC Chat',      'bi-chat-quote',  'In-character NPC dialogue in Session Mode'),
+                        } %}
+                        {% for key, (label, icon, hint) in feature_labels.items() %}
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">
+                                <i class="bi {{ icon }} me-1"></i>{{ label }}
+                                <span class="text-muted fw-normal">— {{ hint }}</span>
+                            </label>
+                            <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                    name="ai_feature_{{ key }}">
+                                <option value="default"
+                                    {{ 'selected' if feature_providers[key] == 'default' }}>
+                                    Default (global setting)
+                                </option>
+                                <option value="ollama"
+                                    {{ 'selected' if feature_providers[key] == 'ollama' }}>
+                                    <i class="bi bi-cpu"></i> Ollama — Local
+                                </option>
+                                <option value="anthropic"
+                                    {{ 'selected' if feature_providers[key] == 'anthropic' }}>
+                                    <i class="bi bi-lightning"></i> Anthropic — Cloud
+                                </option>
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Ollama settings -->
                 <div id="ollama-section" class="border border-secondary rounded p-3 mb-3" style="display:none;">
                     <h6 class="mb-3"><i class="bi bi-hdd-network me-1"></i> Ollama Settings</h6>

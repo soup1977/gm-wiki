@@ -107,7 +107,9 @@
                 </div>
                 {% else %}
                 <div class="d-flex justify-content-start mb-3">
-                    <div class="border border-secondary rounded-3 px-3 py-2" style="max-width:85%; white-space:pre-wrap;">{{ msg.content }}</div>
+                    <div class="assistant-prose border border-secondary rounded-3 px-3 py-2"
+                         style="max-width:85%;"
+                         data-markdown={{ msg.content | tojson }}></div>
                 </div>
                 {% endif %}
                 {% endfor %}
@@ -134,7 +136,50 @@
 </div>
 {% endblock %}
 
+{% block styles %}
+<style>
+/* Markdown rendering inside assistant messages */
+.assistant-prose p      { margin-bottom: 0.4rem; }
+.assistant-prose p:last-child { margin-bottom: 0; }
+.assistant-prose h1, .assistant-prose h2, .assistant-prose h3,
+.assistant-prose h4, .assistant-prose h5 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0.6rem 0 0.3rem;
+}
+.assistant-prose ul, .assistant-prose ol {
+    padding-left: 1.4rem;
+    margin-bottom: 0.4rem;
+}
+.assistant-prose li { margin-bottom: 0.15rem; }
+.assistant-prose code {
+    background: rgba(255,255,255,0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+.assistant-prose pre {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+    overflow-x: auto;
+    margin-bottom: 0.4rem;
+}
+.assistant-prose pre code { background: none; padding: 0; }
+.assistant-prose hr  { border-color: rgba(255,255,255,0.2); margin: 0.5rem 0; }
+.assistant-prose a   { color: #6ea8fe; }
+.assistant-prose blockquote {
+    border-left: 3px solid rgba(255,255,255,0.3);
+    padding-left: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    margin: 0.4rem 0;
+}
+</style>
+{% endblock %}
+
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
     // Pass CSRF token and endpoints to the JS module
     window.ASSISTANT_CONFIG = {

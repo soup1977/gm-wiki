@@ -11,7 +11,7 @@ If no AI provider is configured, both endpoints return a 403.
 import json
 from flask import Blueprint, request, jsonify
 from flask_login import login_required
-from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError
+from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -137,7 +137,8 @@ def smart_fill():
     messages, system_prompt = _build_prompt(entity_type, text)
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=1024, json_mode=True)
+        raw = ai_chat(system_prompt, messages, max_tokens=1024, json_mode=True,
+                      provider=get_feature_provider('smart_fill'))
 
         # Strip markdown code fences if the model added them despite instructions
         # (shouldn't happen with json_mode, but kept as a safety net for Anthropic)
@@ -262,7 +263,8 @@ def generate_entry():
         system_prompt = custom_system
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True)
+        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
+                      provider=get_feature_provider('generate'))
 
         # Strip markdown code fences if the model added them despite instructions
         # (shouldn't happen with json_mode, but kept as a safety net for Anthropic)

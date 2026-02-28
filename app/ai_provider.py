@@ -56,6 +56,29 @@ def get_available_providers():
     return available
 
 
+# Feature keys used for per-feature provider overrides
+FEATURE_KEYS = ('smart_fill', 'generate', 'assistant', 'npc_chat')
+
+
+def get_feature_provider(feature_key):
+    """Return the effective AI provider for a specific feature.
+
+    Each feature can be individually assigned to 'ollama' or 'anthropic'.
+    If set to 'default' (or not set), the global ai_provider is used.
+
+    Args:
+        feature_key: One of 'smart_fill', 'generate', 'assistant', 'npc_chat'
+
+    Returns:
+        'ollama', 'anthropic', or 'none'
+    """
+    settings = _get_settings()
+    override = settings.get(f'ai_feature_{feature_key}', 'default')
+    if override and override != 'default':
+        return override
+    return settings.get('ai_provider', 'none')
+
+
 def get_ai_config():
     """Return a dict of current AI settings for display."""
     settings = _get_settings()

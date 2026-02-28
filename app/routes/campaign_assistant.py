@@ -22,7 +22,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.models import Campaign, NPC, Location, Quest, Item
-from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError
+from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
 
 campaign_assistant_bp = Blueprint('campaign_assistant', __name__)
 
@@ -194,7 +194,8 @@ def send_message():
         history = history[-MAX_HISTORY_MESSAGES:]
 
     try:
-        raw_response = ai_chat(system_prompt, history, max_tokens=2048)
+        raw_response = ai_chat(system_prompt, history, max_tokens=4096,
+                               provider=get_feature_provider('assistant'))
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
