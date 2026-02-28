@@ -296,38 +296,171 @@ def create_app():
         except Exception:
             return dict(ai_enabled=False, sd_enabled=False)
 
-    # CLI command: flask seed-icrpg
-    # Loads ICRPG bestiary entries from the bundled JSON seed data.
-    # Bestiary entries are global (no campaign_id), so this only needs to run once.
+    # -----------------------------------------------------------------
+    # CLI: flask seed-icrpg
+    # Loads ICRPG bestiary + monster entries (global, no campaign_id).
+    # -----------------------------------------------------------------
     @app.cli.command('seed-icrpg')
     def seed_icrpg():
-        """Load ICRPG bestiary seed data into the database."""
+        """Load ICRPG bestiary and monster seed data into the database."""
         import json as _json
         from app.models import BestiaryEntry
 
-        seed_path = os.path.join(app.root_path, 'seed_data', 'icrpg_bestiary.json')
-        with open(seed_path) as f:
-            entries = _json.load(f)
-
         imported = 0
         skipped = 0
-        for entry in entries:
-            name = entry['name']
-            if BestiaryEntry.query.filter_by(name=name, system='ICRPG').first():
-                skipped += 1
+
+        for filename in ('icrpg_bestiary.json', 'icrpg_monsters.json'):
+            seed_path = os.path.join(app.root_path, 'seed_data', filename)
+            if not os.path.exists(seed_path):
+                print(f'  Skipping {filename} (not found)')
                 continue
-            be = BestiaryEntry(
-                name=name,
-                system=entry.get('system', 'ICRPG'),
-                stat_block=entry.get('stat_block', ''),
-                cr_level=entry.get('cr_level', ''),
-                source=entry.get('source', 'ICRPG Master Edition'),
-                tags=entry.get('tags', ''),
-            )
-            db.session.add(be)
-            imported += 1
+            with open(seed_path) as f:
+                entries = _json.load(f)
+            for entry in entries:
+                name = entry['name']
+                if BestiaryEntry.query.filter_by(name=name, system='ICRPG').first():
+                    skipped += 1
+                    continue
+                be = BestiaryEntry(
+                    name=name,
+                    system=entry.get('system', 'ICRPG'),
+                    stat_block=entry.get('stat_block', ''),
+                    cr_level=entry.get('cr_level', ''),
+                    source=entry.get('source', 'ICRPG Master Edition'),
+                    tags=entry.get('tags', ''),
+                )
+                db.session.add(be)
+                imported += 1
 
         db.session.commit()
         print(f'Imported {imported} ICRPG bestiary entries. Skipped {skipped} duplicates.')
+
+    # -----------------------------------------------------------------
+    # CLI: flask seed-icrpg-compendium --campaign-id <N>
+    # Loads ICRPG rules, spells, loot tables, roll tables into a
+    # campaign's compendium as rich-markdown CompendiumEntry records.
+    # -----------------------------------------------------------------
+    import click
+
+    @app.cli.command('seed-icrpg-compendium')
+    @click.argument('campaign_id', type=int)
+    def seed_icrpg_compendium(campaign_id):
+        """Load ICRPG compendium seed data (rules, spells, loot, tables) into a campaign.
+
+        Usage: flask seed-icrpg-compendium <CAMPAIGN_ID>
+        """
+        import json as _json
+        from app.models import Campaign, CompendiumEntry
+
+        campaign = Campaign.query.get(campaign_id)
+        if not campaign:
+            print(f'Error: Campaign {campaign_id} not found.')
+            return
+
+        print(f'Seeding ICRPG compendium into campaign: {campaign.name}')
+
+        imported = 0
+        skipped = 0
+
+        def _add_entry(title, category, content):
+            nonlocal imported, skipped
+            existing = CompendiumEntry.query.filter_by(
+                campaign_id=campaign_id, title=title, category=category
+            ).first()
+            if existing:
+                skipped += 1
+                return
+            db.session.add(CompendiumEntry(
+                campaign_id=campaign_id,
+                title=title,
+                category=category,
+                content=content,
+            ))
+            imported += 1
+
+        # --- 1. Rules (icrpg_compendium.json) ---
+        rules_path = os.path.join(app.root_path, 'seed_data', 'icrpg_compendium.json')
+        if os.path.exists(rules_path):
+            with open(rules_path) as f:
+                for entry in _json.load(f):
+                    _add_entry(entry['title'], entry.get('category', 'ICRPG - Rule'), entry['content'])
+            print(f'  Rules: {imported} imported, {skipped} skipped')
+
+        # --- 2. Spells (icrpg_spells.json) ---
+        count_before = imported
+        spells_path = os.path.join(app.root_path, 'seed_data', 'icrpg_spells.json')
+        if os.path.exists(spells_path):
+            with open(spells_path) as f:
+                spells = _json.load(f)
+            for sp in spells:
+                content = f"**Type:** {sp['type']}  \n"
+                content += f"**Level:** {sp['level']}  \n"
+                if sp.get('target'):
+                    content += f"**Target:** {sp['target']}  \n"
+                if sp.get('duration'):
+                    content += f"**Duration:** {sp['duration']}  \n"
+                content += f"\n{sp['description']}"
+                if sp.get('flavor'):
+                    content += f"\n\n*{sp['flavor']}*"
+                _add_entry(sp['name'], f"ICRPG - Spell ({sp['type']})", content)
+            print(f'  Spells: {imported - count_before} imported')
+
+        # --- 3. Loot tables (icrpg_loot.json) ---
+        count_before = imported
+        loot_path = os.path.join(app.root_path, 'seed_data', 'icrpg_loot.json')
+        if os.path.exists(loot_path):
+            with open(loot_path) as f:
+                tables = _json.load(f)
+            for table in tables:
+                lines = [f"# {table['table_name']}\n"]
+                lines.append("| Roll | Name | Type | Description |")
+                lines.append("|------|------|------|-------------|")
+                for e in table['entries']:
+                    lines.append(f"| {e['roll']} | {e['name']} | {e['type']} | {e['description']} |")
+                _add_entry(table['table_name'], 'ICRPG - Loot Table', '\n'.join(lines))
+            print(f'  Loot tables: {imported - count_before} imported')
+
+        # --- 4. Roll tables (icrpg_tables.json) ---
+        count_before = imported
+        tables_path = os.path.join(app.root_path, 'seed_data', 'icrpg_tables.json')
+        if os.path.exists(tables_path):
+            with open(tables_path) as f:
+                tables = _json.load(f)
+            for table in tables:
+                lines = [f"# {table['table_name']}\n"]
+                lines.append(f"*{table['die']} — {table.get('setting', 'ICRPG')}*\n")
+                # Some roll tables have name+description, some just description
+                has_names = any('name' in e for e in table['entries'])
+                if has_names:
+                    lines.append("| Roll | Name | Description |")
+                    lines.append("|------|------|-------------|")
+                    for e in table['entries']:
+                        lines.append(f"| {e['roll']} | {e.get('name', '')} | {e['description']} |")
+                else:
+                    lines.append("| Roll | Description |")
+                    lines.append("|------|-------------|")
+                    for e in table['entries']:
+                        lines.append(f"| {e['roll']} | {e['description']} |")
+                _add_entry(table['table_name'], f"ICRPG - Roll Table ({table.get('category', 'General')})", '\n'.join(lines))
+            print(f'  Roll tables: {imported - count_before} imported')
+
+        # --- 5. Starter loot (icrpg_starter_loot.json) ---
+        count_before = imported
+        starter_path = os.path.join(app.root_path, 'seed_data', 'icrpg_starter_loot.json')
+        if os.path.exists(starter_path):
+            with open(starter_path) as f:
+                tables = _json.load(f)
+            for table in tables:
+                lines = [f"# {table['table_name']}\n"]
+                lines.append(f"*{table.get('setting', 'ICRPG')} — Starter Loot*\n")
+                lines.append("| Name | Type | Description |")
+                lines.append("|------|------|-------------|")
+                for e in table['entries']:
+                    lines.append(f"| {e['name']} | {e['type']} | {e['description']} |")
+                _add_entry(table['table_name'], f"ICRPG - Starter Loot ({table.get('setting', 'ICRPG')})", '\n'.join(lines))
+            print(f'  Starter loot: {imported - count_before} imported')
+
+        db.session.commit()
+        print(f'\nDone! Total: {imported} imported, {skipped} skipped.')
 
     return app
