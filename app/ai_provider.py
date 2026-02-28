@@ -60,7 +60,7 @@ def get_ai_config():
     }
 
 
-def ai_chat(system_prompt, messages, max_tokens=1024):
+def ai_chat(system_prompt, messages, max_tokens=1024, json_mode=False):
     """Send a chat request to the configured AI provider.
 
     Args:
@@ -68,6 +68,8 @@ def ai_chat(system_prompt, messages, max_tokens=1024):
         messages: List of dicts with 'role' and 'content' keys.
                   Usually just [{'role': 'user', 'content': '...'}].
         max_tokens: Maximum response length (used by Anthropic; Ollama ignores).
+        json_mode: If True, constrain the model to output valid JSON only.
+                   Ollama uses format="json"; Anthropic ignores this (relies on prompt).
 
     Returns:
         The assistant's response as a plain string.
@@ -79,14 +81,14 @@ def ai_chat(system_prompt, messages, max_tokens=1024):
     provider = config['provider']
 
     if provider == 'ollama':
-        return _call_ollama(config, system_prompt, messages)
+        return _call_ollama(config, system_prompt, messages, json_mode=json_mode)
     elif provider == 'anthropic':
         return _call_anthropic(config, system_prompt, messages, max_tokens)
     else:
         raise AIProviderError('No AI provider configured. Go to Settings to set one up.')
 
 
-def _call_ollama(config, system_prompt, messages):
+def _call_ollama(config, system_prompt, messages, json_mode=False):
     """Call the Ollama REST API."""
     url = config['ollama_url'].rstrip('/')
     model = config['ollama_model'] or 'llama3.1'
@@ -96,15 +98,22 @@ def _call_ollama(config, system_prompt, messages):
     for msg in messages:
         ollama_messages.append({'role': msg['role'], 'content': msg['content']})
 
+    payload = {
+        'model': model,
+        'messages': ollama_messages,
+        'stream': False,
+        'keep_alive': '30m',  # Keep model loaded in VRAM for 30 min
+    }
+
+    # When json_mode is True, Ollama constrains output to valid JSON at the
+    # token level — the model literally cannot produce non-JSON tokens.
+    if json_mode:
+        payload['format'] = 'json'
+
     try:
         resp = requests.post(
             f'{url}/api/chat',
-            json={
-                'model': model,
-                'messages': ollama_messages,
-                'stream': False,
-                'keep_alive': '30m',  # Keep model loaded in VRAM for 30 min
-            },
+            json=payload,
             timeout=300,  # 5 min — first request loads model into VRAM, can be slow
         )
         # Check for model-not-found (Ollama returns 404 when model isn't pulled)

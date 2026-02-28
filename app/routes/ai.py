@@ -137,9 +137,10 @@ def smart_fill():
     messages, system_prompt = _build_prompt(entity_type, text)
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=1024)
+        raw = ai_chat(system_prompt, messages, max_tokens=1024, json_mode=True)
 
         # Strip markdown code fences if the model added them despite instructions
+        # (shouldn't happen with json_mode, but kept as a safety net for Anthropic)
         if raw.startswith('```'):
             raw = raw.split('\n', 1)[-1]
             if raw.endswith('```'):
@@ -258,9 +259,10 @@ def generate_entry():
         system_prompt = custom_system
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048)
+        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True)
 
         # Strip markdown code fences if the model added them despite instructions
+        # (shouldn't happen with json_mode, but kept as a safety net for Anthropic)
         if raw.startswith('```'):
             raw = raw.split('\n', 1)[-1]
             if raw.endswith('```'):
