@@ -192,6 +192,19 @@ Rules:
     return messages, system_prompt
 
 
+@ai_bp.route('/generate-prompt/<entity_type>')
+@login_required
+def get_generate_prompt(entity_type):
+    """Return the default system prompt for a given entity type.
+    Used by the shift+click prompt editor in ai_generate.js."""
+    entity_type = entity_type.strip().lower()
+    if entity_type not in ENTITY_SCHEMAS:
+        return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
+    # Build a dummy prompt just to get the system prompt text
+    _, system_prompt = _build_generate_prompt(entity_type, '(concept placeholder)')
+    return jsonify({'system_prompt': system_prompt})
+
+
 @ai_bp.route('/generate-entry', methods=['POST'])
 @login_required
 def generate_entry():
@@ -217,6 +230,11 @@ def generate_entry():
         return jsonify({'error': 'Concept is too long (max ~2000 characters).'}), 400
 
     messages, system_prompt = _build_generate_prompt(entity_type, concept)
+
+    # Allow optional custom system prompt override (from shift+click editor)
+    custom_system = data.get('system_prompt', '').strip()
+    if custom_system:
+        system_prompt = custom_system
 
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=2048)

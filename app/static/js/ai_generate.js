@@ -8,6 +8,8 @@
  * Field mapping: the JSON keys returned by the AI endpoint must match
  * the HTML form input name attributes. If they don't, add a custom
  * mapping via window.SMART_FILL_FIELD_MAP = { aiKey: 'formFieldName' }.
+ *
+ * Shift+click the Generate button to reveal and edit the system prompt.
  */
 
 (function () {
@@ -31,7 +33,7 @@
     // -----------------------------------------------------------------------
     const modalHtml = `
     <div class="modal fade" id="aiGenerateModal" tabindex="-1" aria-labelledby="aiGenerateModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content bg-dark border-secondary">
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title" id="aiGenerateModalLabel">
@@ -46,6 +48,14 @@
                     </p>
                     <textarea id="ai-generate-prompt" class="form-control bg-dark border-secondary text-light"
                               rows="3" placeholder="e.g. A grizzled dwarven blacksmith who secretly works for the thieves' guild"></textarea>
+                    <div id="ai-generate-advanced" class="d-none mt-3">
+                        <label class="form-label small text-muted">
+                            <i class="bi bi-gear me-1"></i>System Prompt
+                            <span class="text-secondary">(controls how the AI generates the entry)</span>
+                        </label>
+                        <textarea id="ai-generate-system-prompt" class="form-control form-control-sm bg-dark border-secondary text-light font-monospace"
+                                  rows="10"></textarea>
+                    </div>
                     <div id="ai-generate-status" class="text-muted small mt-2 d-none">
                         <span class="spinner-border spinner-border-sm me-1"></span>
                         <span id="ai-generate-status-text"></span>
@@ -54,6 +64,9 @@
                     <div id="ai-generate-error" class="alert alert-danger mt-2 d-none"></div>
                 </div>
                 <div class="modal-footer border-secondary">
+                    <span class="text-secondary small me-auto" id="ai-generate-hint">
+                        <i class="bi bi-info-circle"></i> Shift+click Generate to edit system prompt
+                    </span>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="ai-generate-submit">
                         <i class="bi bi-magic"></i> Generate
@@ -72,11 +85,16 @@
     const statusDiv = document.getElementById('ai-generate-status');
     const statusText = document.getElementById('ai-generate-status-text');
     const elapsedSpan = document.getElementById('ai-generate-elapsed');
+    const advancedDiv = document.getElementById('ai-generate-advanced');
+    const systemPromptInput = document.getElementById('ai-generate-system-prompt');
+    const hintSpan = document.getElementById('ai-generate-hint');
+
+    let systemPromptLoaded = false;
 
     // -----------------------------------------------------------------------
     // Submit handler
     // -----------------------------------------------------------------------
-    submitBtn.addEventListener('click', function () {
+    submitBtn.addEventListener('click', function (event) {
         const concept = promptInput.value.trim();
         if (!concept) {
             showError('Please describe what you want to generate.');
@@ -89,14 +107,48 @@
             return;
         }
 
+        // Shift+click: toggle advanced system prompt editor
+        if (event.shiftKey) {
+            if (advancedDiv.classList.contains('d-none')) {
+                // Show advanced section — fetch default system prompt if not loaded
+                if (!systemPromptLoaded) {
+                    systemPromptInput.value = 'Loading...';
+                    fetch('/api/ai/generate-prompt/' + entityType)
+                        .then(r => r.json())
+                        .then(data => {
+                            systemPromptInput.value = data.system_prompt || '';
+                            systemPromptLoaded = true;
+                        })
+                        .catch(() => {
+                            systemPromptInput.value = '(Could not load default prompt)';
+                        });
+                }
+                advancedDiv.classList.remove('d-none');
+                hintSpan.innerHTML = '<i class="bi bi-info-circle"></i> Shift+click Generate to hide system prompt';
+            } else {
+                advancedDiv.classList.add('d-none');
+                hintSpan.innerHTML = '<i class="bi bi-info-circle"></i> Shift+click Generate to edit system prompt';
+            }
+            return;
+        }
+
+        // Normal click: send the request
         setLoading(true);
         clearError();
         startStatusUpdates();
 
+        // Build request body
+        const body = { entity_type: entityType, prompt: concept };
+
+        // Include custom system prompt if the advanced section is visible and was edited
+        if (!advancedDiv.classList.contains('d-none') && systemPromptInput.value.trim()) {
+            body.system_prompt = systemPromptInput.value.trim();
+        }
+
         fetch('/api/ai/generate-entry', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entity_type: entityType, prompt: concept }),
+            body: JSON.stringify(body),
         })
             .then(r => r.json().then(data => ({ ok: r.ok, data })))
             .then(({ ok, data }) => {
@@ -121,6 +173,9 @@
         promptInput.value = '';
         clearError();
         stopStatusUpdates();
+        advancedDiv.classList.add('d-none');
+        hintSpan.innerHTML = '<i class="bi bi-info-circle"></i> Shift+click Generate to edit system prompt';
+        systemPromptLoaded = false;
     });
 
     // -----------------------------------------------------------------------

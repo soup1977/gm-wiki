@@ -1,12 +1,14 @@
 /**
  * sd_generate.js — Stable Diffusion image generation from entity forms
  *
- * Usage: Add a button with onclick="sdGenerate('npc')" and the following
+ * Usage: Add a button with onclick="sdGenerate('npc', event)" and the following
  * elements in the form:
  *   - #sd-preview-img        — <img> element for preview (hidden by default)
  *   - #sd-generated-filename — <input type="hidden" name="sd_generated_filename">
  *   - #sd-generate-btn       — the generate button itself
  *   - #sd-generate-result    — <div> for error messages
+ *
+ * Shift+click the Generate Image button to edit the prompt before sending.
  */
 
 // Status messages for image generation
@@ -74,11 +76,57 @@ const SD_PROMPT_BUILDERS = {
 
 let sdElapsedTimer = null;
 
-function sdGenerate(entityType) {
+// ---------------------------------------------------------------------------
+// Inject the prompt editor modal (for shift+click)
+// ---------------------------------------------------------------------------
+(function () {
+    const modalHtml = `
+    <div class="modal fade" id="sdPromptEditModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> Edit Image Prompt
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-2">
+                        This prompt was auto-built from the form fields. Edit it to fine-tune the image, then click Generate.
+                    </p>
+                    <textarea id="sd-prompt-edit-text" class="form-control bg-dark border-secondary text-light"
+                              rows="5"></textarea>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sd-prompt-edit-submit">
+                        <i class="bi bi-image"></i> Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+})();
+
+// Store current entity type for the modal submit handler
+let _sdPromptEditEntityType = null;
+
+// Modal submit handler — sends the edited prompt
+document.getElementById('sd-prompt-edit-submit').addEventListener('click', function () {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('sdPromptEditModal'));
+    const editedPrompt = document.getElementById('sd-prompt-edit-text').value.trim();
+    if (!editedPrompt) return;
+    modal.hide();
+    _sdSendRequest(editedPrompt);
+});
+
+// ---------------------------------------------------------------------------
+// Main entry point
+// ---------------------------------------------------------------------------
+function sdGenerate(entityType, event) {
     const btn = document.getElementById('sd-generate-btn');
     const resultEl = document.getElementById('sd-generate-result');
-    const previewImg = document.getElementById('sd-preview-img');
-    const filenameInput = document.getElementById('sd-generated-filename');
 
     // Build prompt from form fields
     const builder = SD_PROMPT_BUILDERS[entityType];
@@ -92,6 +140,28 @@ function sdGenerate(entityType) {
         resultEl.innerHTML = '<span class="text-warning">Fill in some fields first (name, description, etc.) so the AI knows what to draw.</span>';
         return;
     }
+
+    _sdPromptEditEntityType = entityType;
+
+    // Shift+click: show prompt editor modal
+    if (event && event.shiftKey) {
+        document.getElementById('sd-prompt-edit-text').value = prompt;
+        new bootstrap.Modal(document.getElementById('sdPromptEditModal')).show();
+        return;
+    }
+
+    // Normal click: send immediately
+    _sdSendRequest(prompt);
+}
+
+// ---------------------------------------------------------------------------
+// Send the SD request (shared by normal click and prompt editor)
+// ---------------------------------------------------------------------------
+function _sdSendRequest(prompt) {
+    const btn = document.getElementById('sd-generate-btn');
+    const resultEl = document.getElementById('sd-generate-result');
+    const previewImg = document.getElementById('sd-preview-img');
+    const filenameInput = document.getElementById('sd-generated-filename');
 
     // Show spinner with status updates
     btn.disabled = true;
@@ -129,11 +199,9 @@ function sdGenerate(entityType) {
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
-            // Show preview
             previewImg.src = data.url;
             previewImg.style.display = 'block';
             previewImg.parentElement.style.display = 'block';
-            // Set hidden filename so the form save picks it up
             filenameInput.value = data.filename;
             resultEl.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Image generated! It will be saved when you submit the form.</span>';
         } else {
