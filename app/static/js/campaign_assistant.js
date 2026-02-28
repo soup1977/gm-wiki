@@ -160,13 +160,33 @@
     };
 
     function buildEntityCard(entity) {
-        const type   = entity.type;
-        const fields = entity.fields || {};
-        const icon   = ENTITY_ICONS[type]   || 'bi-stars';
-        const label  = ENTITY_LABELS[type]  || type;
+        const type  = entity.type;
+        const icon  = ENTITY_ICONS[type]  || 'bi-stars';
+        const label = ENTITY_LABELS[type] || type;
+
+        const card = document.createElement('div');
+        card.style.maxWidth = '85%';
+
+        // Warning card — entity block was truncated/malformed
+        if (!entity.fields) {
+            card.className = 'card border-warning mb-2';
+            card.style.backgroundColor = '#1f1a0a';
+            card.innerHTML = `
+                <div class="card-body py-2 px-3">
+                    <span class="badge bg-warning text-dark me-2">
+                        <i class="${icon} me-1"></i>${label} — Truncated
+                    </span>
+                    <p class="text-warning small mb-0 mt-1">
+                        <i class="bi bi-exclamation-triangle me-1"></i>${escapeHtml(entity.warning || 'Entity block was cut off. Try asking again with a shorter request.')}
+                    </p>
+                </div>`;
+            return card;
+        }
+
+        // Normal entity card
+        const fields = entity.fields;
         const name   = fields.name || 'Unnamed';
 
-        // Build a short preview of the key fields
         const previews = [];
         if (fields.role)        previews.push(fields.role);
         if (fields.type)        previews.push(fields.type);
@@ -176,11 +196,8 @@
         if (fields.hook)        previews.push(fields.hook.substring(0, 100) + (fields.hook.length > 100 ? '…' : ''));
         if (fields.physical_description) previews.push(fields.physical_description.substring(0, 100) + (fields.physical_description.length > 100 ? '…' : ''));
 
-        const card = document.createElement('div');
         card.className = 'card border-success mb-2';
-        card.style.maxWidth = '85%';
-        card.style.backgroundColor = '#0f1f14'; // subtle dark green tint
-
+        card.style.backgroundColor = '#0f1f14';
         card.innerHTML = `
             <div class="card-body py-2 px-3">
                 <div class="d-flex justify-content-between align-items-start">
@@ -197,7 +214,6 @@
                 ${previews.length ? `<p class="text-muted small mb-0 mt-1">${escapeHtml(previews[0])}</p>` : ''}
             </div>`;
 
-        // Wire up the save button
         const saveBtn = card.querySelector('.save-entity-btn');
         saveBtn.addEventListener('click', () => saveEntity(entity, saveBtn));
 

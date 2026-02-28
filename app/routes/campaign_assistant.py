@@ -107,11 +107,40 @@ def _build_system_prompt(campaign):
     return '\n'.join(lines)
 
 
+def _try_repair_json(json_str):
+    """Try to salvage a truncated JSON string by closing any open strings/braces.
+
+    Returns a parsed dict on success, or None on failure.
+    """
+    # First try as-is
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        pass
+
+    # Truncated mid-value: close any unclosed string, then close the object
+    s = json_str.rstrip()
+    # Close an unclosed string value
+    if s.count('"') % 2 != 0:
+        s += '"'
+    # Remove any trailing comma before closing
+    s = s.rstrip().rstrip(',')
+    s += '}'
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+
+    return None
+
+
 def _parse_entities(text):
     """Extract [ENTITY:type]...[/ENTITY] blocks from AI response text.
 
     Returns (prose_text, list_of_entity_dicts) where prose_text has all
-    entity blocks stripped out.
+    entity blocks stripped out. If a block's JSON is malformed (e.g.
+    truncated by a token limit), a warning entity is returned so the
+    user sees an actionable message instead of silent failure.
     """
     pattern = r'\[ENTITY:(\w+)\](.*?)\[/ENTITY\]'
     entities = []
@@ -119,12 +148,23 @@ def _parse_entities(text):
     def _extract(m):
         entity_type = m.group(1).lower()
         json_str = m.group(2).strip()
-        if entity_type in ENTITY_FIELDS:
-            try:
-                fields = json.loads(json_str)
-                entities.append({'type': entity_type, 'fields': fields})
-            except json.JSONDecodeError:
-                pass  # Skip malformed blocks
+        if entity_type not in ENTITY_FIELDS:
+            return ''
+
+        fields = _try_repair_json(json_str)
+        if fields is not None:
+            entities.append({'type': entity_type, 'fields': fields})
+        else:
+            # JSON was too badly truncated — surface a warning card
+            entities.append({
+                'type': entity_type,
+                'fields': None,
+                'warning': (
+                    f'The {entity_type} block was cut off (response too long). '
+                    'Try asking again with a shorter request, e.g. '
+                    f'"Create just the {entity_type}, no extra detail."'
+                ),
+            })
         return ''
 
     prose = re.sub(pattern, _extract, text, flags=re.DOTALL).strip()
@@ -194,7 +234,7 @@ def send_message():
         history = history[-MAX_HISTORY_MESSAGES:]
 
     try:
-        raw_response = ai_chat(system_prompt, history, max_tokens=2048)
+        raw_response = ai_chat(system_prompt, history, max_tokens=4096)
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
