@@ -29,7 +29,7 @@ const SD_PROMPT_BUILDERS = {
         const parts = ['fantasy portrait', 'detailed face'];
         if (name) parts.push(name);
         if (role) parts.push(role);
-        if (desc) parts.push(desc.substring(0, 200));
+        if (desc) parts.push(desc);
         return parts.join(', ');
     },
     location: function() {
@@ -39,7 +39,7 @@ const SD_PROMPT_BUILDERS = {
         const parts = ['fantasy landscape', 'detailed environment'];
         if (name) parts.push(name);
         if (type) parts.push(type);
-        if (desc) parts.push(desc.substring(0, 200));
+        if (desc) parts.push(desc);
         return parts.join(', ');
     },
     bestiary: function() {
@@ -57,7 +57,7 @@ const SD_PROMPT_BUILDERS = {
         const parts = ['fantasy item illustration', 'detailed object'];
         if (name) parts.push(name);
         if (type) parts.push(type);
-        if (desc) parts.push(desc.substring(0, 200));
+        if (desc) parts.push(desc);
         return parts.join(', ');
     },
     pc: function() {
@@ -69,7 +69,7 @@ const SD_PROMPT_BUILDERS = {
         if (race) parts.push(race);
         if (cls) parts.push(cls);
         if (name) parts.push(name);
-        if (desc) parts.push(desc.substring(0, 200));
+        if (desc) parts.push(desc);
         return parts.join(', ');
     }
 };
