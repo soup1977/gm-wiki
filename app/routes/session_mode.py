@@ -239,7 +239,7 @@ def save_post_session():
 @login_required
 def npc_chat():
     """Quick NPC dialogue generator — takes a situation and returns in-character lines."""
-    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
 
     if not is_ai_enabled():
         return jsonify({'error': 'AI is not configured. Go to Settings to set up a provider.'}), 403
@@ -302,7 +302,9 @@ def npc_chat():
     messages = [{'role': 'user', 'content': situation}]
 
     try:
-        response = ai_chat(system_prompt, messages, max_tokens=512, provider=requested_provider)
+        # Per-request toggle overrides the per-feature setting; falls back to feature setting
+        effective_provider = requested_provider or get_feature_provider('npc_chat')
+        response = ai_chat(system_prompt, messages, max_tokens=512, provider=effective_provider)
         return jsonify({'response': response})
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 502

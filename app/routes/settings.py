@@ -4,7 +4,7 @@ from flask_login import login_required
 from app import db
 from app.models import (Campaign, NPC, Location, Quest, Item, Session,
                         BestiaryEntry, CompendiumEntry, AppSetting)
-from app.ai_provider import get_ai_config, ai_chat, AIProviderError
+from app.ai_provider import get_ai_config, get_available_providers, ai_chat, AIProviderError, FEATURE_KEYS
 from app.routes.admin import admin_required
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
@@ -28,12 +28,21 @@ def index():
         AppSetting.set('sd_width', request.form.get('sd_width', '768').strip())
         AppSetting.set('sd_height', request.form.get('sd_height', '1024').strip())
         AppSetting.set('sd_negative_prompt', request.form.get('sd_negative_prompt', '').strip())
+        # Per-feature AI provider overrides
+        for key in FEATURE_KEYS:
+            AppSetting.set(f'ai_feature_{key}',
+                           request.form.get(f'ai_feature_{key}', 'default'))
         # User registration toggle
         AppSetting.set('allow_signup', 'true' if request.form.get('allow_signup') else 'false')
         flash('Settings saved.', 'success')
         return redirect(url_for('settings.index'))
 
     config = get_ai_config()
+    available_providers = get_available_providers()
+
+    # Load per-feature provider settings
+    feature_providers = {key: AppSetting.get(f'ai_feature_{key}', 'default')
+                         for key in FEATURE_KEYS}
 
     stats = {
         'campaigns': Campaign.query.count(),
@@ -49,7 +58,9 @@ def index():
     allow_signup = AppSetting.get('allow_signup', 'true') == 'true'
 
     return render_template('settings/index.html', ai_config=config, stats=stats,
-                           allow_signup=allow_signup)
+                           allow_signup=allow_signup,
+                           available_providers=available_providers,
+                           feature_providers=feature_providers)
 
 
 @settings_bp.route('/test-ollama')
