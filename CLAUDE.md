@@ -1,7 +1,7 @@
-# CLAUDE.md — GM Wiki Project Briefing
+# CLAUDE.md — The War Table Project Briefing
 
 ## What This Project Is
-GM Wiki is a local, browser-based tool for tabletop RPG Game Masters. It lets a GM manage multiple campaigns, each containing NPCs, Locations, Quests, Sessions, Items, and Compendium entries — all cross-linked and clickable. It also has a read-only player-facing wiki view.
+The War Table is a local, browser-based tool for tabletop RPG Game Masters. It lets a GM manage multiple campaigns, each containing NPCs, Locations, Quests, Sessions, Items, and Compendium entries — all cross-linked and clickable. It also has a read-only player-facing wiki view.
 
 It runs in a Docker container on an Unraid home server and is accessed via browser on the local network. No internet required.
 
