@@ -155,41 +155,118 @@ def delete_entry(entry_id):
 @compendium_bp.route('/compendium/seed-icrpg', methods=['POST'])
 @login_required
 def seed_icrpg_compendium():
-    """Load ICRPG compendium seed data into the active campaign."""
+    """Load all ICRPG seed data (rules, spells, loot, tables) into the active campaign."""
     campaign_id = get_active_campaign_id()
     if not campaign_id:
         flash('Select a campaign first.', 'warning')
         return redirect(url_for('campaigns.list_campaigns'))
 
-    seed_path = os.path.join(current_app.root_path, 'seed_data', 'icrpg_compendium.json')
-    with open(seed_path) as f:
-        entries = _json.load(f)
-
     imported = 0
     skipped = 0
-    for entry in entries:
-        title = entry['title']
-        category = entry.get('category', 'ICRPG')
-        exists = CompendiumEntry.query.filter_by(
-            campaign_id=campaign_id, category=category, title=title
-        ).first()
-        if exists:
-            skipped += 1
-            continue
 
-        ce = CompendiumEntry(
-            campaign_id=campaign_id,
-            title=title,
-            category=category,
-            content=entry.get('content', ''),
-            is_gm_only=entry.get('is_gm_only', False),
-        )
-        db.session.add(ce)
+    def _add(title, category, content):
+        nonlocal imported, skipped
+        if CompendiumEntry.query.filter_by(
+            campaign_id=campaign_id, title=title, category=category
+        ).first():
+            skipped += 1
+            return
+        db.session.add(CompendiumEntry(
+            campaign_id=campaign_id, title=title,
+            category=category, content=content,
+        ))
         imported += 1
 
+    seed_dir = os.path.join(current_app.root_path, 'seed_data')
+
+    # --- Rules ---
+    rules_path = os.path.join(seed_dir, 'icrpg_compendium.json')
+    if os.path.exists(rules_path):
+        with open(rules_path) as f:
+            for entry in _json.load(f):
+                _add(entry['title'], entry.get('category', 'ICRPG - Rule'), entry['content'])
+
+    # --- Spells ---
+    spells_path = os.path.join(seed_dir, 'icrpg_spells.json')
+    if os.path.exists(spells_path):
+        with open(spells_path) as f:
+            for sp in _json.load(f):
+                content = f"**Type:** {sp['type']}  \n"
+                content += f"**Level:** {sp['level']}  \n"
+                if sp.get('target'):
+                    content += f"**Target:** {sp['target']}  \n"
+                if sp.get('duration'):
+                    content += f"**Duration:** {sp['duration']}  \n"
+                content += f"\n{sp['description']}"
+                if sp.get('flavor'):
+                    content += f"\n\n*{sp['flavor']}*"
+                _add(sp['name'], f"ICRPG - Spell ({sp['type']})", content)
+
+    # --- Loot tables ---
+    loot_path = os.path.join(seed_dir, 'icrpg_loot.json')
+    if os.path.exists(loot_path):
+        with open(loot_path) as f:
+            for table in _json.load(f):
+                lines = [f"# {table['table_name']}\n",
+                         "| Roll | Name | Type | Description |",
+                         "|------|------|------|-------------|"]
+                for e in table['entries']:
+                    lines.append(f"| {e['roll']} | {e['name']} | {e['type']} | {e['description']} |")
+                _add(table['table_name'], 'ICRPG - Loot Table', '\n'.join(lines))
+
+    # --- Roll tables ---
+    tables_path = os.path.join(seed_dir, 'icrpg_tables.json')
+    if os.path.exists(tables_path):
+        with open(tables_path) as f:
+            for table in _json.load(f):
+                lines = [f"# {table['table_name']}\n",
+                         f"*{table['die']} — {table.get('setting', 'ICRPG')}*\n"]
+                has_names = any('name' in e for e in table['entries'])
+                if has_names:
+                    lines += ["| Roll | Name | Description |", "|------|------|-------------|"]
+                    for e in table['entries']:
+                        lines.append(f"| {e['roll']} | {e.get('name', '')} | {e['description']} |")
+                else:
+                    lines += ["| Roll | Description |", "|------|-------------|"]
+                    for e in table['entries']:
+                        lines.append(f"| {e['roll']} | {e['description']} |")
+                _add(table['table_name'], f"ICRPG - Roll Table ({table.get('category', 'General')})", '\n'.join(lines))
+
+    # --- Starter loot ---
+    starter_path = os.path.join(seed_dir, 'icrpg_starter_loot.json')
+    if os.path.exists(starter_path):
+        with open(starter_path) as f:
+            for table in _json.load(f):
+                lines = [f"# {table['table_name']}\n",
+                         f"*{table.get('setting', 'ICRPG')} — Starter Loot*\n",
+                         "| Name | Type | Description |",
+                         "|------|------|-------------|"]
+                for e in table['entries']:
+                    lines.append(f"| {e['name']} | {e['type']} | {e['description']} |")
+                _add(table['table_name'], f"ICRPG - Starter Loot ({table.get('setting', 'ICRPG')})", '\n'.join(lines))
+
     db.session.commit()
-    msg = f'Imported {imported} ICRPG compendium entries.'
+    msg = f'Imported {imported} ICRPG entries.'
     if skipped:
         msg += f' Skipped {skipped} duplicates.'
     flash(msg, 'success')
+    return redirect(url_for('compendium.list_compendium'))
+
+
+@compendium_bp.route('/compendium/clear-icrpg', methods=['POST'])
+@login_required
+def clear_icrpg_compendium():
+    """Delete all ICRPG-seeded compendium entries from the active campaign."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        flash('Select a campaign first.', 'warning')
+        return redirect(url_for('campaigns.list_campaigns'))
+
+    count = CompendiumEntry.query.filter(
+        CompendiumEntry.campaign_id == campaign_id,
+        CompendiumEntry.category.like('ICRPG%')
+    ).delete(synchronize_session=False)
+
+    db.session.commit()
+    flash(f'Deleted {count} ICRPG compendium entries.', 'success')
     return redirect(url_for('compendium.list_compendium'))

@@ -6,10 +6,17 @@
     <h2>Compendium</h2>
     <div class="d-flex gap-2">
         <form method="POST" action="{{ url_for('compendium.seed_icrpg_compendium') }}" class="d-inline"
-              onsubmit="return confirm('Load ICRPG rules, classes, and spells into this campaign?')">
+              onsubmit="return confirm('Load ICRPG rules, spells, loot tables, and roll tables into this campaign?')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-secondary">
                 <i class="bi bi-database-add"></i> Load ICRPG Content
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('compendium.clear_icrpg_compendium') }}" class="d-inline"
+              onsubmit="return confirm('Delete ALL ICRPG entries from this campaign\'s compendium? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Clear ICRPG Content
             </button>
         </form>
         <a href="{{ url_for('compendium.create_entry') }}" class="btn btn-success">
