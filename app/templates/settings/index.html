@@ -162,6 +162,13 @@
                                    value="{{ ai_config.sd_height or '1024' }}">
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="sd_negative_prompt" class="form-label small">Default Negative Prompt</label>
+                        <textarea class="form-control form-control-sm bg-dark text-light border-secondary"
+                                  id="sd_negative_prompt" name="sd_negative_prompt" rows="2"
+                                  placeholder="blurry, low quality, deformed, text, watermark">{{ ai_config.sd_negative_prompt or '' }}</textarea>
+                        <div class="form-text">Applied to all generated images. Leave blank for built-in default.</div>
+                    </div>
                     <div class="form-text mb-3">
                         Defaults are tuned for SDXL Lightning models (low steps, low CFG).
                         For SD 1.5 models, try Steps: 25, CFG: 7, Sampler: Euler a, Width: 512.
@@ -320,11 +327,14 @@ function loadSdModels() {
 // Auto-detect model type and suggest settings when model changes
 const SD_PRESETS = [
     { match: ['lightning', 'turbo', 'lcm'], label: 'Lightning/Turbo',
-      steps: 4, cfg: 2, sampler: 'DPM++ SDE' },
+      steps: 4, cfg: 2, sampler: 'DPM++ SDE',
+      negative: 'blurry, low quality, deformed, text, watermark, signature' },
     { match: ['xl', 'sdxl', 'pony'], label: 'SDXL',
-      steps: 20, cfg: 5, sampler: 'DPM++ 2M' },
+      steps: 20, cfg: 5, sampler: 'DPM++ 2M',
+      negative: 'blurry, low quality, deformed, text, watermark, signature, extra limbs, bad anatomy' },
     { match: [], label: 'SD 1.5 (default)',
-      steps: 25, cfg: 7, sampler: 'Euler a' },
+      steps: 25, cfg: 7, sampler: 'Euler a',
+      negative: 'blurry, low quality, deformed, text, watermark, signature, extra limbs, bad anatomy, bad hands' },
 ];
 
 function detectModelPreset(modelName) {
@@ -349,6 +359,7 @@ document.getElementById('sd_model').addEventListener('change', function() {
     document.getElementById('sd_steps').value = preset.steps;
     document.getElementById('sd_cfg_scale').value = preset.cfg;
     document.getElementById('sd_sampler').value = preset.sampler;
+    document.getElementById('sd_negative_prompt').value = preset.negative;
     document.getElementById('sd_width').value = isXL ? 768 : 512;
     document.getElementById('sd_height').value = isXL ? 1024 : 768;
 

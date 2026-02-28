@@ -48,6 +48,7 @@ def _get_sd_settings():
         'sampler_name': AppSetting.get('sd_sampler', 'DPM++ SDE'),
         'width': int(AppSetting.get('sd_width', '768')),
         'height': int(AppSetting.get('sd_height', '1024')),
+        'negative_prompt': AppSetting.get('sd_negative_prompt', ''),
     }
 
 
@@ -73,9 +74,9 @@ def sd_generate(prompt, negative_prompt='', width=None, height=None):
     url = url.rstrip('/')
     settings = _get_sd_settings()
 
-    # Default negative prompt if none provided
+    # Use saved negative prompt from settings if none provided by caller
     if not negative_prompt:
-        negative_prompt = 'blurry, low quality, deformed, text, watermark, signature, extra limbs'
+        negative_prompt = settings.get('negative_prompt') or 'blurry, low quality, deformed, text, watermark, signature, extra limbs'
 
     payload = {
         'prompt': prompt,

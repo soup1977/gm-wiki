@@ -11,6 +11,10 @@ import os
 import re
 import uuid
 
+# App version — bump this on each release. Appended to static file URLs
+# as a cache-busting query string so browsers/Cloudflare pick up changes.
+APP_VERSION = '1.0.0'
+
 # Create the database object here, but don't attach it to an app yet
 db = SQLAlchemy()
 
@@ -268,6 +272,20 @@ def create_app():
                     flask_session.pop('active_campaign_id', None)
                     active_campaign = None
         return dict(active_campaign=active_campaign)
+
+    @app.context_processor
+    def inject_app_version():
+        return dict(app_version=APP_VERSION)
+
+    @app.context_processor
+    def override_url_for():
+        """Append version query string to static file URLs for cache busting."""
+        def versioned_url_for(endpoint, **values):
+            from flask import url_for as _url_for
+            if endpoint == 'static':
+                values['v'] = APP_VERSION
+            return _url_for(endpoint, **values)
+        return dict(url_for=versioned_url_for)
 
     @app.context_processor
     def inject_ai_status():

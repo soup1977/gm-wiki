@@ -27,6 +27,7 @@ def index():
         AppSetting.set('sd_cfg_scale', request.form.get('sd_cfg_scale', '2').strip())
         AppSetting.set('sd_width', request.form.get('sd_width', '768').strip())
         AppSetting.set('sd_height', request.form.get('sd_height', '1024').strip())
+        AppSetting.set('sd_negative_prompt', request.form.get('sd_negative_prompt', '').strip())
         # User registration toggle
         AppSetting.set('allow_signup', 'true' if request.form.get('allow_signup') else 'false')
         flash('Settings saved.', 'success')

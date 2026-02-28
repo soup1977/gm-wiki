@@ -56,6 +56,7 @@ def get_ai_config():
         'sd_cfg_scale': settings.get('sd_cfg_scale', '2'),
         'sd_width': settings.get('sd_width', '768'),
         'sd_height': settings.get('sd_height', '1024'),
+        'sd_negative_prompt': settings.get('sd_negative_prompt', ''),
     }
 
 
@@ -102,6 +103,7 @@ def _call_ollama(config, system_prompt, messages):
                 'model': model,
                 'messages': ollama_messages,
                 'stream': False,
+                'keep_alive': '30m',  # Keep model loaded in VRAM for 30 min
             },
             timeout=300,  # 5 min — first request loads model into VRAM, can be slow
         )

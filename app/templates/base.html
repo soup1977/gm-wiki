@@ -211,6 +211,7 @@
     <div class="d-flex justify-content-between align-items-center">
         <span class="text-muted small">
             <img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="14" height="14"> The War Table
+            <span class="text-secondary">v{{ app_version }}</span>
             {% if active_campaign %}
                 <span class="mx-1">&mdash;</span>
                 <span class="text-light">{{ active_campaign.name }}</span>
