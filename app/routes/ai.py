@@ -158,7 +158,7 @@ def smart_fill():
 # Generate Entry — create a complete entry from a short concept prompt
 # ---------------------------------------------------------------------------
 
-def _build_generate_prompt(entity_type, concept):
+def _build_generate_prompt(entity_type, concept, world_context=None):
     """Build the system prompt and messages for creative entity generation."""
     schema = ENTITY_SCHEMAS.get(entity_type)
     if not schema:
@@ -169,9 +169,17 @@ def _build_generate_prompt(entity_type, concept):
         for k, v in schema['fields'].items()
     )
 
+    # If the campaign has world context, inject it so AI output matches the setting
+    world_section = ''
+    if world_context:
+        world_section = f"""
+Campaign world context (use this to inform tone, setting, and details):
+{world_context}
+"""
+
     system_prompt = f"""You are a creative assistant for a tabletop RPG Game Master.
 Your job is to invent a complete, detailed {entity_type.upper()} based on a short concept or idea.
-
+{world_section}
 Fill in ALL of the following fields:
 {field_lines}
 
@@ -181,7 +189,7 @@ Rules:
 - For fields with specific allowed values (like status or rarity), only use those values.
 - Descriptions, notes, and personality fields should be 2-4 sentences minimum.
 - Secrets and GM notes should contain plot hooks, hidden motivations, or things the players don't know.
-- Keep the tone consistent with dark/epic fantasy unless the concept suggests otherwise.
+- Keep the tone consistent with the campaign world context above, or dark/epic fantasy if none is provided.
 - The result should be immediately usable in a game session with no editing needed.
 """
 
@@ -192,6 +200,18 @@ Rules:
     return messages, system_prompt
 
 
+def _get_active_world_context():
+    """Return the ai_world_context for the active campaign, or None."""
+    from flask import session as flask_session
+    from app.models import Campaign
+    campaign_id = flask_session.get('active_campaign_id')
+    if campaign_id:
+        campaign = Campaign.query.get(campaign_id)
+        if campaign and campaign.ai_world_context:
+            return campaign.ai_world_context.strip()
+    return None
+
+
 @ai_bp.route('/generate-prompt/<entity_type>')
 @login_required
 def get_generate_prompt(entity_type):
@@ -200,8 +220,8 @@ def get_generate_prompt(entity_type):
     entity_type = entity_type.strip().lower()
     if entity_type not in ENTITY_SCHEMAS:
         return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
-    # Build a dummy prompt just to get the system prompt text
-    _, system_prompt = _build_generate_prompt(entity_type, '(concept placeholder)')
+    world_context = _get_active_world_context()
+    _, system_prompt = _build_generate_prompt(entity_type, '(concept placeholder)', world_context)
     return jsonify({'system_prompt': system_prompt})
 
 
@@ -229,7 +249,8 @@ def generate_entry():
     if len(concept) > 2000:
         return jsonify({'error': 'Concept is too long (max ~2000 characters).'}), 400
 
-    messages, system_prompt = _build_generate_prompt(entity_type, concept)
+    world_context = _get_active_world_context()
+    messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context)
 
     # Allow optional custom system prompt override (from shift+click editor)
     custom_system = data.get('system_prompt', '').strip()

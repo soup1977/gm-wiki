@@ -13,7 +13,7 @@ import uuid
 
 # App version — bump this on each release. Appended to static file URLs
 # as a cache-busting query string so browsers/Cloudflare pick up changes.
-APP_VERSION = '1.1.1'
+APP_VERSION = '1.2.0'
 
 # Create the database object here, but don't attach it to an app yet
 db = SQLAlchemy()

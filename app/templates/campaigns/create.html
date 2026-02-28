@@ -28,6 +28,15 @@
                 <textarea class="form-control" id="description" name="description" rows="4"></textarea>
             </div>
 
+            {% if ai_enabled %}
+            <div class="mb-4">
+                <label for="ai_world_context" class="form-label">AI World Context</label>
+                <textarea class="form-control" id="ai_world_context" name="ai_world_context" rows="3"
+                          placeholder="e.g. This campaign is set in a plague-ravaged Victorian city. Magic is rare and feared. The tone is grim and desperate."></textarea>
+                <div class="form-text">Injected into AI-generated entries (NPCs, items, locations, etc.) so they match your campaign's setting and tone.</div>
+            </div>
+            {% endif %}
+
             {% if sd_enabled %}
             <div class="mb-4">
                 <label for="image_style_prompt" class="form-label">Image Style Prompt</label>

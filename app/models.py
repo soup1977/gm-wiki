@@ -78,6 +78,7 @@ class Campaign(db.Model):
     status = db.Column(db.String(50), default='active')   # active / on hiatus / complete
     description = db.Column(db.Text)
     image_style_prompt = db.Column(db.Text)   # prepended to all SD image generation prompts
+    ai_world_context = db.Column(db.Text)    # injected into AI Generate Entry system prompts
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

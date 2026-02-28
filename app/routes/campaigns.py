@@ -75,7 +75,8 @@ def create_campaign():
             system=request.form.get('system', '').strip(),
             status=request.form.get('status', 'active'),
             description=request.form.get('description', '').strip(),
-            image_style_prompt=request.form.get('image_style_prompt', '').strip() or None
+            image_style_prompt=request.form.get('image_style_prompt', '').strip() or None,
+            ai_world_context=request.form.get('ai_world_context', '').strip() or None
         )
         db.session.add(campaign)
         db.session.flush()  # Assigns campaign.id before we create child records
@@ -122,6 +123,7 @@ def edit_campaign(campaign_id):
         campaign.status = request.form.get('status', 'active')
         campaign.description = request.form.get('description', '').strip()
         campaign.image_style_prompt = request.form.get('image_style_prompt', '').strip() or None
+        campaign.ai_world_context = request.form.get('ai_world_context', '').strip() or None
         db.session.commit()
         flash(f'Campaign "{campaign.name}" updated.', 'success')
         return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign.id))
