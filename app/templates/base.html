@@ -110,13 +110,21 @@
                     </a>
                 </li>
 
-                <!-- Session Mode — only visible when a session is active -->
-                {% if session.get('in_session_mode') %}
+                <!-- Session Mode — always visible when a campaign is active -->
+                {% if active_campaign %}
                 <li class="nav-item">
+                    {% if session.get('in_session_mode') %}
                     <a class="nav-link session-mode-indicator text-success fw-semibold"
-                       href="{{ url_for('session_mode.dashboard') }}">
+                       href="{{ url_for('session_mode.dashboard') }}"
+                       title="Session Mode" data-bs-toggle="tooltip">
                         <i class="bi bi-broadcast me-1"></i>{{ session.get('session_title', 'Active Session') }}
                     </a>
+                    {% else %}
+                    <a class="nav-link" href="{{ url_for('session_mode.dashboard') }}"
+                       title="Session Mode" data-bs-toggle="tooltip">
+                        <i class="bi bi-broadcast"></i>
+                    </a>
+                    {% endif %}
                 </li>
                 {% endif %}
 
@@ -125,6 +133,14 @@
                     <a class="nav-link" href="{{ url_for('combat.tracker') }}"
                        title="Combat Tracker" data-bs-toggle="tooltip">
                         <i class="bi bi-shield-shaded"></i>
+                    </a>
+                </li>
+
+                <!-- Campaign Assistant -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('campaign_assistant.chat') }}"
+                       title="Campaign Assistant" data-bs-toggle="tooltip">
+                        <i class="bi bi-robot"></i>
                     </a>
                 </li>
 
