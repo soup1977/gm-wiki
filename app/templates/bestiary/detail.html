@@ -60,6 +60,7 @@
             <div class="card-body">
                 <form method="post" action="{{ url_for('bestiary.spawn_instance', entry_id=entry.id) }}"
                       class="row g-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="col">
                         <input type="text" name="instance_name" class="form-control"
                                placeholder="Instance name (leave blank to auto-name)">
@@ -145,6 +146,7 @@
             <div class="modal-footer border-danger">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="post" action="{{ url_for('bestiary.delete_entry', entry_id=entry.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>

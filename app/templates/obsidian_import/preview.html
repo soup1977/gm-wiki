@@ -13,6 +13,7 @@
 </div>
 
 <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% for folder, folder_entries in grouped.items() %}
     <div class="card mb-3">
         <div class="card-header bg-dark">

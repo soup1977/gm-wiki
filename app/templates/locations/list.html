@@ -55,6 +55,7 @@
             <td class="text-end">
                 <form method="POST" action="{{ url_for('locations.delete_location', location_id=location.id) }}"
                       onsubmit="return confirm('Delete {{ location.name }}? This cannot be undone.')" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>

@@ -5,6 +5,7 @@
 <h2 class="mb-4"><i class="bi bi-gear"></i> Settings</h2>
 
 <form method="POST" action="{{ url_for('settings.index') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <div class="row g-4">
 
     <!-- AI Configuration -->
@@ -179,9 +180,25 @@
         </div>
     </div>
 
-    <!-- App Stats -->
+    <!-- User Registration + App Stats -->
     <div class="col-md-5">
-        <div class="card bg-dark border-secondary h-100">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
+                <i class="bi bi-people"></i> User Registration
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="allow_signup" name="allow_signup"
+                           {{ 'checked' if allow_signup }}>
+                    <label class="form-check-label" for="allow_signup">Allow new user signups</label>
+                </div>
+                <div class="form-text mt-2">
+                    When enabled, a "Sign up" link appears on the login page. Disable after all players have created accounts.
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary">
             <div class="card-header">
                 <i class="bi bi-bar-chart"></i> Database Stats
             </div>

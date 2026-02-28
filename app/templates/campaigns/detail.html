@@ -19,6 +19,7 @@
         </a>
         <form method="POST" action="{{ url_for('campaigns.delete_campaign', campaign_id=campaign.id) }}"
               onsubmit="return confirm('Delete {{ campaign.name }} and ALL its content? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>

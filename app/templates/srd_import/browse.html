@@ -15,6 +15,7 @@
 </div>
 
 <form method="POST" action="{{ url_for('srd_import.do_import') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="category" value="{{ category }}">
 
     <div class="d-flex gap-2 mb-3">

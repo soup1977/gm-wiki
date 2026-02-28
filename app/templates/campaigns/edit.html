@@ -13,6 +13,7 @@
 <h2 class="mb-4">Edit Campaign</h2>
 
 <form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="mb-3">
         <label for="name" class="form-label">Campaign Name <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="name" name="name"
@@ -75,6 +76,7 @@
         <form method="POST"
               action="{{ url_for('campaigns.rename_stat_field', campaign_id=campaign.id, stat_id=field.id) }}"
               class="d-flex align-items-center gap-2 flex-grow-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
                    name="stat_name" value="{{ field.stat_name }}" required>
             <button type="submit" class="btn btn-sm btn-outline-secondary" title="Save name">
@@ -85,6 +87,7 @@
         {# Move up #}
         <form method="POST"
               action="{{ url_for('campaigns.move_stat_field', campaign_id=campaign.id, stat_id=field.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="direction" value="up">
             <button type="submit" class="btn btn-sm btn-outline-secondary"
                     title="Move up" {% if loop.first %}disabled{% endif %}>
@@ -95,6 +98,7 @@
         {# Move down #}
         <form method="POST"
               action="{{ url_for('campaigns.move_stat_field', campaign_id=campaign.id, stat_id=field.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="direction" value="down">
             <button type="submit" class="btn btn-sm btn-outline-secondary"
                     title="Move down" {% if loop.last %}disabled{% endif %}>
@@ -106,6 +110,7 @@
         <form method="POST"
               action="{{ url_for('campaigns.delete_stat_field', campaign_id=campaign.id, stat_id=field.id) }}"
               onsubmit="return confirm('Delete stat field &quot;{{ field.stat_name }}&quot;? This will remove all saved values for this stat on every PC in this campaign.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete field">
                 <i class="bi bi-trash"></i>
             </button>
@@ -123,6 +128,7 @@
       action="{{ url_for('campaigns.add_stat_field', campaign_id=campaign.id) }}"
       class="d-flex gap-2 align-items-center"
       style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
            name="stat_name" placeholder="New stat field name (e.g. Armor Class)" required>
     <button type="submit" class="btn btn-sm btn-success text-nowrap">

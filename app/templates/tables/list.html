@@ -107,6 +107,7 @@
                     </a>
                     <form method="POST" action="{{ url_for('tables.delete_table', table_id=table.id) }}"
                           onsubmit="return confirm('Delete table &quot;{{ table.name }}&quot;? All rows will be lost.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger">
                             <i class="bi bi-trash"></i>
                         </button>

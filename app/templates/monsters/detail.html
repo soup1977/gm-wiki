@@ -95,6 +95,7 @@
         <form method="post"
               action="{{ url_for('monsters.add_to_session', campaign_id=campaign.id, instance_id=instance.id) }}"
               class="row g-2 mb-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col">
                 <select name="session_id" class="form-select">
                     <option value="">Add to a session...</option>
@@ -162,6 +163,7 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="post"
                       action="{{ url_for('monsters.delete_instance', campaign_id=campaign.id, instance_id=instance.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>

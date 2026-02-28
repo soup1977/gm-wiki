@@ -20,6 +20,7 @@
 <h2 class="mb-4">Edit: {{ instance.instance_name }}</h2>
 
 <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row g-3">
         <div class="col-md-8">
             <div class="card bg-dark border-secondary mb-3">

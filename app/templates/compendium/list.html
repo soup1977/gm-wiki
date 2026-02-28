@@ -7,6 +7,7 @@
     <div class="d-flex gap-2">
         <form method="POST" action="{{ url_for('compendium.seed_icrpg_compendium') }}" class="d-inline"
               onsubmit="return confirm('Load ICRPG rules, classes, and spells into this campaign?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-secondary">
                 <i class="bi bi-database-add"></i> Load ICRPG Content
             </button>
@@ -69,6 +70,7 @@
                     <td class="text-end">
                         <form method="POST" action="{{ url_for('compendium.delete_entry', entry_id=entry.id) }}"
                               onsubmit="return confirm('Delete {{ entry.title }}? This cannot be undone.')" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                 <i class="bi bi-trash"></i>
                             </button>

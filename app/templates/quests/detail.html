@@ -53,6 +53,7 @@
         </a>
         <form method="POST" action="{{ url_for('quests.delete_quest', quest_id=quest.id) }}"
               onsubmit="return confirm('Delete quest \'{{ quest.name }}\'? This cannot be undone.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
