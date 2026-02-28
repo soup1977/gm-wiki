@@ -112,13 +112,17 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'd-flex flex-column justify-content-start mb-3';
 
-        // Prose section
+        // Prose section — render as Markdown if marked.js is available
         if (prose) {
             const proseEl = document.createElement('div');
-            proseEl.className = 'border border-secondary rounded-3 px-3 py-2 mb-2';
+            proseEl.className = 'assistant-prose border border-secondary rounded-3 px-3 py-2 mb-2';
             proseEl.style.maxWidth = '85%';
-            proseEl.style.whiteSpace = 'pre-wrap';
-            proseEl.textContent = prose;
+            if (window.marked) {
+                proseEl.innerHTML = marked.parse(prose);
+            } else {
+                proseEl.style.whiteSpace = 'pre-wrap';
+                proseEl.textContent = prose;
+            }
             wrapper.appendChild(proseEl);
         }
 
@@ -328,6 +332,17 @@
             }
         });
     }
+
+    // Render Markdown in server-side replayed history messages
+    document.querySelectorAll('[data-markdown]').forEach(el => {
+        const md = el.dataset.markdown;
+        if (window.marked && md) {
+            el.innerHTML = marked.parse(md);
+        } else if (md) {
+            el.style.whiteSpace = 'pre-wrap';
+            el.textContent = md;
+        }
+    });
 
     // Scroll to bottom on initial load (if replaying history)
     scrollToBottom();
