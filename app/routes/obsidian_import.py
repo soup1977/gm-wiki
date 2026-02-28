@@ -11,7 +11,7 @@ from flask import (
     Blueprint, render_template, request, redirect, url_for,
     flash, session as flask_session, current_app
 )
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app import db
 from app.models import Campaign, NPC, Location, CompendiumEntry, Tag
 from app.obsidian_parser import (
@@ -120,11 +120,13 @@ def execute():
     new_name = flask_session.get('obsidian_new_campaign_name', '')
 
     if new_name:
-        campaign = Campaign(name=new_name, system='ICRPG', status='active')
+        campaign = Campaign(name=new_name, system='ICRPG', status='active', user_id=current_user.id)
         db.session.add(campaign)
         db.session.flush()  # get the ID
     elif campaign_id:
-        campaign = Campaign.query.get(int(campaign_id))
+        campaign = Campaign.query.filter_by(
+            id=int(campaign_id), user_id=current_user.id
+        ).first()
         if not campaign:
             flash('Selected campaign not found.', 'danger')
             return redirect(url_for('obsidian_import.select_vault'))

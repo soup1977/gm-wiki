@@ -7,7 +7,7 @@ POST /api/sd/generate
 """
 
 from flask import Blueprint, request, jsonify, url_for, session
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app.sd_provider import sd_generate, SDProviderError, is_sd_enabled
 from app.models import Campaign
 
@@ -31,7 +31,9 @@ def generate():
     # Prepend campaign-level style prompt if set
     campaign_id = session.get('active_campaign_id')
     if campaign_id:
-        campaign = Campaign.query.get(campaign_id)
+        campaign = Campaign.query.filter_by(
+            id=campaign_id, user_id=current_user.id
+        ).first()
         if campaign and campaign.image_style_prompt:
             prompt = campaign.image_style_prompt.strip() + ', ' + prompt
 
