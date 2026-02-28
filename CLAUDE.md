@@ -132,6 +132,17 @@ Then open a PR to make the merge intentional and reviewable.
 
 ---
 
+## Unraid Deployment
+
+- **Server path:** `/mnt/user/appdata/gm-wiki/`
+- **Method:** Git clone + `docker compose up` (no Docker Hub image)
+- **Update script:** `update.sh` in the project root — run it on the Unraid server to pull latest code, rebuild, and restart
+- **To update:** SSH into Unraid, then: `bash /mnt/user/appdata/gm-wiki/update.sh`
+- **Volumes:** `./instance` (SQLite DB) and `./uploads` (images) persist across rebuilds
+- **Migrations run automatically** on container start via `docker-entrypoint.sh`
+
+---
+
 ## Scope Reference
 Full detailed scope lives in `gm-wiki-scope-reference.md` in the project root.
 When in doubt about what a feature should do, check there first.
