@@ -204,10 +204,13 @@ Rules:
 def _get_active_world_context():
     """Return the ai_world_context for the active campaign, or None."""
     from flask import session as flask_session
+    from flask_login import current_user
     from app.models import Campaign
     campaign_id = flask_session.get('active_campaign_id')
     if campaign_id:
-        campaign = Campaign.query.get(campaign_id)
+        campaign = Campaign.query.filter_by(
+            id=campaign_id, user_id=current_user.id
+        ).first()
         if campaign and campaign.ai_world_context:
             return campaign.ai_world_context.strip()
     return None

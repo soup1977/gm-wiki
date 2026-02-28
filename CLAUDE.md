@@ -26,35 +26,49 @@ It runs in a Docker container on an Unraid home server and is accessed via brows
 
 ---
 
-## Project Structure (once scaffolded)
+## Project Structure
 ```
 gm-wiki/
 ├── app/
 │   ├── __init__.py         # App factory — creates and configures the Flask app
 │   ├── models.py           # All database models (SQLAlchemy)
-│   ├── routes/             # One file per entity type
+│   ├── ai_provider.py      # Claude AI integration (Smart Fill, Generate)
+│   ├── sd_provider.py      # Stable Diffusion image generation
+│   ├── obsidian_parser.py  # Obsidian vault file parser
+│   ├── routes/             # One Blueprint per feature (~30 files)
 │   │   ├── main.py         # Homepage, campaign switching
-│   │   ├── campaigns.py
-│   │   ├── npcs.py
-│   │   ├── locations.py
-│   │   ├── quests.py
-│   │   ├── sessions.py
-│   │   ├── items.py
-│   │   └── compendium.py
-│   ├── templates/          # Jinja2 HTML templates
+│   │   ├── auth.py         # Login, signup, setup, logout
+│   │   ├── admin.py        # User management (admin only)
+│   │   ├── campaigns.py    # Campaign CRUD + stat templates
+│   │   ├── npcs.py, locations.py, quests.py, items.py, sessions.py
+│   │   ├── compendium.py, factions.py, pcs.py, encounters.py
+│   │   ├── bestiary.py, monsters.py, tables.py, tags.py
+│   │   ├── session_mode.py # Live session dashboard
+│   │   ├── combat.py       # Combat tracker
+│   │   ├── wiki.py         # Player-facing read-only wiki
+│   │   ├── ai.py, sd_generate.py, quick_create.py
+│   │   ├── global_search.py, entity_search.py
+│   │   ├── obsidian_import.py, srd_import.py, bestiary_import.py
+│   │   └── settings.py
+│   ├── seed_data/          # ICRPG bestiary + table JSON files
+│   ├── templates/          # Jinja2 HTML templates (~70 files)
 │   │   ├── base.html       # Shared layout with navbar
+│   │   ├── wiki/           # Player-facing wiki templates
 │   │   └── ...             # One folder per entity type
-│   └── static/             # CSS, JS, images
-│       └── css/
-│           └── custom.css
+│   └── static/
+│       ├── css/custom.css
+│       └── js/             # Global search, dice roller, quick create, etc.
+├── migrations/versions/    # Flask-Migrate (Alembic) migration files
+├── docs/                   # Phase plans and user guide
 ├── instance/
 │   └── gm_wiki.db          # SQLite database (auto-created, not in git)
-├── CLAUDE.md               # This file
-├── README.md
-├── requirements.txt
 ├── config.py               # App configuration
-├── run.py                  # Entry point to start the app
-└── Dockerfile              # Added in Phase 6
+├── run.py                  # Entry point (port 5001)
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+├── docker-entrypoint.sh
+└── update.sh               # Unraid deployment update script
 ```
 
 ---
@@ -63,12 +77,16 @@ gm-wiki/
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| 1 | Scaffold, Flask running, campaign CRUD, navigation | 🔄 In Progress |
-| 2 | NPCs + Locations with bidirectional linking | Not started |
-| 3 | Quests, Sessions, Items, Compendium | Not started |
-| 4 | Images, file uploads, Markdown rendering, tags/filtering | Not started |
-| 5 | Combat tracker, random tables, session mode dashboard | Not started |
-| 6 | Player wiki view, Docker packaging, Unraid deployment | Not started |
+| 1 | Scaffold, Flask, campaign CRUD, navigation | Complete |
+| 2 | NPCs + Locations with bidirectional linking | Complete |
+| 3 | Quests, Sessions, Items, Compendium | Complete |
+| 4 | Images, file uploads, Markdown rendering, tags/filtering | Complete |
+| 5 | Combat tracker, random tables, session mode dashboard | Complete |
+| 5.5 | Bestiary + monster instances | Complete |
+| 6 | Player wiki view, Docker packaging, Unraid deployment | Complete |
+| 7 | AI Smart Fill, SRD import, settings | Complete |
+| 7.5 | Auth, admin, factions, encounters, PCs, shortcodes, global search, Obsidian import, dice roller, quick create, SD image generation | Complete |
+| 8 | Security audit, hardening, documentation | Complete |
 
 ---
 
@@ -93,11 +111,16 @@ gm-wiki/
 Each entity type is its own page, cross-linked to others.
 
 1. **NPCs** — name, role, status, home location, faction, portrait, secrets (GM only)
-2. **Locations** — name, type, parent location (nestable), map image, GM notes
-3. **Quests** — name, status, hook, involved NPCs/locations, GM notes
-4. **Sessions** — number, date, summary, linked NPCs/locations/items/quests
-5. **Items** — name, type, rarity, owner (NPC or party), origin location
-6. **Compendium** — custom rules reference, per-campaign, GM-only toggle
+2. **Player Characters** — name, class, stats from campaign template, player-claimed
+3. **Locations** — name, type, parent location (nestable), connected locations, map image, GM notes
+4. **Quests** — name, status, hook, involved NPCs/locations, GM notes
+5. **Sessions** — number, date, summary, linked NPCs/locations/items/quests, PC attendance
+6. **Items** — name, type, rarity, owner (NPC or party), origin location
+7. **Factions** — name, disposition, linked NPCs/locations/quests
+8. **Compendium** — custom rules reference, per-campaign, GM-only toggle
+9. **Bestiary** — global monster entries (not campaign-scoped), spawn instances per campaign
+10. **Encounters** — linked monsters, loot tables, tied to sessions
+11. **Random Tables** — weighted entries, one-click rolling, builtin + custom
 
 ---
 
@@ -143,6 +166,6 @@ Then open a PR to make the merge intentional and reviewable.
 
 ---
 
-## Scope Reference
-Full detailed scope lives in `gm-wiki-scope-reference.md` in the project root.
-When in doubt about what a feature should do, check there first.
+## Documentation
+- Phase plans live in `docs/` (one per build phase)
+- User guide: `docs/user-guide.md`

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -6,10 +6,34 @@ from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from config import Config
+import bleach
 import markdown as _md
 import os
 import re
 import uuid
+
+# Tags and attributes allowed after Markdown rendering.
+# Strips dangerous tags like <script> while preserving formatting.
+ALLOWED_TAGS = {
+    'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+    'pre', 'code', 'hr', 'img', 'div', 'span',
+    'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+    'strong', 'em', 'b', 'i', 'a', 'blockquote',
+    'sub', 'sup', 'abbr',
+}
+ALLOWED_ATTRS = {
+    'img': ['src', 'alt', 'title', 'class'],
+    'a': ['href', 'title', 'class'],
+    'div': ['class'],
+    'span': ['class'],
+    'i': ['class'],
+    'th': ['class'],
+    'td': ['class'],
+    'table': ['class'],
+    'code': ['class'],
+    'abbr': ['title'],
+}
 
 # App version — bump this on each release. Appended to static file URLs
 # as a cache-busting query string so browsers/Cloudflare pick up changes.
@@ -49,6 +73,13 @@ def save_upload(file):
         return None
     ext = file.filename.rsplit('.', 1)[1].lower()
     if ext not in current_app.config.get('ALLOWED_EXTENSIONS', set()):
+        return None
+    # Validate actual file content matches an image format (not just extension)
+    import imghdr  # deprecated in 3.11, removed in 3.13 — sufficient for now
+    header = file.read(512)
+    file.seek(0)
+    detected = imghdr.what(None, h=header)
+    if detected not in ('png', 'jpeg', 'gif', 'webp', 'rgb'):
         return None
     filename = f"{uuid.uuid4().hex}.{ext}"
     file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
@@ -93,7 +124,8 @@ def create_app():
         text = _convert_obsidian_callouts(text)
         # Pre-process: convert [[wiki-links]] to regular markdown links
         text = _convert_wiki_links(text)
-        return _md.markdown(text, extensions=['nl2br', 'tables', 'fenced_code'])
+        html = _md.markdown(text, extensions=['nl2br', 'tables', 'fenced_code'])
+        return bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
 
     def _convert_obsidian_callouts(text):
         """Convert Obsidian callout syntax (> [!type] Title) to Bootstrap alerts.
@@ -165,7 +197,9 @@ def create_app():
     def _render_callout(cls, icon, title, body_lines):
         """Render a single callout block as a Bootstrap alert div."""
         body_html = _md.markdown('\n'.join(body_lines), extensions=['nl2br', 'tables'])
-        title_html = f'<strong><i class="bi {icon}"></i> {title}</strong><br>' if title else ''
+        body_html = bleach.clean(body_html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS)
+        safe_title = bleach.clean(title) if title else ''
+        title_html = f'<strong><i class="bi {icon}"></i> {safe_title}</strong><br>' if safe_title else ''
         return f'<div class="alert {cls}">{title_html}{body_html}</div>\n'
 
     def _convert_wiki_links(text):
@@ -265,12 +299,14 @@ def create_app():
         active_campaign_id = flask_session.get('active_campaign_id')
         active_campaign = None
         if active_campaign_id:
-            active_campaign = Campaign.query.get(active_campaign_id)
-            # Clear stale session if campaign belongs to a different user
-            if active_campaign and current_user.is_authenticated:
-                if active_campaign.user_id and active_campaign.user_id != current_user.id:
+            if current_user.is_authenticated:
+                active_campaign = Campaign.query.filter_by(
+                    id=active_campaign_id, user_id=current_user.id
+                ).first()
+                if not active_campaign:
                     flask_session.pop('active_campaign_id', None)
-                    active_campaign = None
+            else:
+                flask_session.pop('active_campaign_id', None)
         return dict(active_campaign=active_campaign)
 
     @app.context_processor
@@ -334,5 +370,24 @@ def create_app():
 
         db.session.commit()
         print(f'Imported {imported} ICRPG bestiary entries. Skipped {skipped} duplicates.')
+
+    # Security headers — added to every response
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "font-src 'self' https://cdn.jsdelivr.net; "
+            "img-src 'self' data:; "
+            "frame-ancestors 'self'"
+        )
+        if request.headers.get('X-Forwarded-Proto') == 'https':
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
 
     return app

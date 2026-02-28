@@ -37,8 +37,8 @@ def create_user():
         if not username:
             flash('Username is required.', 'danger')
             return render_template('admin/user_form.html', user=None)
-        if len(password) < 4:
-            flash('Password must be at least 4 characters.', 'danger')
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'danger')
             return render_template('admin/user_form.html', user=None)
         if User.query.filter_by(username=username).first():
             flash(f'Username "{username}" is already taken.', 'danger')
@@ -61,8 +61,8 @@ def create_user():
 def reset_password(user_id):
     user = User.query.get_or_404(user_id)
     new_password = request.form.get('new_password', '')
-    if len(new_password) < 4:
-        flash('Password must be at least 4 characters.', 'danger')
+    if len(new_password) < 8:
+        flash('Password must be at least 8 characters.', 'danger')
         return redirect(url_for('admin.list_users'))
 
     user.set_password(new_password)
