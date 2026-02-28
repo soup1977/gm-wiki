@@ -41,6 +41,21 @@ def is_ai_enabled():
     return False
 
 
+def get_available_providers():
+    """Return list of all providers that have credentials configured.
+
+    This is independent of the active ai_provider setting — it checks what's
+    actually set up so the UI can offer a choice even if only one is active.
+    """
+    settings = _get_settings()
+    available = []
+    if settings.get('ollama_url'):
+        available.append('ollama')
+    if settings.get('anthropic_api_key'):
+        available.append('anthropic')
+    return available
+
+
 def get_ai_config():
     """Return a dict of current AI settings for display."""
     settings = _get_settings()
@@ -60,7 +75,7 @@ def get_ai_config():
     }
 
 
-def ai_chat(system_prompt, messages, max_tokens=1024, json_mode=False):
+def ai_chat(system_prompt, messages, max_tokens=1024, json_mode=False, provider=None):
     """Send a chat request to the configured AI provider.
 
     Args:
@@ -70,6 +85,8 @@ def ai_chat(system_prompt, messages, max_tokens=1024, json_mode=False):
         max_tokens: Maximum response length (used by Anthropic; Ollama ignores).
         json_mode: If True, constrain the model to output valid JSON only.
                    Ollama uses format="json"; Anthropic ignores this (relies on prompt).
+        provider: Optional override ('ollama' or 'anthropic'). If None, uses
+                  the active provider from Settings.
 
     Returns:
         The assistant's response as a plain string.
@@ -78,11 +95,11 @@ def ai_chat(system_prompt, messages, max_tokens=1024, json_mode=False):
         AIProviderError: If no provider is configured or the call fails.
     """
     config = get_ai_config()
-    provider = config['provider']
+    effective_provider = provider or config['provider']
 
-    if provider == 'ollama':
+    if effective_provider == 'ollama':
         return _call_ollama(config, system_prompt, messages, json_mode=json_mode)
-    elif provider == 'anthropic':
+    elif effective_provider == 'anthropic':
         return _call_anthropic(config, system_prompt, messages, max_tokens)
     else:
         raise AIProviderError('No AI provider configured. Go to Settings to set one up.')

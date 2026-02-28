@@ -411,6 +411,14 @@
                     <div class="text-muted" style="font-size:.75rem;">{{ npc.role }}</div>
                     {% endif %}
                 </div>
+                {% if ai_enabled %}
+                <button type="button"
+                        class="btn btn-sm btn-outline-info ms-1 py-0 px-1"
+                        title="Quick NPC Chat"
+                        onclick="openNpcChat({{ npc.id }}, '{{ npc.name | replace("'", "\\'") }}')">
+                    <i class="bi bi-chat-quote"></i>
+                </button>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -464,5 +472,73 @@
 </div>
 
 {% endif %}{# end if game_session #}
+
+{# ── NPC Quick Chat modal (only when AI is configured) ─────────────────── #}
+{% if ai_enabled and game_session %}
+<div class="modal fade" id="npcChatModal" tabindex="-1" aria-labelledby="npcChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="npcChatModalLabel">
+                    <i class="bi bi-chat-quote me-1"></i>
+                    Chat as <span id="npc-chat-npc-name" class="text-info"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="npc-chat-form">
+                    <input type="hidden" id="npc-chat-npc-id" value="">
+                    <input type="hidden" id="npc-chat-csrf" value="{{ csrf_token() }}">
+                    <label for="npc-chat-situation" class="form-label text-muted small">
+                        Describe the situation — what's happening right now?
+                    </label>
+                    <textarea id="npc-chat-situation"
+                              class="form-control bg-dark text-light border-secondary mb-3"
+                              rows="3"
+                              placeholder="e.g. The party is trying to haggle over the price of a healing potion..."></textarea>
+
+                    {# Provider toggle — only shown when both Ollama and Anthropic are configured #}
+                    {% if available_providers | length > 1 %}
+                    <div class="btn-group btn-group-sm w-100 mb-3" role="group" aria-label="AI provider">
+                        {% for p in available_providers %}
+                        <input type="radio" class="btn-check" name="npc-chat-provider"
+                               id="npc-provider-{{ p }}" value="{{ p }}"
+                               {% if p == active_provider %}checked{% endif %}>
+                        <label class="btn btn-outline-secondary" for="npc-provider-{{ p }}">
+                            {% if p == 'ollama' %}
+                            <i class="bi bi-cpu me-1"></i>Local
+                            {% else %}
+                            <i class="bi bi-lightning me-1"></i>Claude
+                            {% endif %}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% elif available_providers %}
+                    <input type="hidden" name="npc-chat-provider" value="{{ available_providers[0] }}">
+                    {% endif %}
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="submit" id="npc-chat-submit" class="btn btn-info">
+                            <i class="bi bi-chat-quote me-1"></i> Ask NPC
+                        </button>
+                        <span id="npc-chat-spinner" class="spinner-border spinner-border-sm text-info d-none" role="status"></span>
+                        <span id="npc-chat-status" class="text-muted small d-none"></span>
+                    </div>
+                </form>
+
+                <div id="npc-chat-error" class="alert alert-danger mt-3 mb-0 d-none"></div>
+
+                <div id="npc-chat-response" class="mt-3 d-none">
+                    <label class="form-label text-muted small">NPC Dialogue:</label>
+                    <div id="npc-chat-response-text"
+                         class="bg-black border border-secondary rounded p-3 text-light"
+                         style="white-space: pre-wrap; font-size: .95rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/npc_chat.js') }}"></script>
+{% endif %}
 
 {% endblock %}
