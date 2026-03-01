@@ -254,6 +254,7 @@ def create_app():
     from app.routes.srd_import import srd_import_bp
     from app.routes.sd_generate import sd_generate_bp
     from app.routes.campaign_assistant import campaign_assistant_bp
+    from app.routes.icrpg_catalog import icrpg_catalog_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -286,6 +287,7 @@ def create_app():
     app.register_blueprint(srd_import_bp)
     app.register_blueprint(sd_generate_bp)
     app.register_blueprint(campaign_assistant_bp)
+    app.register_blueprint(icrpg_catalog_bp)
 
     # Exempt AJAX-only blueprints from CSRF — these are called from JavaScript
     # using fetch() and are already protected by same-origin policy + login_required
@@ -312,7 +314,8 @@ def create_app():
                     flask_session.pop('active_campaign_id', None)
             else:
                 flask_session.pop('active_campaign_id', None)
-        return dict(active_campaign=active_campaign)
+        is_icrpg = ('icrpg' in (active_campaign.system or '').lower()) if active_campaign else False
+        return dict(active_campaign=active_campaign, is_icrpg=is_icrpg)
 
     @app.context_processor
     def inject_app_version():

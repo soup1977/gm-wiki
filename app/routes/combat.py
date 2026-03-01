@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from flask_login import login_required
-from app.models import Session as GameSession, PlayerCharacter, BestiaryEntry
+from app.models import Session as GameSession, PlayerCharacter, BestiaryEntry, Campaign
 
 combat_bp = Blueprint('combat', __name__, url_prefix='/combat-tracker')
 
@@ -26,6 +26,9 @@ def tracker():
     current_session_name = None
 
     if campaign_id:
+        campaign = Campaign.query.get(campaign_id)
+        is_icrpg = 'icrpg' in (campaign.system or '').lower() if campaign else False
+
         all_sessions = GameSession.query.filter_by(campaign_id=campaign_id)\
             .order_by(GameSession.number.desc()).all()
 
@@ -42,17 +45,35 @@ def tracker():
                     pc = attendance.character
                     if not pc:
                         continue
-                    # Build a {stat_name: value} dict for this PC
-                    stats = {
-                        s.template_field.stat_name: s.stat_value
-                        for s in pc.stats if s.template_field
-                    }
-                    session_pcs.append({
+
+                    pc_data = {
                         'id': pc.id,
                         'character_name': pc.character_name,
                         'player_name': pc.player_name,
-                        'stats': stats,
-                    })
+                    }
+
+                    # ICRPG: pull stats from the ICRPG sheet
+                    if is_icrpg and pc.icrpg_sheet:
+                        s = pc.icrpg_sheet
+                        pc_data['stats'] = {
+                            'STR': s.total_stat('STR'),
+                            'DEX': s.total_stat('DEX'),
+                            'CON': s.total_stat('CON'),
+                            'INT': s.total_stat('INT'),
+                            'WIS': s.total_stat('WIS'),
+                            'CHA': s.total_stat('CHA'),
+                            'Defense': s.defense,
+                        }
+                        pc_data['hp_current'] = s.hp_current
+                        pc_data['hp_max'] = s.hp_max
+                    else:
+                        # Generic campaign stats
+                        pc_data['stats'] = {
+                            st.template_field.stat_name: st.stat_value
+                            for st in pc.stats if st.template_field
+                        }
+
+                    session_pcs.append(pc_data)
 
     # Build session monster data — Monster Instances linked to the current session.
     # These appear as a separate quick-add list in the modal.

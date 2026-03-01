@@ -1,0 +1,250 @@
+{% extends "wiki/base_wiki.html" %}
+{% block title %}{{ pc.character_name }} — {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('wiki.wiki_pcs', campaign_id=campaign.id) }}">PCs</a>
+        </li>
+        <li class="breadcrumb-item active">{{ pc.character_name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2>{{ pc.character_name }}</h2>
+    <p class="text-muted mb-1">
+        Player: <strong class="text-light">{{ pc.player_name }}</strong>
+        {% if sheet.world %} &mdash; {{ sheet.world.name }}{% endif %}
+        {% if sheet.life_form %} {{ sheet.life_form.name }}{% endif %}
+        {% if sheet.char_type %} {{ sheet.char_type.name }}{% endif %}
+    </p>
+    {% if sheet.story %}
+    <p class="text-muted small fst-italic mb-0">{{ sheet.story }}</p>
+    {% endif %}
+    <div class="mt-2">
+        {% if pc.status == 'active' %}
+            <span class="badge bg-success">{{ pc.status }}</span>
+        {% elif pc.status == 'dead' %}
+            <span class="badge bg-danger">{{ pc.status }}</span>
+        {% elif pc.status == 'retired' %}
+            <span class="badge bg-secondary">{{ pc.status }}</span>
+        {% else %}
+            <span class="badge bg-secondary">{{ pc.status }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    {# ── LEFT COLUMN ─────────────────────────────────────────── #}
+    <div class="col-lg-4">
+
+        {% if pc.portrait_filename %}
+        <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
+             alt="{{ pc.character_name }}"
+             class="img-fluid rounded mb-3"
+             style="max-height: 300px; width: 100%; object-fit: cover;">
+        {% endif %}
+
+        {% if sheet.life_form and sheet.life_form.bonuses and sheet.life_form.bonuses.get('ABILITY') %}
+        <div class="alert alert-info py-2 mb-3">
+            <small><strong>{{ sheet.life_form.name }}:</strong> {{ sheet.life_form.bonuses['ABILITY'] }}</small>
+        </div>
+        {% endif %}
+
+        {# ── CORE STATS ──────────────────────────────────────── #}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Core Stats</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-sm mb-0">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Stat</th><th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] %}
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td class="text-end fw-bold">{{ sheet.total_stat(key) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ── EFFORT ───────────────────────────────────────────── #}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Effort</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-sm mb-0">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Type</th><th class="text-center">Die</th><th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key in sheet.EFFORT_KEYS %}
+                        <tr>
+                            <td>{{ key | capitalize }}</td>
+                            <td class="text-center text-muted">{{ sheet.EFFORT_DICE[key] }}</td>
+                            <td class="text-end fw-bold">{{ sheet.total_effort(key) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ── STATUS ───────────────────────────────────────────── #}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Status</strong></div>
+            <div class="card-body">
+                {% set hp_pct = ((sheet.hp_current / sheet.hp_max * 100) if sheet.hp_max else 0) | int %}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold">{{ sheet.hp_current }} / {{ sheet.hp_max }} HP</span>
+                    </div>
+                    <div class="progress" style="height: 1.2rem;">
+                        <div class="progress-bar {% if hp_pct > 50 %}bg-success{% elif hp_pct > 25 %}bg-warning{% else %}bg-danger{% endif %}"
+                             style="width: {{ hp_pct }}%"></div>
+                    </div>
+                </div>
+
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <div class="text-muted small">Hearts</div>
+                        <div class="fs-5 fw-bold">{{ sheet.hearts_max }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Defense</div>
+                        <div class="fs-5 fw-bold">{{ sheet.defense }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Hero Coin</div>
+                        <div class="fs-5 fw-bold">
+                            {% if sheet.hero_coin %}
+                            <span class="text-warning"><i class="bi bi-circle-fill"></i></span>
+                            {% else %}
+                            <span class="text-secondary"><i class="bi bi-circle"></i></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── RIGHT COLUMN ────────────────────────────────────────── #}
+    <div class="col-lg-8">
+
+        {# ── EQUIPPED LOOT ────────────────────────────────────── #}
+        {% if sheet.equipped_loot %}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Equipped Loot</strong></div>
+            <div class="card-body p-0">
+                <ul class="list-unstyled mb-0">
+                    {% for item in sheet.equipped_loot %}
+                    <li class="px-3 py-2 border-bottom border-secondary">
+                        <strong>{{ item.display_name }}</strong>
+                        {% if item.loot_def and item.loot_def.loot_type %}
+                        <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
+                        {% endif %}
+                        {% if item.display_description %}
+                        <div class="text-muted small">{{ item.display_description }}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── CARRIED LOOT ─────────────────────────────────────── #}
+        {% if sheet.carried_loot %}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Carried Loot</strong></div>
+            <div class="card-body p-0">
+                <ul class="list-unstyled mb-0">
+                    {% for item in sheet.carried_loot %}
+                    <li class="px-3 py-2 border-bottom border-secondary">
+                        <strong>{{ item.display_name }}</strong>
+                        {% if item.loot_def and item.loot_def.loot_type %}
+                        <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
+                        {% endif %}
+                        {% if item.display_description %}
+                        <div class="text-muted small">{{ item.display_description }}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── ABILITIES ────────────────────────────────────────── #}
+        {% set starting = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'starting') | list %}
+        {% set milestone = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'milestone') | list %}
+        {% set mastery = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'mastery') | list %}
+
+        {% if starting or milestone or mastery %}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Abilities</strong></div>
+            <div class="card-body">
+                {% if starting %}
+                <h6 class="text-info mb-2">Starting</h6>
+                {% for ab in starting %}
+                <div class="mb-2">
+                    <strong>{{ ab.display_name }}</strong>
+                    {% if ab.display_description %}
+                    <div class="text-muted small">{{ ab.display_description }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if milestone %}
+                <h6 class="text-warning mb-2 {% if starting %}mt-3{% endif %}">Milestone</h6>
+                {% for ab in milestone %}
+                <div class="mb-2">
+                    <strong>{{ ab.display_name }}</strong>
+                    {% if ab.display_description %}
+                    <div class="text-muted small">{{ ab.display_description }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if mastery %}
+                <h6 class="text-danger mb-2 {% if starting or milestone %}mt-3{% endif %}">Mastery</h6>
+                {% for ab in mastery %}
+                <div class="mb-2">
+                    <strong>{{ ab.display_name }}</strong>
+                    {% if ab.display_description %}
+                    <div class="text-muted small">{{ ab.display_description }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── DESCRIPTION / BACKSTORY (player-safe only) ──────── #}
+        {% if pc.description %}
+        <div class="mb-4">
+            <h5><i class="bi bi-body-text me-1"></i>Description</h5>
+            <div>{{ pc.description | md | safe }}</div>
+        </div>
+        {% endif %}
+
+        {% if pc.backstory %}
+        <div class="mb-4">
+            <h5><i class="bi bi-journal-text me-1"></i>Backstory</h5>
+            <div>{{ pc.backstory | md | safe }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
