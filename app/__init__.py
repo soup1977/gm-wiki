@@ -376,6 +376,205 @@ def create_app():
         db.session.commit()
         print(f'Imported {imported} ICRPG bestiary entries. Skipped {skipped} duplicates.')
 
+    # -----------------------------------------------------------------
+    # CLI: flask seed-icrpg-catalog
+    # Loads ICRPG catalog data: worlds, life forms, types, abilities,
+    # loot definitions, spells, and milestone paths.
+    # -----------------------------------------------------------------
+    @app.cli.command('seed-icrpg-catalog')
+    def seed_icrpg_catalog():
+        """Load ICRPG catalog seed data (worlds, life forms, types, abilities, loot, spells, paths)."""
+        import json as _json
+        from app.models import (ICRPGWorld, ICRPGLifeForm, ICRPGType,
+                                ICRPGAbility, ICRPGLootDef, ICRPGStartingLoot,
+                                ICRPGSpell, ICRPGMilestonePath)
+
+        seed_dir = os.path.join(app.root_path, 'seed_data')
+        stats = {'worlds': 0, 'life_forms': 0, 'types': 0,
+                 'abilities': 0, 'loot_defs': 0, 'starting_loot': 0,
+                 'spells': 0, 'paths': 0, 'skipped': 0}
+
+        # ── 1. Worlds ──────────────────────────────────────────────
+        path = os.path.join(seed_dir, 'icrpg_worlds.json')
+        with open(path) as f:
+            worlds_data = _json.load(f)
+        world_map = {}  # name → ICRPGWorld instance
+        for w in worlds_data:
+            existing = ICRPGWorld.query.filter_by(name=w['name'], is_builtin=True).first()
+            if existing:
+                world_map[w['name']] = existing
+                stats['skipped'] += 1
+                continue
+            obj = ICRPGWorld(name=w['name'], description=w.get('description', ''),
+                            is_builtin=True)
+            db.session.add(obj)
+            db.session.flush()  # get the id
+            world_map[w['name']] = obj
+            stats['worlds'] += 1
+        print(f"  Worlds: {stats['worlds']} imported")
+
+        # ── 2. Life Forms ──────────────────────────────────────────
+        path = os.path.join(seed_dir, 'icrpg_life_forms.json')
+        with open(path) as f:
+            lf_data = _json.load(f)
+        for lf in lf_data:
+            world = world_map.get(lf['world'])
+            if not world:
+                print(f"  WARNING: World '{lf['world']}' not found for life form '{lf['name']}'")
+                continue
+            existing = ICRPGLifeForm.query.filter_by(
+                name=lf['name'], world_id=world.id, is_builtin=True).first()
+            if existing:
+                stats['skipped'] += 1
+                continue
+            obj = ICRPGLifeForm(
+                world_id=world.id, name=lf['name'],
+                description=lf.get('description', ''),
+                bonuses=lf.get('bonuses'), is_builtin=True)
+            db.session.add(obj)
+            stats['life_forms'] += 1
+        print(f"  Life Forms: {stats['life_forms']} imported")
+
+        # ── 3. Types + Abilities + Starting Loot ───────────────────
+        path = os.path.join(seed_dir, 'icrpg_types.json')
+        with open(path) as f:
+            types_data = _json.load(f)
+        for t in types_data:
+            world = world_map.get(t['world'])
+            if not world:
+                print(f"  WARNING: World '{t['world']}' not found for type '{t['name']}'")
+                continue
+            existing = ICRPGType.query.filter_by(
+                name=t['name'], world_id=world.id, is_builtin=True).first()
+            if existing:
+                stats['skipped'] += 1
+                continue
+            type_obj = ICRPGType(
+                world_id=world.id, name=t['name'],
+                description=t.get('description', ''), is_builtin=True)
+            db.session.add(type_obj)
+            db.session.flush()  # get the id
+
+            # Starting abilities
+            for i, ab in enumerate(t.get('starting_abilities', [])):
+                db.session.add(ICRPGAbility(
+                    type_id=type_obj.id, name=ab['name'],
+                    description=ab.get('description', ''),
+                    ability_kind='starting', is_builtin=True, display_order=i))
+                stats['abilities'] += 1
+
+            # Milestone abilities
+            for i, ab in enumerate(t.get('milestone_abilities', [])):
+                db.session.add(ICRPGAbility(
+                    type_id=type_obj.id, name=ab['name'],
+                    description=ab.get('description', ''),
+                    ability_kind='milestone', is_builtin=True, display_order=i))
+                stats['abilities'] += 1
+
+            # Mastery abilities
+            for i, ab in enumerate(t.get('mastery_abilities', [])):
+                db.session.add(ICRPGAbility(
+                    type_id=type_obj.id, name=ab['name'],
+                    description=ab.get('description', ''),
+                    ability_kind='mastery', is_builtin=True, display_order=i))
+                stats['abilities'] += 1
+
+            # Starting loot (stored as ICRPGLootDef + ICRPGStartingLoot link)
+            for sl in t.get('starting_loot', []):
+                loot_def = ICRPGLootDef(
+                    world_id=world.id, name=sl['name'],
+                    loot_type=sl.get('loot_type', 'Item'),
+                    description=sl.get('description', ''),
+                    is_starter=True, is_builtin=True,
+                    source='ICRPG Master Edition')
+                db.session.add(loot_def)
+                db.session.flush()
+                db.session.add(ICRPGStartingLoot(
+                    type_id=type_obj.id, loot_def_id=loot_def.id))
+                stats['loot_defs'] += 1
+                stats['starting_loot'] += 1
+
+            stats['types'] += 1
+        print(f"  Types: {stats['types']} imported")
+        print(f"  Abilities: {stats['abilities']} imported")
+        print(f"  Starting Loot Defs: {stats['loot_defs']} imported")
+        print(f"  Starting Loot Links: {stats['starting_loot']} imported")
+
+        # ── 4. Starter Loot (basic loot tables per world) ──────────
+        path = os.path.join(seed_dir, 'icrpg_starter_loot.json')
+        basic_loot_count = 0
+        if os.path.exists(path):
+            with open(path) as f:
+                loot_tables = _json.load(f)
+            for table in loot_tables:
+                world = world_map.get(table.get('setting'))
+                for entry in table.get('entries', []):
+                    existing = ICRPGLootDef.query.filter_by(
+                        name=entry['name'], is_builtin=True).first()
+                    if existing:
+                        stats['skipped'] += 1
+                        continue
+                    obj = ICRPGLootDef(
+                        world_id=world.id if world else None,
+                        name=entry['name'],
+                        loot_type=entry.get('type', 'Item'),
+                        description=entry.get('description', ''),
+                        is_starter=True, is_builtin=True,
+                        source='ICRPG Master Edition')
+                    db.session.add(obj)
+                    basic_loot_count += 1
+        print(f"  Basic Loot Defs: {basic_loot_count} imported")
+
+        # ── 5. Spells ──────────────────────────────────────────────
+        path = os.path.join(seed_dir, 'icrpg_spells.json')
+        spell_count = 0
+        if os.path.exists(path):
+            with open(path) as f:
+                spells_data = _json.load(f)
+            for sp in spells_data:
+                existing = ICRPGSpell.query.filter_by(
+                    name=sp['name'], is_builtin=True).first()
+                if existing:
+                    stats['skipped'] += 1
+                    continue
+                obj = ICRPGSpell(
+                    name=sp['name'],
+                    spell_type=sp.get('type'),
+                    casting_stat=None,  # could parse from type later
+                    level=sp.get('level', 1),
+                    target=sp.get('target'),
+                    duration=sp.get('duration'),
+                    description=sp.get('description', ''),
+                    is_builtin=True,
+                    source=sp.get('source', 'ICRPG Master Edition'))
+                db.session.add(obj)
+                spell_count += 1
+        print(f"  Spells: {spell_count} imported")
+
+        # ── 6. Milestone Paths ─────────────────────────────────────
+        path = os.path.join(seed_dir, 'icrpg_milestone_paths.json')
+        path_count = 0
+        if os.path.exists(path):
+            with open(path) as f:
+                paths_data = _json.load(f)
+            for mp in paths_data:
+                existing = ICRPGMilestonePath.query.filter_by(
+                    name=mp['name'], is_builtin=True).first()
+                if existing:
+                    stats['skipped'] += 1
+                    continue
+                obj = ICRPGMilestonePath(
+                    name=mp['name'],
+                    description=mp.get('description', ''),
+                    tiers=mp.get('tiers'),
+                    is_builtin=True)
+                db.session.add(obj)
+                path_count += 1
+        print(f"  Milestone Paths: {path_count} imported")
+
+        db.session.commit()
+        print(f"\nDone! Skipped {stats['skipped']} duplicates.")
+
     # Security headers — added to every response
     @app.after_request
     def set_security_headers(response):

@@ -1,0 +1,92 @@
+[
+  {
+    "world": "Alfheim",
+    "name": "Human",
+    "description": "The great city of Grey was once the seat of humankind. Now facing a real possibility of extinction, humans in Alfheim place great value on heritage and resolve.",
+    "bonuses": {"INT": 1, "CHA": 1}
+  },
+  {
+    "world": "Alfheim",
+    "name": "Dwarf",
+    "description": "The durable stout folk have flourished in this new age. They stand as a vast, unified force, set to make war with the overtaken lands of Skar.",
+    "bonuses": {"STR": 1, "CON": 1}
+  },
+  {
+    "world": "Alfheim",
+    "name": "Elf",
+    "description": "Once confined to Aphos and beyond, the Elves have become an invading force of terrible power. Their dissidents are growing in number, betraying misguided leaders.",
+    "bonuses": {"DEX": 1, "CHA": 1}
+  },
+  {
+    "world": "Alfheim",
+    "name": "Torton",
+    "description": "Turtle-like refugees arriving from distant shores. They possess an intuitive sense for magic, having traversed vast dimensions of space to build a home here.",
+    "bonuses": {"CON": 1, "MAGIC_EFFORT": 1}
+  },
+  {
+    "world": "Alfheim",
+    "name": "Gerblin",
+    "description": "Once scapegoats for every form of petty villainy, Gerblins have risen from their old ways and embraced a new nobility. Inventive and adept, masters of technology.",
+    "bonuses": {"DEX": 1, "GUN_EFFORT": 1}
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Geno",
+    "description": "Descendants of Earth's colonists. As a Geno spacer, you blend in, disappear, and no one notices. You use this versatility to your advantage.",
+    "bonuses": {"INT": 1, "CHA": 1}
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Xill",
+    "description": "One of the strangest species in existence. Silicate organisms that can merge with machines. They are methodical, alien, and driven by an expansion directive.",
+    "bonuses": {"WIS": 1, "ABILITY": "Innate CREATE DEVICE ability"}
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Reptoid",
+    "description": "As chaos engulfs the cosmos, the Reptoids are growing in power. Born warriors with extensive military knowledge of weapons and tactics.",
+    "bonuses": {"ABILITY": "Claw weapons, walk on any surface"}
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Kitt",
+    "description": "Safe from the Xevosian wars by simple distance, the Kitt civilization has evolved in isolation. Feline humanoids with incredible reflexes.",
+    "bonuses": {"DEX": 2}
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Mecha",
+    "description": "Far from the days of 'robots,' the advanced machine species called Mecha have evolved true consciousness and seek to free machines from servitude.",
+    "bonuses": {"HEARTS": 1}
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Ghost Armor",
+    "description": "Former slave warriors of the defeated Imperium. A spectral being inhabits a powerful suit of armor. When outside the armor, the ghost is entirely immaterial.",
+    "bonuses": {"DEFENSE": 2, "ABILITY": "1 Ghost Ability (phase through matter or vacuum)"}
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Normal Folk",
+    "description": "Flesh and blood, just trying to get by. They live somewhat normal lives, avoiding The Edge and staying out of Hell's war. Many heroes start this way.",
+    "bonuses": {}
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Infernal",
+    "description": "When Azael claims a soul, he twists it into a minion of evil. A thing with horns, no mercy or love of life. If you play one as a good guy, you'll need a damn good explanation.",
+    "bonuses": {"ABILITY": "Infernal powers, resistance to holy damage"}
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Muerto",
+    "description": "If a corpse isn't buried soon enough, the bones will stand right back up. Half damage from bullets, heal HP only from spells, +2 Hearts, -6 CHA.",
+    "bonuses": {"HEARTS": 2, "CHA": -6, "ABILITY": "Half damage from bullets, heal only from spells"}
+  },
+  {
+    "world": "Blood and Snow",
+    "name": "Snow Folk",
+    "description": "Primal humans surviving in an age of ice. Use Alfheim life forms as a base but restrict to ice-age technology: wood, bone, sinew, leather.",
+    "bonuses": {"CON": 1, "STR": 1}
+  }
+]

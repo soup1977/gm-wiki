@@ -712,6 +712,389 @@ class AppSetting(db.Model):
         return f'<AppSetting {self.key}={self.value}>'
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# ICRPG CATALOG MODELS (Global base + Campaign-scoped homebrew)
+#
+# All catalog models use the same scope pattern:
+#   is_builtin=True,  campaign_id=NULL  → official ICRPG content, read-only
+#   is_builtin=False, campaign_id=<id>  → homebrew for that campaign
+# Query pattern:
+#   Model.query.filter(or_(Model.is_builtin == True, Model.campaign_id == X))
+# ═══════════════════════════════════════════════════════════════════════════
+
+class ICRPGWorld(db.Model):
+    """An ICRPG world/setting (Alfheim, Warp Shell, Ghost Mountain, etc.)."""
+    __tablename__ = 'icrpg_worlds'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    is_builtin  = db.Column(db.Boolean, default=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+
+    campaign    = db.relationship('Campaign', backref='icrpg_homebrew_worlds')
+    life_forms  = db.relationship('ICRPGLifeForm', backref='world', lazy=True)
+    types       = db.relationship('ICRPGType', backref='world', lazy=True)
+    loot_defs   = db.relationship('ICRPGLootDef', backref='world', lazy=True)
+
+    def __repr__(self):
+        return f'<ICRPGWorld {self.name}>'
+
+
+class ICRPGLifeForm(db.Model):
+    """A race/life form. Each grants stat bonuses and/or effort bonuses.
+    Bonuses stored as JSON: {"STR": 1, "CON": 1} or {"DEX": 1, "GUN_EFFORT": 1}.
+    Non-stat bonuses like innate abilities: {"ABILITY": "Claw weapons, walk on any surface"}."""
+    __tablename__ = 'icrpg_life_forms'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    world_id    = db.Column(db.Integer, db.ForeignKey('icrpg_worlds.id'), nullable=False)
+    name        = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    bonuses     = db.Column(db.JSON)
+    is_builtin  = db.Column(db.Boolean, default=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+
+    campaign    = db.relationship('Campaign', backref='icrpg_homebrew_life_forms')
+
+    def __repr__(self):
+        return f'<ICRPGLifeForm {self.name}>'
+
+
+class ICRPGType(db.Model):
+    """A class/type (Warrior, Mage, Pilot, etc.). Belongs to a world."""
+    __tablename__ = 'icrpg_types'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    world_id    = db.Column(db.Integer, db.ForeignKey('icrpg_worlds.id'), nullable=False)
+    name        = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    is_builtin  = db.Column(db.Boolean, default=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+
+    campaign    = db.relationship('Campaign', backref='icrpg_homebrew_types')
+    abilities   = db.relationship('ICRPGAbility', backref='type_ref',
+                                  cascade='all, delete-orphan', lazy=True)
+    starting_loot = db.relationship('ICRPGStartingLoot', backref='type_ref',
+                                    cascade='all, delete-orphan', lazy=True)
+
+    def __repr__(self):
+        return f'<ICRPGType {self.name}>'
+
+
+class ICRPGAbility(db.Model):
+    """An ability (starting, milestone, or mastery) tied to a Type.
+    ability_kind: 'starting' | 'milestone' | 'mastery'."""
+    __tablename__ = 'icrpg_abilities'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    type_id       = db.Column(db.Integer, db.ForeignKey('icrpg_types.id'), nullable=False)
+    name          = db.Column(db.String(200), nullable=False)
+    description   = db.Column(db.Text)
+    ability_kind  = db.Column(db.String(20), nullable=False)
+    is_builtin    = db.Column(db.Boolean, default=False)
+    campaign_id   = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+    display_order = db.Column(db.Integer, default=0)
+
+    campaign      = db.relationship('Campaign', backref='icrpg_homebrew_abilities')
+
+    def __repr__(self):
+        return f'<ICRPGAbility {self.name} ({self.ability_kind})>'
+
+
+class ICRPGLootDef(db.Model):
+    """A reusable loot definition in the ICRPG catalog.
+    This is the 'blueprint'; when a PC equips it, an ICRPGCharLoot row is created.
+    Effects stored as JSON: {"DEFENSE": 2} or {"WEAPON_EFFORT": 1, "note": "silver"}."""
+    __tablename__ = 'icrpg_loot_defs'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    world_id    = db.Column(db.Integer, db.ForeignKey('icrpg_worlds.id'), nullable=True)
+    name        = db.Column(db.String(200), nullable=False)
+    loot_type   = db.Column(db.String(50))      # Weapon, Armor, Shield, Pack, Tool, Spell, Item, Augment
+    description = db.Column(db.Text)
+    effects     = db.Column(db.JSON)            # mechanical bonuses
+    slot_cost   = db.Column(db.Integer, default=1)
+    coin_cost   = db.Column(db.Integer, nullable=True)
+    is_starter  = db.Column(db.Boolean, default=False)   # available as starting loot pick
+    is_builtin  = db.Column(db.Boolean, default=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+    source      = db.Column(db.String(100))
+
+    campaign    = db.relationship('Campaign', backref='icrpg_homebrew_loot')
+
+    def __repr__(self):
+        return f'<ICRPGLootDef {self.name}>'
+
+
+class ICRPGStartingLoot(db.Model):
+    """Links a Type to its starting loot options (choose 1).
+    Can reference a LootDef or a Spell."""
+    __tablename__ = 'icrpg_starting_loot'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    type_id     = db.Column(db.Integer, db.ForeignKey('icrpg_types.id'), nullable=False)
+    loot_def_id = db.Column(db.Integer, db.ForeignKey('icrpg_loot_defs.id'), nullable=True)
+    spell_id    = db.Column(db.Integer, db.ForeignKey('icrpg_spells.id'), nullable=True)
+
+    loot_def    = db.relationship('ICRPGLootDef')
+    spell       = db.relationship('ICRPGSpell')
+
+    @property
+    def display_name(self):
+        if self.loot_def:
+            return self.loot_def.name
+        if self.spell:
+            return self.spell.name
+        return 'Unknown'
+
+    def __repr__(self):
+        return f'<ICRPGStartingLoot type={self.type_id}>'
+
+
+class ICRPGSpell(db.Model):
+    """An ICRPG spell catalog entry. Spells are loot (occupy inventory slots)
+    but have extra metadata (type, casting stat, level)."""
+    __tablename__ = 'icrpg_spells'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    name         = db.Column(db.String(200), nullable=False)
+    spell_type   = db.Column(db.String(50))      # "Arcane", "Holy", "Infernal"
+    casting_stat = db.Column(db.String(10))       # "INT", "WIS"
+    level        = db.Column(db.Integer, default=1)
+    target       = db.Column(db.String(100))
+    duration     = db.Column(db.String(100))
+    description  = db.Column(db.Text)
+    is_builtin   = db.Column(db.Boolean, default=False)
+    campaign_id  = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+    source       = db.Column(db.String(100))
+
+    campaign     = db.relationship('Campaign', backref='icrpg_homebrew_spells')
+
+    def __repr__(self):
+        return f'<ICRPGSpell {self.name}>'
+
+
+class ICRPGMilestonePath(db.Model):
+    """One of the 5 milestone paths (Iron, Smoke, Amber, Oak, Hawk).
+    Tiers stored as JSON: [{"tier": 1, "rewards": [{"name": "...", "description": "..."}]}, ...]."""
+    __tablename__ = 'icrpg_milestone_paths'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    tiers       = db.Column(db.JSON)
+    is_builtin  = db.Column(db.Boolean, default=False)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+
+    campaign    = db.relationship('Campaign', backref='icrpg_homebrew_paths')
+
+    def __repr__(self):
+        return f'<ICRPGMilestonePath {self.name}>'
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ICRPG CHARACTER SHEET (linked 1:1 to PlayerCharacter)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class ICRPGCharacterSheet(db.Model):
+    """ICRPG-specific character data, linked 1:1 to PlayerCharacter.
+    Only created for PCs in campaigns where system contains 'ICRPG'."""
+    __tablename__ = 'icrpg_character_sheets'
+
+    id              = db.Column(db.Integer, primary_key=True)
+    pc_id           = db.Column(db.Integer, db.ForeignKey('player_characters.id'),
+                                nullable=False, unique=True)
+
+    # Catalog references
+    world_id        = db.Column(db.Integer, db.ForeignKey('icrpg_worlds.id'), nullable=True)
+    life_form_id    = db.Column(db.Integer, db.ForeignKey('icrpg_life_forms.id'), nullable=True)
+    type_id         = db.Column(db.Integer, db.ForeignKey('icrpg_types.id'), nullable=True)
+
+    story           = db.Column(db.String(500))    # one-line character concept
+
+    # Core Stats — base allocation by player (6 points total)
+    stat_str        = db.Column(db.Integer, default=0)
+    stat_dex        = db.Column(db.Integer, default=0)
+    stat_con        = db.Column(db.Integer, default=0)
+    stat_int        = db.Column(db.Integer, default=0)
+    stat_wis        = db.Column(db.Integer, default=0)
+    stat_cha        = db.Column(db.Integer, default=0)
+
+    # Effort — base allocation by player (4 points total)
+    effort_basic    = db.Column(db.Integer, default=0)    # d4
+    effort_weapons  = db.Column(db.Integer, default=0)    # d6
+    effort_guns     = db.Column(db.Integer, default=0)    # d8
+    effort_magic    = db.Column(db.Integer, default=0)    # d10
+    effort_ultimate = db.Column(db.Integer, default=0)    # d12
+
+    # Status
+    hearts_max      = db.Column(db.Integer, default=1)    # total hearts (starts at 1)
+    hp_current      = db.Column(db.Integer, default=10)   # current HP
+    hero_coin       = db.Column(db.Boolean, default=False)
+    dying_timer     = db.Column(db.Integer, default=0)    # 0 = not dying
+
+    # Mastery tracking
+    nat20_count     = db.Column(db.Integer, default=0)    # total natural 20s rolled
+    mastery_count   = db.Column(db.Integer, default=0)    # masteries earned (0-3)
+
+    # Coin
+    coin            = db.Column(db.Integer, default=0)
+
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    pc              = db.relationship('PlayerCharacter',
+                        backref=db.backref('icrpg_sheet', uselist=False,
+                                           cascade='all, delete-orphan'))
+    world           = db.relationship('ICRPGWorld')
+    life_form       = db.relationship('ICRPGLifeForm')
+    char_type       = db.relationship('ICRPGType')
+    loot_items      = db.relationship('ICRPGCharLoot', backref='sheet',
+                        cascade='all, delete-orphan', order_by='ICRPGCharLoot.display_order')
+    char_abilities  = db.relationship('ICRPGCharAbility', backref='sheet',
+                        cascade='all, delete-orphan', order_by='ICRPGCharAbility.display_order')
+
+    # ── Computed stat helpers ────────────────────────────────────
+    STAT_KEYS = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
+    EFFORT_KEYS = ['basic', 'weapons', 'guns', 'magic', 'ultimate']
+    EFFORT_DICE = {'basic': 'd4', 'weapons': 'd6', 'guns': 'd8',
+                   'magic': 'd10', 'ultimate': 'd12'}
+
+    def _lf_bonus(self, key):
+        """Get life form bonus for a stat/effort key."""
+        if not self.life_form or not self.life_form.bonuses:
+            return 0
+        return self.life_form.bonuses.get(key, 0)
+
+    def _loot_bonus(self, key):
+        """Sum all equipped loot bonuses for a stat/effort key."""
+        total = 0
+        for cl in self.loot_items:
+            if cl.slot == 'equipped' and cl.loot_def and cl.loot_def.effects:
+                total += cl.loot_def.effects.get(key, 0)
+        return total
+
+    def total_stat(self, key):
+        """BASE + LIFE FORM bonus + LOOT bonus, capped at 10."""
+        base = getattr(self, f'stat_{key.lower()}', 0) or 0
+        return min(base + self._lf_bonus(key) + self._loot_bonus(key), 10)
+
+    def total_effort(self, key):
+        """BASE + LIFE FORM effort bonus + LOOT bonus, capped at 10."""
+        effort_key = key.upper() + '_EFFORT'   # e.g. "MAGIC_EFFORT"
+        base = getattr(self, f'effort_{key}', 0) or 0
+        return min(base + self._lf_bonus(effort_key) + self._loot_bonus(effort_key), 10)
+
+    @property
+    def defense(self):
+        """CON total + loot DEFENSE bonuses, capped at 10."""
+        con = self.total_stat('CON')
+        loot_def = self._loot_bonus('DEFENSE')
+        return min(con + loot_def, 10)
+
+    @property
+    def hp_max(self):
+        """Maximum HP = hearts * 10."""
+        return self.hearts_max * 10
+
+    @property
+    def equipped_loot(self):
+        return [cl for cl in self.loot_items if cl.slot == 'equipped']
+
+    @property
+    def carried_loot(self):
+        return [cl for cl in self.loot_items if cl.slot == 'carried']
+
+    @property
+    def equipped_slots_used(self):
+        return sum((cl.loot_def.slot_cost if cl.loot_def else 1) for cl in self.equipped_loot)
+
+    @property
+    def carried_slots_used(self):
+        return sum((cl.loot_def.slot_cost if cl.loot_def else 1) for cl in self.carried_loot)
+
+    def __repr__(self):
+        return f'<ICRPGCharacterSheet pc={self.pc_id}>'
+
+
+class ICRPGCharLoot(db.Model):
+    """One loot item or spell on a character's sheet (equipped or carried).
+    Can reference a catalog LootDef, a Spell, or be a custom one-off item."""
+    __tablename__ = 'icrpg_char_loot'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    sheet_id      = db.Column(db.Integer, db.ForeignKey('icrpg_character_sheets.id'), nullable=False)
+    loot_def_id   = db.Column(db.Integer, db.ForeignKey('icrpg_loot_defs.id'), nullable=True)
+    spell_id      = db.Column(db.Integer, db.ForeignKey('icrpg_spells.id'), nullable=True)
+    slot          = db.Column(db.String(20), default='carried')   # 'equipped' | 'carried'
+    custom_name   = db.Column(db.String(200))    # for one-off items not in catalog
+    custom_desc   = db.Column(db.Text)           # for one-off items
+    display_order = db.Column(db.Integer, default=0)
+
+    loot_def      = db.relationship('ICRPGLootDef')
+    spell         = db.relationship('ICRPGSpell')
+
+    @property
+    def display_name(self):
+        if self.custom_name:
+            return self.custom_name
+        if self.loot_def:
+            return self.loot_def.name
+        if self.spell:
+            return self.spell.name
+        return 'Unknown'
+
+    @property
+    def display_description(self):
+        if self.custom_desc:
+            return self.custom_desc
+        if self.loot_def:
+            return self.loot_def.description
+        if self.spell:
+            return self.spell.description
+        return ''
+
+    def __repr__(self):
+        return f'<ICRPGCharLoot {self.display_name}>'
+
+
+class ICRPGCharAbility(db.Model):
+    """An ability on a character's sheet (starting, milestone, or mastery).
+    Can reference a catalog Ability or be a custom homebrew ability."""
+    __tablename__ = 'icrpg_char_abilities'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    sheet_id      = db.Column(db.Integer, db.ForeignKey('icrpg_character_sheets.id'), nullable=False)
+    ability_id    = db.Column(db.Integer, db.ForeignKey('icrpg_abilities.id'), nullable=True)
+    custom_name   = db.Column(db.String(200))
+    custom_desc   = db.Column(db.Text)
+    ability_kind  = db.Column(db.String(20))     # 'starting' | 'milestone' | 'mastery'
+    display_order = db.Column(db.Integer, default=0)
+
+    ability       = db.relationship('ICRPGAbility')
+
+    @property
+    def display_name(self):
+        if self.custom_name:
+            return self.custom_name
+        if self.ability:
+            return self.ability.name
+        return 'Unknown'
+
+    @property
+    def display_description(self):
+        if self.custom_desc:
+            return self.custom_desc
+        if self.ability:
+            return self.ability.description
+        return ''
+
+    def __repr__(self):
+        return f'<ICRPGCharAbility {self.display_name}>'
+
+
 class EntityMention(db.Model):
     """Tracks which entity text fields reference other entities via #shortcodes.
 
