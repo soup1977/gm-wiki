@@ -295,7 +295,7 @@
         <div class="tab-pane fade show {% if arc_npcs %}active{% endif %}" id="arc-npcs" role="tabpanel">
             <div class="list-group list-group-flush">
                 {% for npc in arc_npcs %}
-                <a href="{{ url_for('npcs.view_npc', npc_id=npc.id) }}"
+                <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}"
                    class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
                     <span>
                         <i class="bi bi-person-fill text-info me-2"></i>{{ npc.name }}
@@ -332,7 +332,7 @@
         <div class="tab-pane fade {% if not arc_npcs and not arc_locations %}show active{% endif %}" id="arc-quests" role="tabpanel">
             <div class="list-group list-group-flush">
                 {% for quest in arc_quests %}
-                <a href="{{ url_for('quests.view_quest', quest_id=quest.id) }}"
+                <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}"
                    class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
                     <span>
                         <i class="bi bi-map-fill text-warning me-2"></i>{{ quest.name }}
@@ -353,7 +353,7 @@
         <div class="tab-pane fade {% if not arc_npcs and not arc_locations and not arc_quests %}show active{% endif %}" id="arc-items" role="tabpanel">
             <div class="list-group list-group-flush">
                 {% for item in arc_items %}
-                <a href="{{ url_for('items.view_item', item_id=item.id) }}"
+                <a href="{{ url_for('items.item_detail', item_id=item.id) }}"
                    class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
                     <span>
                         <i class="bi bi-gem text-secondary me-2"></i>{{ item.name }}
