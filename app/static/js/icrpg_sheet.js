@@ -192,7 +192,17 @@
             });
         });
 
-        // ── Add Loot Modal (GM only) ─────────────────────────────
+        // ── Allow Player Edit toggle (GM only) ──────────────────
+        var playerEditToggle = document.getElementById('icrpg-allow-player-edit');
+        if (playerEditToggle) {
+            playerEditToggle.addEventListener('change', function () {
+                postAction('toggle-player-edit', {}, function () {
+                    window.location.reload();
+                });
+            });
+        }
+
+        // ── Add Loot Modal ──────────────────────────────────────
         if (typeof SHEET_CATALOG !== 'undefined') {
             var addLootModal = document.getElementById('addLootModal');
             var lootTypeFilter = document.getElementById('loot-type-filter');

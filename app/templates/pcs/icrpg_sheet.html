@@ -116,7 +116,7 @@
                         <tr>
                             <td>{{ key }}</td>
                             <td class="text-center" id="icrpg-stat-base-{{ key.lower() }}">
-                                {% if current_user.is_admin %}
+                                {% if can_edit_stats %}
                                 <div class="d-inline-flex align-items-center gap-1">
                                     <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="-1">-</button>
                                     <span class="icrpg-stat-base-val">{{ base }}</span>
@@ -158,7 +158,7 @@
                             <td>{{ key | capitalize }}</td>
                             <td class="text-center text-muted">{{ sheet.EFFORT_DICE[key] }}</td>
                             <td class="text-center" id="icrpg-effort-base-{{ key }}">
-                                {% if current_user.is_admin %}
+                                {% if can_edit_stats %}
                                 <div class="d-inline-flex align-items-center gap-1">
                                     <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="-1">-</button>
                                     <span class="icrpg-effort-base-val">{{ base }}</span>
@@ -181,6 +181,18 @@
         <div class="card bg-dark border-secondary mb-3">
             <div class="card-header py-2"><strong>Status</strong></div>
             <div class="card-body">
+
+                {# GM toggle for player stat editing #}
+                {% if current_user.is_admin %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="small">Allow Player Stat Edit</span>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="icrpg-allow-player-edit"
+                               {% if sheet.allow_player_edit %}checked{% endif %}>
+                    </div>
+                </div>
+                {% endif %}
 
                 {# HP bar #}
                 {% set hp_pct = ((sheet.hp_current / sheet.hp_max * 100) if sheet.hp_max else 0) | int %}
@@ -272,7 +284,7 @@
                 <strong>Equipped Loot</strong>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small" id="icrpg-equipped-slots">{{ sheet.equipped_slots_used }} / 10 slots</span>
-                    {% if current_user.is_admin %}
+                    {% if can_edit %}
                     <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="equipped" title="Add Loot">
                         <i class="bi bi-plus-circle"></i>
                     </button>
@@ -300,7 +312,7 @@
                                 <i class="bi bi-box-arrow-down"></i>
                             </button>
                             {% endif %}
-                            {% if current_user.is_admin %}
+                            {% if can_edit %}
                             <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
                                     data-loot-id="{{ item.id }}" title="Remove">
                                 <i class="bi bi-x-lg"></i>
@@ -322,7 +334,7 @@
                 <strong>Carried Loot</strong>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small" id="icrpg-carried-slots">{{ sheet.carried_slots_used }} / 10 slots</span>
-                    {% if current_user.is_admin %}
+                    {% if can_edit %}
                     <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="carried" title="Add Loot">
                         <i class="bi bi-plus-circle"></i>
                     </button>
@@ -350,7 +362,7 @@
                                 <i class="bi bi-box-arrow-up"></i>
                             </button>
                             {% endif %}
-                            {% if current_user.is_admin %}
+                            {% if can_edit %}
                             <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
                                     data-loot-id="{{ item.id }}" title="Remove">
                                 <i class="bi bi-x-lg"></i>
@@ -374,7 +386,7 @@
         <div class="card bg-dark border-secondary mb-3">
             <div class="card-header py-2 d-flex justify-content-between align-items-center">
                 <strong>Abilities</strong>
-                {% if current_user.is_admin %}
+                {% if can_edit %}
                 <button class="btn btn-sm btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#addAbilityModal" title="Add Ability">
                     <i class="bi bi-plus-circle"></i>
                 </button>
@@ -391,7 +403,7 @@
                         <div class="text-muted small">{{ ab.display_description }}</div>
                         {% endif %}
                     </div>
-                    {% if current_user.is_admin %}
+                    {% if can_edit %}
                     <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
                             data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                     {% endif %}
@@ -409,7 +421,7 @@
                         <div class="text-muted small">{{ ab.display_description }}</div>
                         {% endif %}
                     </div>
-                    {% if current_user.is_admin %}
+                    {% if can_edit %}
                     <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
                             data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                     {% endif %}
@@ -427,7 +439,7 @@
                         <div class="text-muted small">{{ ab.display_description }}</div>
                         {% endif %}
                     </div>
-                    {% if current_user.is_admin %}
+                    {% if can_edit %}
                     <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
                             data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                     {% endif %}
@@ -527,7 +539,7 @@
 <p class="text-muted small mt-4">Created {{ pc.created_at.strftime('%Y-%m-%d') }}</p>
 
 {# ── ADD LOOT MODAL ──────────────────────────────────────── #}
-{% if current_user.is_admin %}
+{% if can_edit %}
 <div class="modal fade" id="addLootModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content bg-dark border-secondary">
@@ -649,7 +661,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if current_user.is_admin and sheet_catalog %}
+{% if sheet_catalog %}
 <script>var SHEET_CATALOG = {{ sheet_catalog | tojson }};</script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/icrpg_sheet.js') }}"></script>

@@ -941,6 +941,9 @@ class ICRPGCharacterSheet(db.Model):
     # Coin
     coin            = db.Column(db.Integer, default=0)
 
+    # Permission toggle — when True, the owning player can adjust base stats/efforts
+    allow_player_edit = db.Column(db.Boolean, default=False)
+
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
