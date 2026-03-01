@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from app import db
-from app.models import AdventureSite, Session, Tag, get_or_create_tags
+from app.models import AdventureSite, Session, Tag, get_or_create_tags, Campaign
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 adventure_sites_bp = Blueprint('adventure_sites', __name__)
@@ -99,10 +99,12 @@ def create_site():
 @adventure_sites_bp.route('/sites/<int:site_id>')
 @login_required
 def site_detail(site_id):
+    from app.ai_provider import is_ai_enabled
     campaign_id = get_active_campaign_id()
     site = AdventureSite.query.filter_by(id=site_id, campaign_id=campaign_id).first_or_404()
     mentions = resolve_mentions_for_target('site', site_id)
-    return render_template('adventure_sites/detail.html', site=site, mentions=mentions)
+    return render_template('adventure_sites/detail.html', site=site, mentions=mentions,
+                           ai_enabled=is_ai_enabled())
 
 
 @adventure_sites_bp.route('/sites/<int:site_id>/edit', methods=['GET', 'POST'])
@@ -162,3 +164,53 @@ def delete_site(site_id):
     db.session.commit()
     flash(f'Adventure Site "{name}" deleted.', 'success')
     return redirect(url_for('adventure_sites.list_sites'))
+
+
+@adventure_sites_bp.route('/sites/<int:site_id>/suggest-milestones', methods=['POST'])
+@login_required
+def suggest_milestones(site_id):
+    """Generate milestone suggestions from the adventure site's content."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Check Settings.'}), 403
+
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    site = AdventureSite.query.filter_by(id=site_id, campaign_id=campaign_id).first()
+    if not site:
+        return jsonify({'error': 'Adventure Site not found.'}), 404
+
+    if not site.content:
+        return jsonify({'error': 'This site has no content yet. Add some content first.'}), 400
+
+    campaign = Campaign.query.get(campaign_id)
+
+    context_parts = [f'Adventure Site: {site.name}']
+    if site.subtitle:
+        context_parts.append(f'Subtitle: {site.subtitle}')
+    if site.status:
+        context_parts.append(f'Status: {site.status}')
+    context_parts.append(f'\nSite content:\n{site.content[:4000]}')
+
+    system_prompt = (
+        'You are a tabletop RPG adventure designer. '
+        'Based on the adventure site content provided, suggest 5-7 key milestones or story beats '
+        'that could be tracked as progress checkpoints for this adventure. '
+        'Each milestone should represent a meaningful moment of completion or achievement — '
+        'clearing an area, defeating a boss, finding a key item, triggering a plot revelation, etc. '
+        'Format as a Markdown bullet list. Each milestone is one line, starting with a verb.'
+    )
+    if campaign and campaign.ai_world_context:
+        system_prompt += f'\n\nWorld context: {campaign.ai_world_context}'
+
+    messages = [{'role': 'user', 'content': '\n\n'.join(context_parts)}]
+
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=512,
+                           provider=get_feature_provider('generate'))
+        return jsonify({'milestones': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502

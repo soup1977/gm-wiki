@@ -178,6 +178,13 @@
         <i class="bi bi-journal-text fs-5 d-block mb-1"></i>
         Session Notes
     </a>
+    {% if ai_enabled %}
+    <button type="button" class="btn btn-lg btn-outline-warning flex-fill" style="min-width:180px;"
+            data-bs-toggle="modal" data-bs-target="#hazardFlavorModal">
+        <i class="bi bi-exclamation-triangle fs-5 d-block mb-1"></i>
+        Quick Hazard
+    </button>
+    {% endif %}
 </div>
 
 {# ── Encounters panel ─────────────────────────────────────────────────────── #}
@@ -185,9 +192,17 @@
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="mb-0"><i class="bi bi-map me-1"></i> Encounters</h5>
-        <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-plus-circle me-1"></i> New
-        </a>
+        <div class="d-flex gap-2">
+            {% if ai_enabled %}
+            <button type="button" class="btn btn-sm btn-outline-warning"
+                    data-bs-toggle="modal" data-bs-target="#improvEncounterModal">
+                <i class="bi bi-lightning me-1"></i> Improv
+            </button>
+            {% endif %}
+            <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-plus-circle me-1"></i> New
+            </a>
+        </div>
     </div>
     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
         {% for enc in session_encounters %}
@@ -236,9 +251,17 @@
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="mb-0 text-muted"><i class="bi bi-map me-1"></i> Encounters</h5>
-        <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-plus-circle me-1"></i> Plan Encounter
-        </a>
+        <div class="d-flex gap-2">
+            {% if ai_enabled %}
+            <button type="button" class="btn btn-sm btn-outline-warning"
+                    data-bs-toggle="modal" data-bs-target="#improvEncounterModal">
+                <i class="bi bi-lightning me-1"></i> Improv
+            </button>
+            {% endif %}
+            <a href="{{ url_for('encounters.create_encounter') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-plus-circle me-1"></i> Plan Encounter
+            </a>
+        </div>
     </div>
     <p class="text-muted small">No encounters planned for this session. Link encounters to this session during prep.</p>
 </div>
@@ -555,6 +578,154 @@
     </div>
 </div>
 <script src="{{ url_for('static', filename='js/npc_chat.js') }}"></script>
+{% endif %}
+
+{# ── Hazard Flavor modal ──────────────────────────────────────────────────── #}
+{% if ai_enabled and game_session %}
+<input type="hidden" id="dashboard-csrf" value="{{ csrf_token() }}">
+
+<div class="modal fade" id="hazardFlavorModal" tabindex="-1" aria-labelledby="hazardFlavorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="hazardFlavorModalLabel">
+                    <i class="bi bi-exclamation-triangle me-1 text-warning"></i> Quick Hazard Flavor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label for="hazard-input" class="form-label text-muted small">Describe the hazard briefly:</label>
+                <input type="text" id="hazard-input"
+                       class="form-control bg-dark text-light border-secondary mb-3"
+                       placeholder="e.g. cave-in, fire trap, poisonous gas...">
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" id="hazard-generate-btn" class="btn btn-warning"
+                            onclick="generateHazardFlavor()">
+                        <i class="bi bi-stars me-1"></i> Generate Flavor
+                    </button>
+                    <span id="hazard-spinner" class="spinner-border spinner-border-sm text-warning d-none" role="status"></span>
+                </div>
+                <div id="hazard-error" class="alert alert-danger mt-3 d-none"></div>
+                <div id="hazard-result" class="mt-3 d-none">
+                    <label class="form-label text-muted small">Read aloud:</label>
+                    <div id="hazard-result-text"
+                         class="bg-black border border-secondary rounded p-3 text-light small"
+                         style="white-space: pre-wrap;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Improv Encounter modal ───────────────────────────────────────────────── #}
+<div class="modal fade" id="improvEncounterModal" tabindex="-1" aria-labelledby="improvEncounterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="improvEncounterModalLabel">
+                    <i class="bi bi-lightning me-1 text-warning"></i> Improv Encounter
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Location: <strong class="text-light">{{ game_session.active_location.name if game_session.active_location else 'Not set' }}</strong>
+                    &nbsp;·&nbsp;
+                    Party: <strong class="text-light">{{ game_session.attending_pcs | length }} PC{{ 's' if game_session.attending_pcs | length != 1 }}</strong>
+                </p>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <button type="button" id="improv-generate-btn" class="btn btn-warning"
+                            onclick="generateImprovEncounter()">
+                        <i class="bi bi-lightning me-1"></i> Generate Encounter
+                    </button>
+                    <span id="improv-spinner" class="spinner-border spinner-border-sm text-warning d-none" role="status"></span>
+                </div>
+                <div id="improv-error" class="alert alert-danger d-none"></div>
+                <div id="improv-result" class="d-none">
+                    <div id="improv-result-text" class="text-light small"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+(function () {
+    const _csrf = document.getElementById('dashboard-csrf').value;
+
+    window.generateHazardFlavor = function () {
+        const hazard = document.getElementById('hazard-input').value.trim();
+        if (!hazard) return;
+        const btn     = document.getElementById('hazard-generate-btn');
+        const spinner = document.getElementById('hazard-spinner');
+        const errorEl = document.getElementById('hazard-error');
+        const resultEl = document.getElementById('hazard-result');
+        const resultText = document.getElementById('hazard-result-text');
+
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+        errorEl.classList.add('d-none');
+        resultEl.classList.add('d-none');
+
+        fetch('/session-mode/hazard-flavor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrf },
+            body: JSON.stringify({ hazard: hazard })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) { throw new Error(data.error); }
+            resultText.textContent = data.flavor;
+            resultEl.classList.remove('d-none');
+        })
+        .catch(function (err) {
+            errorEl.textContent = err.message;
+            errorEl.classList.remove('d-none');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+        });
+    };
+
+    window.generateImprovEncounter = function () {
+        const btn      = document.getElementById('improv-generate-btn');
+        const spinner  = document.getElementById('improv-spinner');
+        const errorEl  = document.getElementById('improv-error');
+        const resultEl = document.getElementById('improv-result');
+        const resultText = document.getElementById('improv-result-text');
+
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+        errorEl.classList.add('d-none');
+        resultEl.classList.add('d-none');
+
+        fetch('/session-mode/improv-encounter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrf },
+            body: JSON.stringify({
+                location_id: {{ game_session.active_location_id | tojson }},
+                party_size:  {{ game_session.attending_pcs | length }}
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) { throw new Error(data.error); }
+            resultText.innerHTML = marked.parse(data.encounter);
+            resultEl.classList.remove('d-none');
+        })
+        .catch(function (err) {
+            errorEl.textContent = err.message;
+            errorEl.classList.remove('d-none');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+        });
+    };
+})();
+</script>
 {% endif %}
 
 {% if game_session %}

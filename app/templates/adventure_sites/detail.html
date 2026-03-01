@@ -134,6 +134,24 @@
             </div>
             {% endif %}
 
+            {% if ai_enabled %}
+            <!-- Milestones card -->
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <span class="small fw-bold text-muted text-uppercase">
+                        <i class="bi bi-check2-square me-1"></i> Milestones
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-info py-0 px-2"
+                            id="suggest-milestones-btn" onclick="suggestMilestones()">
+                        <i class="bi bi-stars"></i> Suggest
+                    </button>
+                </div>
+                <div class="card-body py-2 px-3 d-none" id="milestones-result">
+                    <div id="milestones-content" class="small text-light"></div>
+                </div>
+            </div>
+            {% endif %}
+
         </div><!-- sticky-top -->
     </div><!-- sidebar col -->
 
@@ -278,4 +296,41 @@
 .toc-link:hover { background: rgba(255,255,255,0.07); }
 #site-content h2, #site-content h3 { scroll-margin-top: 80px; }
 </style>
+
+{% if ai_enabled %}
+<input type="hidden" id="site-csrf" value="{{ csrf_token() }}">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+function suggestMilestones() {
+    const btn     = document.getElementById('suggest-milestones-btn');
+    const result  = document.getElementById('milestones-result');
+    const content = document.getElementById('milestones-content');
+    const _csrf   = document.getElementById('site-csrf').value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    result.classList.add('d-none');
+
+    fetch('/sites/{{ site.id }}/suggest-milestones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _csrf },
+        body: '{}'
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (data.error) { throw new Error(data.error); }
+        content.innerHTML = marked.parse(data.milestones);
+        result.classList.remove('d-none');
+    })
+    .catch(function (err) {
+        content.innerHTML = '<span class="text-danger">' + err.message + '</span>';
+        result.classList.remove('d-none');
+    })
+    .finally(function () {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars"></i> Suggest';
+    });
+}
+</script>
+{% endif %}
 {% endblock %}
