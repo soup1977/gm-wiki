@@ -33,6 +33,38 @@
 
 <hr class="border-secondary mb-4">
 
+<!-- Campaign Stats Summary -->
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-body py-3">
+        <div class="row text-center g-3">
+            <div class="col-4 col-md-2">
+                <div class="fs-3 fw-bold text-light">{{ stats.sessions }}</div>
+                <div class="text-muted small">Sessions</div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="fs-3 fw-bold text-light">{{ stats.npcs }}</div>
+                <div class="text-muted small">NPCs</div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="fs-3 fw-bold text-light">{{ stats.locations }}</div>
+                <div class="text-muted small">Locations</div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="fs-3 fw-bold text-light">{{ stats.quests_active }}<span class="fs-6 text-muted">/{{ stats.quests_total }}</span></div>
+                <div class="text-muted small">Active Quests</div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="fs-3 fw-bold text-light">{{ stats.item_count }}</div>
+                <div class="text-muted small">Items</div>
+            </div>
+            <div class="col-4 col-md-2">
+                <div class="fs-3 fw-bold text-light">{{ stats.sites_completed }}<span class="fs-6 text-muted">/{{ stats.sites_total }}</span></div>
+                <div class="text-muted small">Sites Done</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Entity summary grid -->
 <div class="row g-3">
 
@@ -54,12 +86,7 @@
                     {% for site in campaign.adventure_sites | sort(attribute='sort_order') %}
                     <div class="col-md-4">
                         <div class="d-flex align-items-start gap-2">
-                            <span class="badge mt-1 flex-shrink-0
-                                {% if site.status == 'Active' %}bg-success
-                                {% elif site.status == 'Completed' %}bg-secondary
-                                {% else %}bg-warning text-dark{% endif %}">
-                                {{ site.status }}
-                            </span>
+                            <span class="status-badge mt-1 flex-shrink-0" data-status="{{ site.status }}">{{ site.status }}</span>
                             <div>
                                 <a href="{{ url_for('adventure_sites.site_detail', site_id=site.id) }}" class="fw-semibold text-decoration-none">{{ site.name }}</a>
                                 {% if site.subtitle %}

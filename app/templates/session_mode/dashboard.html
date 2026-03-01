@@ -258,12 +258,21 @@
                 {% if session_quests %}
                 <ul class="list-group list-group-flush">
                     {% for quest in session_quests %}
-                    <li class="list-group-item bg-dark border-secondary py-2">
-                        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}?from=session"
-                           class="text-decoration-none text-light fw-bold">{{ quest.name }}</a>
-                        {% if quest.hook %}
-                        <div class="text-muted small mt-1">{{ quest.hook | truncate(70) }}</div>
-                        {% endif %}
+                    <li class="list-group-item bg-dark border-secondary py-2 d-flex justify-content-between align-items-start">
+                        <div>
+                            <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}?from=session"
+                               class="text-decoration-none text-light fw-bold">{{ quest.name }}</a>
+                            {% if quest.hook %}
+                            <div class="text-muted small mt-1">{{ quest.hook | truncate(70) }}</div>
+                            {% endif %}
+                        </div>
+                        <button type="button"
+                                class="btn btn-sm py-0 px-1 ms-2 wiki-vis-toggle flex-shrink-0
+                                       {% if quest.is_player_visible %}btn-outline-success{% else %}btn-outline-secondary{% endif %}"
+                                title="{% if quest.is_player_visible %}Visible to players{% else %}Hidden from players{% endif %}"
+                                data-entity-type="quest" data-entity-id="{{ quest.id }}">
+                            <i class="bi {% if quest.is_player_visible %}bi-eye{% else %}bi-eye-slash{% endif %}"></i>
+                        </button>
                     </li>
                     {% endfor %}
                 </ul>
@@ -419,6 +428,13 @@
                     <i class="bi bi-chat-quote"></i>
                 </button>
                 {% endif %}
+                <button type="button"
+                        class="btn btn-sm py-0 px-1 ms-1 wiki-vis-toggle
+                               {% if npc.is_player_visible %}btn-outline-success{% else %}btn-outline-secondary{% endif %}"
+                        title="{% if npc.is_player_visible %}Visible to players{% else %}Hidden from players{% endif %}"
+                        data-entity-type="npc" data-entity-id="{{ npc.id }}">
+                    <i class="bi {% if npc.is_player_visible %}bi-eye{% else %}bi-eye-slash{% endif %}"></i>
+                </button>
             </div>
             {% endfor %}
         </div>
@@ -539,6 +555,60 @@
     </div>
 </div>
 <script src="{{ url_for('static', filename='js/npc_chat.js') }}"></script>
+{% endif %}
+
+{% if game_session %}
+<script>
+(function() {
+    'use strict';
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    document.querySelectorAll('.wiki-vis-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var type = btn.dataset.entityType;
+            var id = parseInt(btn.dataset.entityId);
+            var icon = btn.querySelector('i');
+
+            btn.disabled = true;
+
+            fetch('/session-mode/toggle-visibility', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ type: type, id: id }),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    console.error(data.error);
+                    return;
+                }
+                if (data.visible) {
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-outline-success');
+                    btn.title = 'Visible to players';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                } else {
+                    btn.classList.remove('btn-outline-success');
+                    btn.classList.add('btn-outline-secondary');
+                    btn.title = 'Hidden from players';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                }
+            })
+            .catch(function() {
+                console.error('Toggle request failed.');
+            })
+            .finally(function() {
+                btn.disabled = false;
+            });
+        });
+    });
+})();
+</script>
 {% endif %}
 
 {% endblock %}

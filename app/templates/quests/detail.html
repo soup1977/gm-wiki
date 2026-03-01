@@ -22,15 +22,7 @@
             Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=quest.campaign.id) }}">{{ quest.campaign.name }}</a>
         </p>
         <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
-            {% if quest.status == 'active' %}
-                <span class="badge bg-success fs-6">Active</span>
-            {% elif quest.status == 'completed' %}
-                <span class="badge bg-primary fs-6">Completed</span>
-            {% elif quest.status == 'failed' %}
-                <span class="badge bg-danger fs-6">Failed</span>
-            {% elif quest.status == 'on_hold' %}
-                <span class="badge bg-warning text-dark fs-6">On Hold</span>
-            {% endif %}
+            <span class="status-badge fs-6" data-status="{{ quest.status }}">{{ quest.status | replace('_', ' ') | title }}</span>
             {% if quest.faction %}
             <a href="{{ url_for('factions.faction_detail', faction_id=quest.faction.id) }}"
                class="badge bg-secondary text-decoration-none fs-6">

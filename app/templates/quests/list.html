@@ -61,17 +61,7 @@
         <tr>
             <td><a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a></td>
             <td>
-                {% if quest.status == 'active' %}
-                    <span class="badge bg-success">Active</span>
-                {% elif quest.status == 'completed' %}
-                    <span class="badge bg-primary">Completed</span>
-                {% elif quest.status == 'failed' %}
-                    <span class="badge bg-danger">Failed</span>
-                {% elif quest.status == 'on_hold' %}
-                    <span class="badge bg-warning text-dark">On Hold</span>
-                {% else %}
-                    <span class="badge bg-secondary">{{ quest.status }}</span>
-                {% endif %}
+                <span class="status-badge" data-status="{{ quest.status }}">{{ quest.status | replace('_', ' ') | title }}</span>
             </td>
             <td class="text-end">
                 <form method="POST" action="{{ url_for('quests.delete_quest', quest_id=quest.id) }}"
