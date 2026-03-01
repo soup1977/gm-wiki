@@ -980,10 +980,11 @@ def propose_arc_entities():
 
 # Maps entity_type → (model class, valid schema fields, detail URL pattern)
 _GENESIS_ENTITY_CONFIG = {
-    'npc':      ('NPC',      ['name','role','status','faction','physical_description','personality','secrets','notes'],     '/npcs/{id}'),
-    'location': ('Location', ['name','type','description','gm_notes','notes'],                                              '/locations/{id}'),
-    'quest':    ('Quest',    ['name','status','hook','description','outcome','gm_notes'],                                   '/quests/{id}'),
-    'item':     ('Item',     ['name','type','rarity','description','gm_notes'],                                             '/items/{id}'),
+    'npc':       ('NPC',       ['name','role','status','faction','physical_description','personality','secrets','notes'],     '/npcs/{id}'),
+    'location':  ('Location',  ['name','type','description','gm_notes','notes'],                                              '/locations/{id}'),
+    'quest':     ('Quest',     ['name','status','hook','description','outcome','gm_notes'],                                   '/quests/{id}'),
+    'item':      ('Item',      ['name','type','rarity','description','gm_notes'],                                             '/items/{id}'),
+    'encounter': ('Encounter', ['name','encounter_type','description','gm_notes'],                                            '/encounters/{id}'),
 }
 
 
