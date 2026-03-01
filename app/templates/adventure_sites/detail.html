@@ -233,6 +233,144 @@
 </div>
 {% endif %}
 
+{% set has_arc_entities = arc_npcs or arc_locations or arc_quests or arc_items %}
+{% if has_arc_entities %}
+<div class="mt-4 border-top border-secondary pt-3">
+    <div class="d-flex align-items-start justify-content-between mb-3">
+        <div>
+            <h6 class="text-muted small mb-1">
+                <i class="bi bi-diagram-3-fill me-1"></i>Linked Entities
+            </h6>
+            <p class="text-muted mb-0" style="font-size: 0.78rem;">
+                These NPCs, locations, quests, and items were created for this arc.
+                When you use <strong>Generate Entry</strong> or <strong>Smart Fill</strong> on any of them,
+                the AI automatically includes this arc's premise and title as context — so generated content stays coherent with the story.
+            </p>
+        </div>
+    </div>
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs nav-tabs-sm mb-3" id="arcEntityTabs" role="tablist">
+        {% if arc_npcs %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if arc_npcs %}active{% endif %} small" id="tab-npcs"
+                    data-bs-toggle="tab" data-bs-target="#arc-npcs" type="button">
+                <i class="bi bi-person-fill text-info me-1"></i>NPCs
+                <span class="badge bg-secondary">{{ arc_npcs|length }}</span>
+            </button>
+        </li>
+        {% endif %}
+        {% if arc_locations %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if not arc_npcs and arc_locations %}active{% endif %} small" id="tab-locations"
+                    data-bs-toggle="tab" data-bs-target="#arc-locations" type="button">
+                <i class="bi bi-geo-alt-fill text-success me-1"></i>Locations
+                <span class="badge bg-secondary">{{ arc_locations|length }}</span>
+            </button>
+        </li>
+        {% endif %}
+        {% if arc_quests %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if not arc_npcs and not arc_locations and arc_quests %}active{% endif %} small" id="tab-quests"
+                    data-bs-toggle="tab" data-bs-target="#arc-quests" type="button">
+                <i class="bi bi-map-fill text-warning me-1"></i>Quests
+                <span class="badge bg-secondary">{{ arc_quests|length }}</span>
+            </button>
+        </li>
+        {% endif %}
+        {% if arc_items %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if not arc_npcs and not arc_locations and not arc_quests and arc_items %}active{% endif %} small" id="tab-items"
+                    data-bs-toggle="tab" data-bs-target="#arc-items" type="button">
+                <i class="bi bi-gem text-secondary me-1"></i>Items
+                <span class="badge bg-secondary">{{ arc_items|length }}</span>
+            </button>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content" id="arcEntityTabContent">
+        {% if arc_npcs %}
+        <div class="tab-pane fade show {% if arc_npcs %}active{% endif %}" id="arc-npcs" role="tabpanel">
+            <div class="list-group list-group-flush">
+                {% for npc in arc_npcs %}
+                <a href="{{ url_for('npcs.view_npc', npc_id=npc.id) }}"
+                   class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
+                    <span>
+                        <i class="bi bi-person-fill text-info me-2"></i>{{ npc.name }}
+                        {% if npc.role %}<span class="text-muted small ms-2">{{ npc.role }}</span>{% endif %}
+                    </span>
+                    <span class="badge
+                        {% if npc.status == 'alive' %}bg-success
+                        {% elif npc.status == 'dead' %}bg-danger
+                        {% elif npc.status == 'missing' %}bg-warning text-dark
+                        {% else %}bg-secondary{% endif %}">
+                        {{ npc.status or 'unknown' }}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if arc_locations %}
+        <div class="tab-pane fade {% if not arc_npcs %}show active{% endif %}" id="arc-locations" role="tabpanel">
+            <div class="list-group list-group-flush">
+                {% for loc in arc_locations %}
+                <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}"
+                   class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
+                    <span>
+                        <i class="bi bi-geo-alt-fill text-success me-2"></i>{{ loc.name }}
+                        {% if loc.type %}<span class="text-muted small ms-2">{{ loc.type }}</span>{% endif %}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if arc_quests %}
+        <div class="tab-pane fade {% if not arc_npcs and not arc_locations %}show active{% endif %}" id="arc-quests" role="tabpanel">
+            <div class="list-group list-group-flush">
+                {% for quest in arc_quests %}
+                <a href="{{ url_for('quests.view_quest', quest_id=quest.id) }}"
+                   class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
+                    <span>
+                        <i class="bi bi-map-fill text-warning me-2"></i>{{ quest.name }}
+                    </span>
+                    <span class="badge
+                        {% if quest.status == 'active' %}bg-success
+                        {% elif quest.status == 'completed' %}bg-primary
+                        {% elif quest.status == 'failed' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ quest.status or 'active' }}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if arc_items %}
+        <div class="tab-pane fade {% if not arc_npcs and not arc_locations and not arc_quests %}show active{% endif %}" id="arc-items" role="tabpanel">
+            <div class="list-group list-group-flush">
+                {% for item in arc_items %}
+                <a href="{{ url_for('items.view_item', item_id=item.id) }}"
+                   class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex align-items-center justify-content-between py-2">
+                    <span>
+                        <i class="bi bi-gem text-secondary me-2"></i>{{ item.name }}
+                        {% if item.type %}<span class="text-muted small ms-2">{{ item.type }}</span>{% endif %}
+                    </span>
+                    {% if item.rarity %}
+                    <span class="badge bg-secondary">{{ item.rarity }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <!-- JS: ToC generation + Run State persistence -->
 <script>
 (function() {

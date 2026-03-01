@@ -14,15 +14,30 @@
     </ol>
 </nav>
 
-<div class="d-flex align-items-center gap-3 mb-4">
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
     <h2 class="mb-0">{% if quest %}Edit Quest{% else %}New Quest{% endif %}</h2>
     {% if ai_enabled %}
     <button type="button" class="btn btn-outline-primary btn-sm"
             data-bs-toggle="modal" data-bs-target="#smartFillModal">
         <i class="bi bi-stars"></i> Smart Fill
     </button>
+    {% if quest and quest.story_arc %}
+    <span class="badge bg-warning text-dark ms-1">
+        <i class="bi bi-map-fill me-1"></i>
+        <a href="{{ url_for('adventure_sites.site_detail', site_id=quest.story_arc.id) }}"
+           class="text-dark text-decoration-none">{{ quest.story_arc.name }}</a>
+    </span>
+    {% endif %}
     {% endif %}
 </div>
+{% if quest and quest.story_arc %}
+<p class="text-muted small mb-3">
+    <i class="bi bi-stars text-warning me-1"></i>
+    <strong>Arc-aware AI:</strong> Smart Fill will include the
+    <a href="{{ url_for('adventure_sites.site_detail', site_id=quest.story_arc.id) }}">{{ quest.story_arc.name }}</a>
+    arc's premise as context, keeping generated content coherent with the story.
+</p>
+{% endif %}
 
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -175,6 +190,9 @@
 </form>
 {% if ai_enabled %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'quest';</script>
+{% if quest and quest.story_arc_id %}
+<script>window.AI_STORY_ARC_ID = {{ quest.story_arc_id }};</script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
 {% endif %}
 {% endblock %}
