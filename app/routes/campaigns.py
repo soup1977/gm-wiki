@@ -304,6 +304,13 @@ def delete_campaign(campaign_id):
         loc.connected_locations = []
         db.session.delete(loc)
 
+    # Adventure sites — NPCs/Locations/Quests/Items that referenced them are
+    # already deleted above, so story_arc_id FKs are gone. Sessions and their
+    # adventure_site_session links were cleared in the sessions loop.
+    for site in list(campaign.adventure_sites):
+        site.tags = []
+        db.session.delete(site)
+
     # Tags — association rows (npc_tags, etc.) were cleared when entities were deleted.
     for tag in list(campaign.tags):
         db.session.delete(tag)
