@@ -61,9 +61,10 @@ def index():
 
     allow_signup = AppSetting.get('allow_signup', 'true') == 'true'
 
-    # Load editable AI prompts (empty string = use default)
+    # Load editable AI prompts — show stored override, or built-in default if none saved
+    from app.routes.ai import DEFAULT_PROMPTS
     ai_prompts = {
-        key: AppSetting.get(f'ai_prompt_{key}', '')
+        key: AppSetting.get(f'ai_prompt_{key}') or DEFAULT_PROMPTS[key]
         for key in ('smart_fill', 'generate', 'brainstorm_arcs',
                     'site_ideas', 'session_prep', 'draft_summary')
     }
