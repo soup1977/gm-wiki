@@ -85,7 +85,12 @@ ENTITY_SCHEMAS = {
             'name':     'Name of the adventure site',
             'subtitle': 'A one-line tagline or description (e.g. "Flooded temple of a forgotten god")',
             'status':   'One of: Planned, Active, Completed',
-            'content':  'Full Markdown content for the site — use ## headings for zones/areas, include encounters, traps, loot, NPCs',
+            'content':  (
+                'A focused Markdown overview of this story arc. '
+                'Include: 2-3 key scenes or beats, the central conflict, major NPCs involved, '
+                'a climax moment, and 2 possible outcomes. '
+                'Use ## for section headings. Aim for 300-500 words — focused, not exhaustive.'
+            ),
         },
     },
     'bestiary': {
@@ -100,6 +105,139 @@ ENTITY_SCHEMAS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Default AI prompts and editable prompt system
+# ---------------------------------------------------------------------------
+
+# These are the hardcoded defaults for all 6 AI prompts.
+# Each prompt may contain {placeholder} tokens that get substituted at call time.
+# Placeholders used:
+#   {entity_type}   — entity type name in uppercase (smart_fill, generate)
+#   {field_lines}   — field schema listing (smart_fill, generate)
+#   {world_section} — world context block or empty string (generate, site_ideas, session_prep, draft_summary)
+#
+# GMs can override any prompt from Settings → AI Prompts.
+# An empty override falls back to the hardcoded default.
+
+DEFAULT_PROMPTS = {
+    'smart_fill': """\
+You are a helpful assistant for a tabletop RPG Game Master.
+Your job is to read raw GM notes and extract structured data from them.
+
+Extract the following fields for a {entity_type}:
+{field_lines}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Use null for any field you cannot confidently determine from the text.
+- For fields with specific allowed values (like status or rarity), only use those values.
+- Do not invent information that isn't in the text.
+- Keep field values as plain text (no Markdown formatting unless it's notes/description).
+""",
+
+    'generate': """\
+You are a creative assistant for a tabletop RPG Game Master.
+Your job is to invent a complete, detailed {entity_type} based on a short concept or idea.
+{world_section}
+Fill in ALL of the following fields:
+{field_lines}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Be creative and detailed — flesh out every field with interesting, usable content.
+- For fields with specific allowed values (like status or rarity), only use those values.
+- Descriptions, notes, and personality fields should be 2-4 sentences minimum.
+- Secrets and GM notes should contain plot hooks, hidden motivations, or things the players don't know.
+- Keep the tone consistent with the campaign world context above, or dark/epic fantasy if none is provided.
+- The result should be immediately usable in a game session with no editing needed.
+""",
+
+    'brainstorm_arcs': """\
+You are a creative assistant for a tabletop RPG Game Master.
+Your job is to brainstorm 3-5 story arc ideas based on the campaign context provided.
+
+Each arc should:
+- Build on existing NPCs, factions, locations, and quests when possible
+- Be compelling, dramatic, and full of conflict
+- Feel like a natural extension of what is already happening in the campaign
+- Be different from each other -- offer variety in tone and scope
+
+Return a JSON object with an "arcs" array. Each arc has:
+  "title": Short, evocative arc name
+  "hook": How the arc begins -- the inciting incident (1-2 sentences)
+  "stakes": What is at risk if the players fail (1-2 sentences)
+  "key_npcs": Comma-separated names of NPCs involved (existing or suggested new ones)
+  "estimated_sessions": Rough number of sessions (e.g. "2-3" or "4-6")
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Match the tone and setting of the campaign world context.
+""",
+
+    'site_ideas': """\
+You are a creative assistant for a tabletop RPG Game Master.
+Your job is to suggest 4-6 new areas, rooms, or encounters for an adventure site.
+{world_section}
+Rules:
+- Each idea should fit naturally with the existing content tone and setting.
+- Offer variety -- mix combat encounters, puzzles, social interactions, exploration, and environmental hazards.
+- Each idea should be a self-contained section a GM can drop into their adventure.
+- Do NOT repeat areas that already exist in the content.
+
+Return a JSON object with an "ideas" array. Each idea has:
+  "heading": A short section heading (e.g. "The Flooded Archive")
+  "description": 2-4 sentences describing the area -- what is there, what happens, what players find
+
+Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+""",
+
+    'session_prep': """\
+You are a GM prep assistant for a tabletop RPG.
+Your job is to write concise, actionable session prep notes a GM can reference during play.
+{world_section}
+The prep notes should include (as applicable):
+- **Recap** -- 2-3 bullet points summarizing what happened last session
+- **Key NPCs** -- Who might appear, their current motivations, what they want
+- **Scenes and Encounters** -- Planned scenes based on the adventure site content
+- **Open Threads** -- Active quests and loose ends to weave in
+- **Decision Points** -- Moments where players might choose different paths
+- **Sensory Details** -- A few evocative details to set the mood
+
+Format as Markdown. Be concise. Use bullet points and bold headings.
+
+Return a JSON object: {"prep_notes": "markdown string..."}
+Return ONLY a valid JSON object. No explanation, no code fences.""",
+
+    'draft_summary': """\
+You are a session recap writer for a tabletop RPG.
+Your job is to turn raw GM notes into a polished narrative summary suitable for players to read.
+{world_section}
+Guidelines:
+- Write 2-4 paragraphs in narrative style, past tense
+- Mention key NPCs, locations, and quest developments by name
+- Write from a neutral narrator perspective
+- Include dramatic moments and key decisions
+- Do NOT include GM-only secrets or meta-game information
+- Keep it concise -- this is a recap, not a novel chapter
+
+Return a JSON object: {"summary": "markdown string..."}
+Return ONLY a valid JSON object. No explanation, no code fences.""",
+}
+
+
+def _get_system_prompt(key, **subs):
+    """Return the system prompt for key, reading from AppSetting with fallback to DEFAULT_PROMPTS.
+
+    Substitutes {placeholder} tokens in the template using the provided kwargs.
+    An empty AppSetting value falls back to the hardcoded default.
+    """
+    from app.models import AppSetting
+    template = AppSetting.get(f'ai_prompt_{key}') or DEFAULT_PROMPTS[key]
+    for placeholder, value in subs.items():
+        template = template.replace('{' + placeholder + '}', value or '')
+    return template
+
+
 def _build_prompt(entity_type, text):
     """Build the system prompt and messages list for a Smart Fill extraction."""
     schema = ENTITY_SCHEMAS.get(entity_type)
@@ -111,19 +249,10 @@ def _build_prompt(entity_type, text):
         for k, v in schema['fields'].items()
     )
 
-    system_prompt = f"""You are a helpful assistant for a tabletop RPG Game Master.
-Your job is to read raw GM notes and extract structured data from them.
-
-Extract the following fields for a {entity_type.upper()}:
-{field_lines}
-
-Rules:
-- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
-- Use null for any field you cannot confidently determine from the text.
-- For fields with specific allowed values (like status or rarity), only use those values.
-- Do not invent information that isn't in the text.
-- Keep field values as plain text (no Markdown formatting unless it's notes/description).
-"""
+    system_prompt = _get_system_prompt('smart_fill',
+        entity_type=entity_type.upper(),
+        field_lines=field_lines,
+    )
 
     messages = [
         {'role': 'user', 'content': f"Extract {entity_type} data from these notes:\n\n{text}"}
@@ -192,26 +321,15 @@ def _build_generate_prompt(entity_type, concept, world_context=None):
     # If the campaign has world context, inject it so AI output matches the setting
     world_section = ''
     if world_context:
-        world_section = f"""
-Campaign world context (use this to inform tone, setting, and details):
-{world_context}
-"""
+        world_section = (
+            f"\nCampaign world context (use this to inform tone, setting, and details):\n{world_context}\n"
+        )
 
-    system_prompt = f"""You are a creative assistant for a tabletop RPG Game Master.
-Your job is to invent a complete, detailed {entity_type.upper()} based on a short concept or idea.
-{world_section}
-Fill in ALL of the following fields:
-{field_lines}
-
-Rules:
-- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
-- Be creative and detailed — flesh out every field with interesting, usable content.
-- For fields with specific allowed values (like status or rarity), only use those values.
-- Descriptions, notes, and personality fields should be 2-4 sentences minimum.
-- Secrets and GM notes should contain plot hooks, hidden motivations, or things the players don't know.
-- Keep the tone consistent with the campaign world context above, or dark/epic fantasy if none is provided.
-- The result should be immediately usable in a game session with no editing needed.
-"""
+    system_prompt = _get_system_prompt('generate',
+        entity_type=entity_type.upper(),
+        field_lines=field_lines,
+        world_section=world_section,
+    )
 
     messages = [
         {'role': 'user', 'content': f"Create a {entity_type} based on this concept:\n\n{concept}"}
@@ -420,26 +538,7 @@ def brainstorm_arcs():
     if sites:
         context_parts.append(f"Existing adventure sites: {', '.join(sites)}")
 
-    system_prompt = """You are a creative assistant for a tabletop RPG Game Master.
-Your job is to brainstorm 3-5 story arc ideas based on the campaign context provided.
-
-Each arc should:
-- Build on existing NPCs, factions, locations, and quests when possible
-- Be compelling, dramatic, and full of conflict
-- Feel like a natural extension of what is already happening in the campaign
-- Be different from each other -- offer variety in tone and scope
-
-Return a JSON object with an "arcs" array. Each arc has:
-  "title": Short, evocative arc name
-  "hook": How the arc begins -- the inciting incident (1-2 sentences)
-  "stakes": What is at risk if the players fail (1-2 sentences)
-  "key_npcs": Comma-separated names of NPCs involved (existing or suggested new ones)
-  "estimated_sessions": Rough number of sessions (e.g. "2-3" or "4-6")
-
-Rules:
-- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
-- Match the tone and setting of the campaign world context.
-"""
+    system_prompt = _get_system_prompt('brainstorm_arcs')
 
     messages = [
         {'role': 'user', 'content': "Brainstorm story arc ideas for this campaign:\n\n" + '\n'.join(context_parts)}
@@ -483,21 +582,7 @@ def site_ideas():
     world_context = _get_active_world_context()
     world_section = f"\nCampaign world context:\n{world_context}\n" if world_context else ''
 
-    system_prompt = f"""You are a creative assistant for a tabletop RPG Game Master.
-Your job is to suggest 4-6 new areas, rooms, or encounters for an adventure site.
-{world_section}
-Rules:
-- Each idea should fit naturally with the existing content tone and setting.
-- Offer variety -- mix combat encounters, puzzles, social interactions, exploration, and environmental hazards.
-- Each idea should be a self-contained section a GM can drop into their adventure.
-- Do NOT repeat areas that already exist in the content.
-
-Return a JSON object with an "ideas" array. Each idea has:
-  "heading": A short section heading (e.g. "The Flooded Archive")
-  "description": 2-4 sentences describing the area -- what is there, what happens, what players find
-
-Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
-"""
+    system_prompt = _get_system_prompt('site_ideas', world_section=world_section)
 
     user_content = f"Adventure site: {site_name}\n\n"
     if content:
@@ -569,21 +654,7 @@ def session_prep():
     world_context = _get_active_world_context()
     world_section = f"\nCampaign world context:\n{world_context}\n" if world_context else ''
 
-    system_prompt = f"""You are a GM prep assistant for a tabletop RPG.
-Your job is to write concise, actionable session prep notes a GM can reference during play.
-{world_section}
-The prep notes should include (as applicable):
-- **Recap** -- 2-3 bullet points summarizing what happened last session
-- **Key NPCs** -- Who might appear, their current motivations, what they want
-- **Scenes and Encounters** -- Planned scenes based on the adventure site content
-- **Open Threads** -- Active quests and loose ends to weave in
-- **Decision Points** -- Moments where players might choose different paths
-- **Sensory Details** -- A few evocative details to set the mood
-
-Format as Markdown. Be concise. Use bullet points and bold headings.
-
-Return a JSON object: {{"prep_notes": "markdown string..."}}
-Return ONLY a valid JSON object. No explanation, no code fences."""
+    system_prompt = _get_system_prompt('session_prep', world_section=world_section)
 
     parts = []
     if session_number:
@@ -660,19 +731,7 @@ def draft_summary():
     world_context = _get_active_world_context()
     world_section = f"\nCampaign world context:\n{world_context}\n" if world_context else ''
 
-    system_prompt = f"""You are a session recap writer for a tabletop RPG.
-Your job is to turn raw GM notes into a polished narrative summary suitable for players to read.
-{world_section}
-Guidelines:
-- Write 2-4 paragraphs in narrative style, past tense
-- Mention key NPCs, locations, and quest developments by name
-- Write from a neutral narrator perspective
-- Include dramatic moments and key decisions
-- Do NOT include GM-only secrets or meta-game information
-- Keep it concise -- this is a recap, not a novel chapter
-
-Return a JSON object: {{"summary": "markdown string..."}}
-Return ONLY a valid JSON object. No explanation, no code fences."""
+    system_prompt = _get_system_prompt('draft_summary', world_section=world_section)
 
     parts = []
     title = ''

@@ -36,7 +36,7 @@
             {% if carryover.from_session.number %}#{{ carryover.from_session.number }}{% endif %}
             {% if carryover.from_session.title %} — {{ carryover.from_session.title }}{% endif %}
         </strong>
-        <br><span class="small">Active quests, alive NPCs, adventure site, and attending players carried over automatically.</span>
+        <br><span class="small">Active quests, alive NPCs, story arc, and attending players carried over automatically.</span>
     </div>
 </div>
 {% endif %}
@@ -81,7 +81,7 @@
 
                     {% if all_sites %}
                     <div>
-                        <label for="adventure_site_id" class="form-label">Adventure Site</label>
+                        <label for="adventure_site_id" class="form-label">Story Arc</label>
                         <select class="form-select" id="adventure_site_id" name="adventure_site_id">
                             <option value="">— None —</option>
                             {% for site in all_sites %}
@@ -94,7 +94,7 @@
                             </option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">Which adventure site was this session run at?</div>
+                        <div class="form-text">Which story arc was this session part of?</div>
                     </div>
                     {% endif %}
 
@@ -318,7 +318,7 @@ function generatePrepNotes() {
     }
 
     if (!siteId && npcNames.length === 0 && questNames.length === 0) {
-        alert('Select an adventure site, NPCs, or quests first to generate prep notes.');
+        alert('Select a story arc, NPCs, or quests first to generate prep notes.');
         return;
     }
 
