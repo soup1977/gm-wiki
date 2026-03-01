@@ -19,7 +19,7 @@ Ideas that are intentionally deferred. Not forgotten — just waiting for the ri
 **Notes:**
 - No migration needed if `AppSetting` model already supports arbitrary key/value pairs (it does)
 - Anthropic Claude Haiku supports up to 8192 output tokens; Ollama depends on the loaded model's context window
-- Current hardcoded values: Smart Fill = 1024, Generate Entry = 2048 (4096 for adventure_site/bestiary)
+- Current hardcoded values: Smart Fill = 1024, Generate Entry = 2048 (8000 for adventure_site, 4096 for bestiary)
 
 ---
 
