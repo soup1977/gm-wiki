@@ -312,6 +312,46 @@ def npc_chat():
         return jsonify({'error': str(e)}), 502
 
 
+
+@session_mode_bp.route('/toggle-visibility', methods=['POST'])
+@login_required
+def toggle_visibility():
+    """AJAX endpoint to flip is_player_visible on an entity linked to the current session."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    entity_type = data.get('type', '')
+    entity_id = data.get('id')
+
+    if not entity_type or not entity_id:
+        return jsonify({'error': 'Missing type or id.'}), 400
+
+    type_map = {
+        'npc': NPC,
+        'quest': Quest,
+        'item': Item,
+        'location': Location,
+    }
+
+    model = type_map.get(entity_type)
+    if not model:
+        return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
+
+    entity = model.query.filter_by(id=entity_id, campaign_id=campaign_id).first()
+    if not entity:
+        return jsonify({'error': 'Entity not found.'}), 404
+
+    entity.is_player_visible = not entity.is_player_visible
+    db.session.commit()
+
+    return jsonify({
+        'visible': entity.is_player_visible,
+        'name': getattr(entity, 'name', ''),
+    })
+
+
 @session_mode_bp.route('/improv-encounter', methods=['POST'])
 @login_required
 def improv_encounter():
@@ -424,7 +464,6 @@ def suggest_consequences():
 
     campaign = Campaign.query.get(campaign_id)
 
-    # Build context from session data
     context_parts = []
     if game_session.summary:
         context_parts.append(f'Session summary:\n{game_session.summary[:2000]}')

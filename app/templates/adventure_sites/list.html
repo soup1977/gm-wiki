@@ -44,12 +44,7 @@
                             {{ site.name }}
                         </a>
                     </h5>
-                    <span class="badge ms-2
-                        {% if site.status == 'Active' %}bg-success
-                        {% elif site.status == 'Completed' %}bg-secondary
-                        {% else %}bg-warning text-dark{% endif %}">
-                        {{ site.status }}
-                    </span>
+                    <span class="status-badge ms-2" data-status="{{ site.status }}">{{ site.status }}</span>
                 </div>
                 {% if site.subtitle %}
                 <p class="text-muted small mb-2 fst-italic">{{ site.subtitle }}</p>
