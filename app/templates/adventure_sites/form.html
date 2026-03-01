@@ -112,6 +112,33 @@
                                   style="resize: vertical;">{{ site.content if site else '' }}</textarea>
                     </div>
 
+                    <!-- Planning Checklist accordion -->
+                    <div class="accordion accordion-flush mb-2" id="planningChecklist">
+                        <div class="accordion-item bg-dark border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-light border-0 py-2" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#checklistBody" aria-expanded="false">
+                                    <i class="bi bi-check2-square me-2"></i> Planning Checklist
+                                </button>
+                            </h2>
+                            <div id="checklistBody" class="accordion-collapse collapse">
+                                <div class="accordion-body pt-1 pb-2 px-3">
+                                    <ul class="list-unstyled mb-0 small" id="planning-checks">
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> Entry &amp; exit points defined</li>
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> At least one keyed NPC</li>
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> Boss encounter or climax</li>
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> Non-combat challenge included</li>
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> Unique environmental detail</li>
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> Loot or reward defined</li>
+                                        <li class="mb-1"><input type="checkbox" class="form-check-input me-2 plan-check"> Linked to relevant campaign NPCs</li>
+                                    </ul>
+                                    <button type="button" class="btn btn-link btn-sm text-muted p-0 mt-1"
+                                            onclick="clearChecklist()">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Writing Tips accordion -->
                     <div class="accordion accordion-flush" id="writingTips">
                         <div class="accordion-item bg-dark border-secondary">
@@ -176,4 +203,31 @@
            class="btn btn-outline-secondary">Cancel</a>
     </div>
 </form>
+
+<script>
+(function () {
+    const SITE_ID = '{{ site.id if site else "new" }}';
+    const KEY = 'site_checklist_' + SITE_ID;
+    const checks = document.querySelectorAll('.plan-check');
+
+    // Load saved state
+    try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || '[]');
+        checks.forEach(function(cb, i) { cb.checked = !!saved[i]; });
+    } catch(e) {}
+
+    // Save on change
+    checks.forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const state = Array.from(checks).map(function(c) { return c.checked; });
+            localStorage.setItem(KEY, JSON.stringify(state));
+        });
+    });
+
+    window.clearChecklist = function() {
+        checks.forEach(function(cb) { cb.checked = false; });
+        localStorage.removeItem(KEY);
+    };
+})();
+</script>
 {% endblock %}

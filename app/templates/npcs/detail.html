@@ -41,6 +41,28 @@
         <span class="badge bg-secondary align-self-center"><i class="bi bi-eye-slash"></i> Hidden from players</span>
         {% endif %}
         <span class="status-badge fs-6" data-status="{{ npc.status }}">{{ npc.status | replace('_', ' ') | title }}</span>
+        <!-- Quick-status buttons -->
+        {% if npc.status != 'dead' %}
+        <form method="POST" action="{{ url_for('npcs.set_npc_status', npc_id=npc.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="dead">
+            <button class="btn btn-sm btn-outline-danger">Mark Dead</button>
+        </form>
+        {% endif %}
+        {% if npc.status != 'missing' %}
+        <form method="POST" action="{{ url_for('npcs.set_npc_status', npc_id=npc.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="missing">
+            <button class="btn btn-sm btn-outline-warning">Mark Missing</button>
+        </form>
+        {% endif %}
+        {% if npc.status != 'alive' %}
+        <form method="POST" action="{{ url_for('npcs.set_npc_status', npc_id=npc.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="alive">
+            <button class="btn btn-sm btn-outline-success">Mark Alive</button>
+        </form>
+        {% endif %}
         <a href="{{ url_for('npcs.edit_npc', npc_id=npc.id) }}" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Edit
         </a>

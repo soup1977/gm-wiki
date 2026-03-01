@@ -30,6 +30,37 @@
             </a>
             {% endif %}
         </div>
+        <!-- Quick-status buttons (show all options except current) -->
+        <div class="d-flex gap-1 flex-wrap mt-2">
+            {% if quest.status != 'active' %}
+            <form method="POST" action="{{ url_for('quests.set_quest_status', quest_id=quest.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="active">
+                <button class="btn btn-sm btn-outline-success">Set Active</button>
+            </form>
+            {% endif %}
+            {% if quest.status != 'on_hold' %}
+            <form method="POST" action="{{ url_for('quests.set_quest_status', quest_id=quest.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="on_hold">
+                <button class="btn btn-sm btn-outline-warning">Hold</button>
+            </form>
+            {% endif %}
+            {% if quest.status != 'completed' %}
+            <form method="POST" action="{{ url_for('quests.set_quest_status', quest_id=quest.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="completed">
+                <button class="btn btn-sm btn-outline-primary">Complete</button>
+            </form>
+            {% endif %}
+            {% if quest.status != 'failed' %}
+            <form method="POST" action="{{ url_for('quests.set_quest_status', quest_id=quest.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="failed">
+                <button class="btn btn-sm btn-outline-danger">Fail</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
     <div class="d-flex gap-2 align-items-center">
         {% if quest.is_player_visible %}

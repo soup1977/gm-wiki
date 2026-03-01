@@ -4,89 +4,158 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <h2 class="mb-4">New Campaign</h2>
-        <form method="POST">
+        <h2 class="mb-1">New Campaign</h2>
+        <p class="text-muted small mb-4">Step <span id="step-num">1</span> of 3</p>
+
+        <!-- Progress bar -->
+        <div class="progress mb-4" style="height: 6px;">
+            <div class="progress-bar bg-success" id="wizard-progress" role="progressbar"
+                 style="width: 33%;" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <form method="POST" id="campaign-wizard-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3">
-                <label for="name" class="form-label">Campaign Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="name" name="name" required autofocus>
-            </div>
-            <div class="mb-3">
-                <label for="system" class="form-label">System</label>
-                <input type="text" class="form-control" id="system" name="system" placeholder="e.g. D&D 5e, ICRPG, Pathfinder…">
-            </div>
-            <div class="mb-3">
-                <label for="status" class="form-label">Status</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="active">Active</option>
-                    <option value="on hiatus">On Hiatus</option>
-                    <option value="complete">Complete</option>
-                </select>
-            </div>
-            <div class="mb-4">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+
+            <!-- ── Step 1: The Basics ─────────────────────────────────────── -->
+            <div class="wizard-step" id="step-1">
+                <h5 class="mb-3 text-muted text-uppercase small fw-bold">Step 1 — The Basics</h5>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Campaign Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="system" class="form-label">System</label>
+                    <input type="text" class="form-control" id="system" name="system"
+                           placeholder="e.g. D&D 5e, ICRPG, Pathfinder…">
+                </div>
+                <div class="mb-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="active">Active</option>
+                        <option value="on hiatus">On Hiatus</option>
+                        <option value="complete">Complete</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" onclick="wizardNext(1)">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                    <a href="{{ url_for('campaigns.list_campaigns') }}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
             </div>
 
-            {% if ai_enabled %}
-            <div class="mb-4">
-                <label for="ai_world_context" class="form-label">AI World Context</label>
-                <textarea class="form-control" id="ai_world_context" name="ai_world_context" rows="3"
-                          placeholder="e.g. This campaign is set in a plague-ravaged Victorian city. Magic is rare and feared. The tone is grim and desperate."></textarea>
-                <div class="form-text">Injected into AI-generated entries (NPCs, items, locations, etc.) so they match your campaign's setting and tone.</div>
-            </div>
-            {% endif %}
+            <!-- ── Step 2: World Context ──────────────────────────────────── -->
+            <div class="wizard-step d-none" id="step-2">
+                <h5 class="mb-3 text-muted text-uppercase small fw-bold">Step 2 — World Context</h5>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"
+                              placeholder="A short overview of the campaign premise."></textarea>
+                </div>
 
-            {% if sd_enabled %}
-            <div class="mb-4">
-                <label for="image_style_prompt" class="form-label">Image Style Prompt</label>
-                <textarea class="form-control" id="image_style_prompt" name="image_style_prompt" rows="2"
-                          placeholder="e.g. dark fantasy oil painting, dramatic lighting, medieval"></textarea>
-                <div class="form-text">Prepended to all AI-generated images for this campaign. Sets the visual tone for portraits, locations, and items.</div>
-            </div>
-            {% endif %}
+                {% if ai_enabled %}
+                <div class="mb-3">
+                    <label for="ai_world_context" class="form-label">AI World Context</label>
+                    <textarea class="form-control" id="ai_world_context" name="ai_world_context" rows="3"
+                              placeholder="e.g. This campaign is set in a plague-ravaged Victorian city. Magic is rare and feared. The tone is grim and desperate."></textarea>
+                    <div class="form-text">Injected into AI-generated entries so they match your campaign's setting and tone.</div>
+                </div>
+                {% endif %}
 
-            <hr class="border-secondary mb-4">
+                {% if sd_enabled %}
+                <div class="mb-3">
+                    <label for="image_style_prompt" class="form-label">Image Style Prompt</label>
+                    <textarea class="form-control" id="image_style_prompt" name="image_style_prompt" rows="2"
+                              placeholder="e.g. dark fantasy oil painting, dramatic lighting, medieval"></textarea>
+                    <div class="form-text">Prepended to all AI-generated images for this campaign.</div>
+                </div>
+                {% endif %}
 
-            <h5 class="mb-3">Player Character Stat Fields</h5>
-            <p class="text-muted small mb-3">
-                Choose a preset to auto-populate stat fields for your Player Characters.
-                You can add, remove, or rename fields any time from Campaign Settings.
-            </p>
-            <div class="mb-3">
-                <label for="stat_preset" class="form-label">Game System Preset</label>
-                <select class="form-select" id="stat_preset" name="stat_preset" onchange="updatePresetPreview()">
-                    {% for key, preset in stat_presets.items() %}
-                    <option value="{{ key }}">{{ preset.name }}</option>
-                    {% endfor %}
-                </select>
+                <p class="text-muted small fst-italic mb-4">You can leave these blank and fill them in later from Campaign Settings.</p>
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="wizardBack(2)">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="wizardNext(2)">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
             </div>
 
-            <div id="preset-preview" class="mb-4" style="display:none;">
-                <p class="text-muted small mb-2">Stat fields that will be created:</p>
-                <ul id="preset-stat-list" class="list-group list-group-flush mb-0"></ul>
+            <!-- ── Step 3: PC Stat Preset ─────────────────────────────────── -->
+            <div class="wizard-step d-none" id="step-3">
+                <h5 class="mb-3 text-muted text-uppercase small fw-bold">Step 3 — Player Character Stats</h5>
+                <p class="text-muted small mb-3">
+                    Choose a preset to auto-populate stat fields for your Player Characters.
+                    You can add, remove, or rename fields any time from Campaign Settings.
+                </p>
+                <div class="mb-3">
+                    <label for="stat_preset" class="form-label">Game System Preset</label>
+                    <select class="form-select" id="stat_preset" name="stat_preset" onchange="updatePresetPreview()">
+                        {% for key, preset in stat_presets.items() %}
+                        <option value="{{ key }}">{{ preset.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="preset-preview" class="mb-4" style="display:none;">
+                    <p class="text-muted small mb-2">Stat fields that will be created:</p>
+                    <ul id="preset-stat-list" class="list-group list-group-flush mb-0"></ul>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="wizardBack(3)">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Create Campaign
+                    </button>
+                </div>
             </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Create Campaign
-                </button>
-                <a href="{{ url_for('campaigns.list_campaigns') }}" class="btn btn-outline-secondary">Cancel</a>
-            </div>
         </form>
     </div>
 </div>
 
 <script>
-// Preset data mirrored from the server — keeps the preview client-side with no round trip.
 const STAT_PRESETS = {{ stat_presets | tojson }};
 
+// ── Wizard navigation ──────────────────────────────────────────────────────
+const PROGRESS = { 1: 33, 2: 66, 3: 100 };
+
+function wizardNext(fromStep) {
+    // Validate required fields on step 1
+    if (fromStep === 1) {
+        const name = document.getElementById('name').value.trim();
+        if (!name) {
+            document.getElementById('name').focus();
+            document.getElementById('name').classList.add('is-invalid');
+            return;
+        }
+        document.getElementById('name').classList.remove('is-invalid');
+    }
+    showStep(fromStep + 1);
+}
+
+function wizardBack(fromStep) {
+    showStep(fromStep - 1);
+}
+
+function showStep(n) {
+    document.querySelectorAll('.wizard-step').forEach(function(el) { el.classList.add('d-none'); });
+    document.getElementById('step-' + n).classList.remove('d-none');
+    document.getElementById('step-num').textContent = n;
+    const bar = document.getElementById('wizard-progress');
+    bar.style.width = PROGRESS[n] + '%';
+    bar.setAttribute('aria-valuenow', PROGRESS[n]);
+    window.scrollTo(0, 0);
+}
+
+// ── Preset preview ─────────────────────────────────────────────────────────
 function updatePresetPreview() {
-    const key = document.getElementById('stat_preset').value;
+    const key    = document.getElementById('stat_preset').value;
     const preset = STAT_PRESETS[key];
     const preview = document.getElementById('preset-preview');
-    const list = document.getElementById('preset-stat-list');
-
+    const list    = document.getElementById('preset-stat-list');
     list.innerHTML = '';
     if (preset && preset.stats.length > 0) {
         preset.stats.forEach(function(stat) {
@@ -101,7 +170,7 @@ function updatePresetPreview() {
     }
 }
 
-// Show preview on page load for whichever option is selected by default
+// Show preset preview immediately for whichever option is selected by default
 updatePresetPreview();
 </script>
 {% endblock %}

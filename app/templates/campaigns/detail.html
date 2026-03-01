@@ -117,13 +117,21 @@
             </div>
             <div class="card-body">
                 {% if campaign.npcs %}
-                <ul class="list-unstyled mb-0">
-                    {% for npc in campaign.npcs[:8] %}
-                    <li class="mb-1"><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a>
-                        <span class="text-muted small">{{ '— ' + npc.role if npc.role }}</span></li>
+                <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Filter NPCs">
+                    <button class="btn btn-outline-secondary active" onclick="filterList('npc-list', 'all', this)">All</button>
+                    <button class="btn btn-outline-secondary" onclick="filterList('npc-list', 'alive', this)">Alive</button>
+                    <button class="btn btn-outline-secondary" onclick="filterList('npc-list', 'dead', this)">Dead</button>
+                    <button class="btn btn-outline-secondary" onclick="filterList('npc-list', 'missing', this)">Missing</button>
+                </div>
+                <ul class="list-unstyled mb-0" id="npc-list">
+                    {% for npc in campaign.npcs %}
+                    <li class="mb-1 npc-item" data-status="{{ npc.status }}" {% if loop.index > 8 %}data-overflow="true" style="display:none;"{% endif %}>
+                        <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a>
+                        <span class="text-muted small">{{ '— ' + npc.role if npc.role }}</span>
+                    </li>
                     {% endfor %}
                     {% if campaign.npcs|length > 8 %}
-                    <li class="text-muted small mt-1">…and {{ campaign.npcs|length - 8 }} more</li>
+                    <li class="text-muted small mt-1" id="npc-overflow-note">…and {{ campaign.npcs|length - 8 }} more</li>
                     {% endif %}
                 </ul>
                 {% else %}
@@ -165,13 +173,21 @@
             </div>
             <div class="card-body">
                 {% if campaign.quests %}
-                <ul class="list-unstyled mb-0">
-                    {% for quest in campaign.quests[:8] %}
-                    <li class="mb-1"><a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a>
-                        <span class="text-muted small">— {{ quest.status | replace('_', ' ') }}</span></li>
+                <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Filter Quests">
+                    <button class="btn btn-outline-secondary active" onclick="filterList('quest-list', 'all', this)">All</button>
+                    <button class="btn btn-outline-secondary" onclick="filterList('quest-list', 'active', this)">Active</button>
+                    <button class="btn btn-outline-secondary" onclick="filterList('quest-list', 'completed', this)">Done</button>
+                    <button class="btn btn-outline-secondary" onclick="filterList('quest-list', 'failed', this)">Failed</button>
+                </div>
+                <ul class="list-unstyled mb-0" id="quest-list">
+                    {% for quest in campaign.quests %}
+                    <li class="mb-1 quest-item" data-status="{{ quest.status }}" {% if loop.index > 8 %}data-overflow="true" style="display:none;"{% endif %}>
+                        <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a>
+                        <span class="text-muted small">— {{ quest.status | replace('_', ' ') }}</span>
+                    </li>
                     {% endfor %}
                     {% if campaign.quests|length > 8 %}
-                    <li class="text-muted small mt-1">…and {{ campaign.quests|length - 8 }} more</li>
+                    <li class="text-muted small mt-1" id="quest-overflow-note">…and {{ campaign.quests|length - 8 }} more</li>
                     {% endif %}
                 </ul>
                 {% else %}
@@ -274,4 +290,32 @@
 </div>
 
 <p class="text-muted small mt-4">Created {{ campaign.created_at.strftime('%Y-%m-%d') }}</p>
+
+<script>
+function filterList(listId, status, btn) {
+    const isAll = (status === 'all');
+    const items = document.querySelectorAll('#' + listId + ' li[data-status]');
+    const overflowNote = document.getElementById(listId.replace('-list', '-overflow-note'));
+
+    items.forEach(function(li) {
+        if (isAll) {
+            // Restore 8-item limit for "All" view
+            li.style.display = li.dataset.overflow ? 'none' : '';
+        } else {
+            li.style.display = (li.dataset.status === status) ? '' : 'none';
+        }
+    });
+
+    // Hide overflow note when filtering (showing everything matching)
+    if (overflowNote) {
+        overflowNote.style.display = isAll ? '' : 'none';
+    }
+
+    // Update active button within this group
+    btn.closest('.btn-group').querySelectorAll('.btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+}
+</script>
 {% endblock %}
