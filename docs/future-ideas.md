@@ -4,6 +4,25 @@ Ideas that are intentionally deferred. Not forgotten — just waiting for the ri
 
 ---
 
+## Configurable AI Token Limits (Settings Page)
+
+**Why deferred:** Token limits are currently hardcoded in `app/routes/ai.py`. They've been tuned per entity type (e.g. 4096 for adventure sites, 2048 for NPCs), but a power user with a fast/expensive model may want to push limits higher, and a user on a budget may want to cap them lower.
+
+**The right approach:**
+- Add per-feature token limit fields to the Settings page under the AI section
+- Store them in `AppSetting`: `ai_max_tokens_generate`, `ai_max_tokens_smart_fill`, `ai_max_tokens_assistant`
+- `ai_chat()` (or the individual routes) reads the setting and falls back to the hardcoded default if not set
+- Input type `number`, min 256, max 8192, step 256 — with a note on what each feature uses them for
+
+**Nice to have:** A "large entity types" override — a separate token cap specifically for `adventure_site` and `bestiary` Generate Entry calls, since those produce much more content than NPC/location/quest entries.
+
+**Notes:**
+- No migration needed if `AppSetting` model already supports arbitrary key/value pairs (it does)
+- Anthropic Claude Haiku supports up to 8192 output tokens; Ollama depends on the loaded model's context window
+- Current hardcoded values: Smart Fill = 1024, Generate Entry = 2048 (4096 for adventure_site/bestiary)
+
+---
+
 ## Theme Engine
 
 **Why deferred:** A single high-contrast CSS toggle is not the right approach. Adding one-off overrides creates maintenance debt and doesn't scale.
