@@ -7,13 +7,13 @@
         <li class="breadcrumb-item">
             <a href="{{ url_for('wiki.wiki_locations', campaign_id=campaign.id) }}">Locations</a>
         </li>
-        {% if location.parent_location and location.parent_location.is_player_visible %}
+        {% for ancestor in ancestors %}
         <li class="breadcrumb-item">
-            <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=location.parent_location.id) }}">
-                {{ location.parent_location.name }}
+            <a href="{{ url_for('wiki.wiki_location_detail', campaign_id=campaign.id, location_id=ancestor.id) }}">
+                {{ ancestor.name }}
             </a>
         </li>
-        {% endif %}
+        {% endfor %}
         <li class="breadcrumb-item active">{{ location.name }}</li>
     </ol>
 </nav>
