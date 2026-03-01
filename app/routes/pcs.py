@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from app import db, save_upload
 from app.models import (PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate,
-                         Location, Campaign, ICRPGCharacterSheet, ICRPGCharLoot)
+                         Location, Campaign, ICRPGCharacterSheet, ICRPGCharLoot,
+                         ICRPGCharAbility, ICRPGWorld, ICRPGLifeForm, ICRPGType,
+                         ICRPGAbility, ICRPGStartingLoot)
 
 pcs_bp = Blueprint('pcs', __name__, url_prefix='/pcs')
 
@@ -72,10 +74,14 @@ def list_pcs():
     preview_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
         .order_by(CampaignStatTemplate.display_order).limit(3).all()
 
+    campaign = Campaign.query.get(campaign_id)
+    is_icrpg = 'icrpg' in (campaign.system or '').lower() if campaign else False
+
     return render_template('pcs/list.html', pcs=pcs,
                            status_filter=status_filter,
                            status_choices=PC_STATUS_CHOICES,
-                           preview_fields=preview_fields)
+                           preview_fields=preview_fields,
+                           is_icrpg=is_icrpg)
 
 
 @pcs_bp.route('/new', methods=['GET', 'POST'])
@@ -404,6 +410,230 @@ def icrpg_equip_loot(pc_id):
     char_loot.slot = new_slot
     db.session.commit()
     return jsonify({'ok': True})
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ICRPG CHARACTER CREATION WIZARD
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _serialize_catalog(worlds, life_forms, types):
+    """Build catalog dict for JSON embedding in the wizard template."""
+    return {
+        'worlds': [
+            {'id': w.id, 'name': w.name, 'description': w.description or ''}
+            for w in worlds
+        ],
+        'life_forms': [
+            {'id': lf.id, 'world_id': lf.world_id, 'name': lf.name,
+             'description': lf.description or '', 'bonuses': lf.bonuses or {}}
+            for lf in life_forms
+        ],
+        'types': [
+            {
+                'id': t.id, 'world_id': t.world_id, 'name': t.name,
+                'description': t.description or '',
+                'starting_abilities': [
+                    {'id': a.id, 'name': a.name, 'description': a.description or ''}
+                    for a in t.abilities if a.ability_kind == 'starting'
+                ],
+                'starting_loot': [
+                    {
+                        'id': sl.id,
+                        'name': sl.display_name,
+                        'description': (sl.loot_def.description if sl.loot_def else
+                                        sl.spell.description if sl.spell else ''),
+                        'loot_type': (sl.loot_def.loot_type if sl.loot_def else 'Spell'),
+                        'loot_def_id': sl.loot_def_id,
+                        'spell_id': sl.spell_id,
+                    }
+                    for sl in t.starting_loot
+                ],
+            }
+            for t in types
+        ],
+    }
+
+
+@pcs_bp.route('/icrpg/wizard')
+@login_required
+def icrpg_wizard():
+    """Render the 8-step ICRPG character creation wizard."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        flash('Please select a campaign first.', 'warning')
+        return redirect(url_for('main.index'))
+
+    campaign = Campaign.query.get(campaign_id)
+    if not campaign or 'icrpg' not in (campaign.system or '').lower():
+        flash('The ICRPG wizard is only available for ICRPG campaigns.', 'danger')
+        return redirect(url_for('pcs.list_pcs'))
+
+    # Query catalog: builtin + campaign homebrew
+    worlds = ICRPGWorld.query.filter(
+        db.or_(ICRPGWorld.is_builtin == True,
+               ICRPGWorld.campaign_id == campaign_id)
+    ).order_by(ICRPGWorld.name).all()
+
+    world_ids = [w.id for w in worlds]
+
+    life_forms = ICRPGLifeForm.query.filter(
+        ICRPGLifeForm.world_id.in_(world_ids)
+    ).order_by(ICRPGLifeForm.name).all()
+
+    types = ICRPGType.query.filter(
+        ICRPGType.world_id.in_(world_ids)
+    ).order_by(ICRPGType.name).all()
+
+    catalog_json = _serialize_catalog(worlds, life_forms, types)
+
+    return render_template('pcs/icrpg_wizard.html', catalog_json=catalog_json)
+
+
+@pcs_bp.route('/icrpg/create', methods=['POST'])
+@login_required
+def icrpg_create_character():
+    """Create a PlayerCharacter + ICRPGCharacterSheet from the wizard."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    campaign = Campaign.query.get(campaign_id)
+    if not campaign or 'icrpg' not in (campaign.system or '').lower():
+        return jsonify({'error': 'Not an ICRPG campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+
+    # ── Validate text fields ──────────────────────────────────
+    character_name = (data.get('character_name') or '').strip()
+    player_name = (data.get('player_name') or '').strip()
+    if not character_name or not player_name:
+        return jsonify({'error': 'Character name and player name are required.'}), 400
+
+    story = (data.get('story') or '').strip()[:500]
+
+    # ── Validate world ────────────────────────────────────────
+    world_id = data.get('world_id')
+    world = ICRPGWorld.query.get(world_id) if world_id else None
+    if not world or not (world.is_builtin or world.campaign_id == campaign_id):
+        return jsonify({'error': 'Invalid world.'}), 400
+
+    # ── Validate life form ────────────────────────────────────
+    life_form_id = data.get('life_form_id')
+    life_form = ICRPGLifeForm.query.get(life_form_id) if life_form_id else None
+    if not life_form or life_form.world_id != world.id:
+        return jsonify({'error': 'Invalid life form.'}), 400
+
+    # ── Validate type ─────────────────────────────────────────
+    type_id = data.get('type_id')
+    type_obj = ICRPGType.query.get(type_id) if type_id else None
+    if not type_obj or type_obj.world_id != world.id:
+        return jsonify({'error': 'Invalid type.'}), 400
+
+    # ── Validate stats (6 points total, each 0-6) ────────────
+    stats = data.get('stats', {})
+    stat_keys = ['str', 'dex', 'con', 'int', 'wis', 'cha']
+    try:
+        stat_values = {k: int(stats.get(k, 0)) for k in stat_keys}
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid stat values.'}), 400
+    if any(v < 0 or v > 6 for v in stat_values.values()):
+        return jsonify({'error': 'Each stat must be 0-6.'}), 400
+    if sum(stat_values.values()) != 6:
+        return jsonify({'error': 'Stats must total exactly 6.'}), 400
+
+    # ── Validate effort (4 points total, each 0-4) ───────────
+    effort = data.get('effort', {})
+    effort_keys = ['basic', 'weapons', 'guns', 'magic', 'ultimate']
+    try:
+        effort_values = {k: int(effort.get(k, 0)) for k in effort_keys}
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid effort values.'}), 400
+    if any(v < 0 or v > 4 for v in effort_values.values()):
+        return jsonify({'error': 'Each effort must be 0-4.'}), 400
+    if sum(effort_values.values()) != 4:
+        return jsonify({'error': 'Effort must total exactly 4.'}), 400
+
+    # ── Validate abilities ────────────────────────────────────
+    ability_ids = data.get('ability_ids', [])
+    valid_starting = ICRPGAbility.query.filter_by(
+        type_id=type_obj.id, ability_kind='starting').all()
+    valid_ab_ids = {a.id for a in valid_starting}
+    for ab_id in ability_ids:
+        if ab_id not in valid_ab_ids:
+            return jsonify({'error': 'Invalid ability selection.'}), 400
+
+    # ── Validate loot picks ───────────────────────────────────
+    loot_picks = data.get('loot_picks', [])
+    valid_sl = ICRPGStartingLoot.query.filter_by(type_id=type_obj.id).all()
+    valid_loot_keys = {(sl.loot_def_id, sl.spell_id) for sl in valid_sl}
+    for pick in loot_picks:
+        key = (pick.get('loot_def_id'), pick.get('spell_id'))
+        if key not in valid_loot_keys:
+            return jsonify({'error': 'Invalid loot selection.'}), 400
+
+    # ── Create records ────────────────────────────────────────
+    pc = PlayerCharacter(
+        campaign_id=campaign_id,
+        character_name=character_name,
+        player_name=player_name,
+        race_or_ancestry=life_form.name,
+        class_or_role=type_obj.name,
+        status='active',
+    )
+    db.session.add(pc)
+    db.session.flush()
+
+    sheet = ICRPGCharacterSheet(
+        pc_id=pc.id,
+        world_id=world.id,
+        life_form_id=life_form.id,
+        type_id=type_obj.id,
+        story=story,
+        stat_str=stat_values['str'],
+        stat_dex=stat_values['dex'],
+        stat_con=stat_values['con'],
+        stat_int=stat_values['int'],
+        stat_wis=stat_values['wis'],
+        stat_cha=stat_values['cha'],
+        effort_basic=effort_values['basic'],
+        effort_weapons=effort_values['weapons'],
+        effort_guns=effort_values['guns'],
+        effort_magic=effort_values['magic'],
+        effort_ultimate=effort_values['ultimate'],
+        hearts_max=1,
+        hp_current=10,
+        hero_coin=True,
+    )
+    # Handle life form HEARTS bonus
+    bonuses = life_form.bonuses or {}
+    if isinstance(bonuses.get('HEARTS'), (int, float)):
+        sheet.hearts_max += int(bonuses['HEARTS'])
+        sheet.hp_current = sheet.hearts_max * 10
+
+    db.session.add(sheet)
+    db.session.flush()
+
+    for i, ab_id in enumerate(ability_ids):
+        db.session.add(ICRPGCharAbility(
+            sheet_id=sheet.id, ability_id=ab_id,
+            ability_kind='starting', display_order=i
+        ))
+
+    for i, pick in enumerate(loot_picks):
+        db.session.add(ICRPGCharLoot(
+            sheet_id=sheet.id,
+            loot_def_id=pick.get('loot_def_id'),
+            spell_id=pick.get('spell_id'),
+            slot='equipped', display_order=i
+        ))
+
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'pc_id': pc.id,
+        'redirect': url_for('pcs.pc_detail', pc_id=pc.id),
+    })
 
 
 @pcs_bp.route('/<int:pc_id>/icrpg/create-sheet', methods=['POST'])

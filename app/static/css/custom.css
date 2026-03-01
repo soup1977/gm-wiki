@@ -112,3 +112,9 @@ a:hover {
 .icrpg-loot-item { border-bottom: 1px solid rgba(255,255,255,0.1); }
 .icrpg-loot-item:last-child { border-bottom: none; }
 .icrpg-loot-desc { font-size: 0.85em; color: #adb5bd; }
+
+/* ── ICRPG Wizard ─────────────────────────────────────────── */
+.icrpg-wizard-card { transition: border-color 0.15s ease; }
+.icrpg-wizard-card:hover { border-color: #ffc107 !important; }
+.icrpg-allocator td { vertical-align: middle; }
+.icrpg-allocator .btn-sm { width: 32px; height: 32px; padding: 0; }
