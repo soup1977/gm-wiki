@@ -103,6 +103,22 @@ Ideas that are intentionally deferred. Not forgotten — just waiting for the ri
 
 ---
 
+## Campaign Assistant → "Link to Story Arc" Quick-Action
+
+**Why deferred:** The Campaign Assistant creates entities with no `story_arc_id`, so arc-aware AI (Smart Fill / Generate Entry) won't kick in for them later. The Genesis Wizard handles this automatically, but ad-hoc entities from the assistant are always orphaned.
+
+**The idea:**
+- After saving an entity from the Campaign Assistant (via the "Save" button on an entity card), show a small follow-up prompt: "Link to a Story Arc?" with a dropdown of existing arcs
+- If the GM selects one, patch the entity's `story_arc_id` via a lightweight AJAX call
+- This closes the gap between the two AI creation workflows — anything created ad-hoc can be retroactively pulled into an arc's context
+
+**Notes:**
+- Alternatively, expose the "Story Arc" field directly on the Campaign Assistant's save dialog (a simple `<select>` populated with arcs for the active campaign)
+- The patch endpoint would be trivial: one route per entity type updating `story_arc_id` and returning success
+- No migration needed — `story_arc_id` already exists on all four entity tables
+
+---
+
 ## Pinned Entities with Inline Edit (Session Mode)
 
 **Why deferred:** The dashboard already shows NPCs and the active site. Pinning adds flexibility but also UI complexity.
