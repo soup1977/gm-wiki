@@ -97,7 +97,8 @@ gm-wiki/
 | 15b | Dashboard Overhaul — panel layout, pinned entities, map overlay, drag-to-rearrange | Planned — see docs/phase-15-plan.md |
 | 15.5 | Story Arcs rename (UI), editable AI prompts in Settings, Generate Entry fix | Complete — PR #14 |
 | 16 | Workflow Guidance (campaign wizard, planning checklist, entity grouping, theme toggle) | Planned — see docs/phase-16-plan.md |
-| 17 | AI Campaign Genesis (genesis wizard, entity-arc linking, arc-aware AI, campaign quick-start) | In Progress — feature/phase-17-campaign-genesis |
+| 17 | AI Campaign Genesis (genesis wizard, entity-arc linking, arc-aware AI, campaign quick-start) | Complete |
+| 18 | Arc-Session Workflow (encounter arc-linking, richer arc doc, encounters on session form, arc-aware prefill) | Planned — see docs/phase-18-plan.md |
 
 ---
 
