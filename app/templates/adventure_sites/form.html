@@ -333,15 +333,81 @@ function generateSiteIdeas() {
             return;
         }
 
+        var siteCtx = document.getElementById('efs-context');
+        var siteId = siteCtx ? siteCtx.getAttribute('data-site-id') : null;
+        var csrf = document.querySelector('meta[name="csrf-token"]') ?
+                   document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+
         cards.innerHTML = '';
         ideas.forEach(function(idea) {
             var div = document.createElement('div');
             div.className = 'card bg-dark border-warning mb-2';
+
+            var encounterBtn = siteId
+                ? '<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 create-encounter-btn" ' +
+                  'title="Save as an Encounter entity">' +
+                  '<i class="bi bi-sword me-1"></i>Create Encounter</button>'
+                : '';
+
             div.innerHTML =
                 '<div class="card-body py-2 px-3">' +
                     '<p class="small fw-bold text-warning mb-1">' + escHtml(idea.heading) + '</p>' +
-                    '<p class="small mb-0">' + escHtml(idea.description) + '</p>' +
+                    '<p class="small mb-2">' + escHtml(idea.description) + '</p>' +
+                    '<div class="d-flex gap-2">' +
+                        '<button type="button" class="btn btn-sm btn-outline-warning py-0 px-2 add-to-arc-btn" ' +
+                        'title="Append this idea as a new section in the arc content below">' +
+                        '<i class="bi bi-plus-circle me-1"></i>Add to Arc</button>' +
+                        encounterBtn +
+                    '</div>' +
                 '</div>';
+
+            // "Add to Arc" — append as Markdown section to the content textarea
+            div.querySelector('.add-to-arc-btn').addEventListener('click', function() {
+                var contentEl = document.getElementById('content');
+                var section = '\n\n## ' + idea.heading + '\n\n' + idea.description;
+                contentEl.value = (contentEl.value || '').trimEnd() + section;
+                contentEl.scrollTop = contentEl.scrollHeight;
+                this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Added';
+                this.disabled = true;
+                this.classList.replace('btn-outline-warning', 'btn-outline-success');
+            });
+
+            // "Create Encounter" — save directly to database (no extra AI call)
+            if (siteId) {
+                var encBtn = div.querySelector('.create-encounter-btn');
+                encBtn.addEventListener('click', function() {
+                    var self = this;
+                    self.disabled = true;
+                    self.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                    fetch('/api/ai/save-idea-as-encounter', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrf
+                        },
+                        body: JSON.stringify({ name: idea.heading, description: idea.description })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.error) {
+                            self.disabled = false;
+                            self.innerHTML = '<i class="bi bi-sword me-1"></i>Create Encounter';
+                            alert('Error: ' + data.error);
+                        } else {
+                            self.innerHTML = '<i class="bi bi-check-circle me-1"></i>Saved — <a href="' +
+                                            data.url + '" class="text-light" target="_blank">View</a>';
+                            self.classList.replace('btn-outline-secondary', 'btn-outline-success');
+                        }
+                    })
+                    .catch(function() {
+                        self.disabled = false;
+                        self.innerHTML = '<i class="bi bi-sword me-1"></i>Create Encounter';
+                        alert('Failed to save encounter.');
+                    });
+                });
+            }
+
             cards.appendChild(div);
         });
 
