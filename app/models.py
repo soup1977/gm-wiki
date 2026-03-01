@@ -577,9 +577,12 @@ class Encounter(db.Model):
     gm_notes       = db.Column(db.Text)
     loot_table_id  = db.Column(db.Integer, db.ForeignKey('random_tables.id'), nullable=True)
 
-    campaign   = db.relationship('Campaign',    backref='encounters')
-    session    = db.relationship('Session',     backref='encounters', foreign_keys=[session_id])
-    loot_table = db.relationship('RandomTable', backref='encounters')
+    story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+
+    campaign   = db.relationship('Campaign',      backref='encounters')
+    session    = db.relationship('Session',       backref='encounters', foreign_keys=[session_id])
+    story_arc  = db.relationship('AdventureSite', backref='arc_encounters')
+    loot_table = db.relationship('RandomTable',   backref='encounters')
     monsters   = db.relationship('EncounterMonster', backref='encounter',
                                  cascade='all, delete-orphan', order_by='EncounterMonster.id')
 

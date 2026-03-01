@@ -4,7 +4,7 @@ from flask_login import login_required
 from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
                         get_or_create_tags, PlayerCharacter, SessionAttendance,
-                        MonsterInstance, AdventureSite)
+                        MonsterInstance, AdventureSite, Encounter)
 from app.shortcode import process_shortcodes, clear_mentions
 
 sessions_bp = Blueprint('sessions', __name__)
@@ -71,6 +71,9 @@ def create_session():
         .order_by(MonsterInstance.instance_name).all()
     all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
         .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+    # Encounters available to plan (not yet assigned to a session)
+    encounters = Encounter.query.filter_by(campaign_id=campaign_id, session_id=None)\
+        .order_by(Encounter.name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -83,7 +86,8 @@ def create_session():
                 return render_template('sessions/form.html', sess=None,
                                        npcs=npcs, locations=locations,
                                        items=items, quests=quests, pcs=pcs,
-                                       monsters=monsters, all_sites=all_sites)
+                                       monsters=monsters, all_sites=all_sites,
+                                       encounters=encounters)
 
         sess = Session(
             campaign_id=campaign_id,
@@ -125,7 +129,15 @@ def create_session():
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(sess)
-        db.session.flush()  # Need sess.id before creating attendance rows
+        db.session.flush()  # Need sess.id before creating attendance rows and linking encounters
+
+        # Link selected encounters to this session
+        selected_enc_ids = {int(i) for i in request.form.getlist('encounters_planned')}
+        for enc in Encounter.query.filter(
+            Encounter.id.in_(selected_enc_ids),
+            Encounter.campaign_id == campaign_id
+        ).all():
+            enc.session_id = sess.id
 
         _save_attendance(sess, campaign_id)
         sess.is_player_visible = 'is_player_visible' in request.form
@@ -146,11 +158,35 @@ def create_session():
     # Check for preselect_site_id from query param (e.g. "Start Session Here" on Site detail)
     preselect_site_id = request.args.get('site_id', type=int)
 
+    # Arc-aware prefill: if coming from a specific Story Arc, pre-select its entities
+    arc_npc_ids = set()
+    arc_location_ids = set()
+    arc_quest_ids = set()
+    arc_encounter_ids = set()
+    arc_site = None
+    arc_next_milestone = None
+
+    if preselect_site_id:
+        arc_site = AdventureSite.query.filter_by(id=preselect_site_id, campaign_id=campaign_id).first()
+        if arc_site:
+            arc_npc_ids       = {n.id for n in NPC.query.filter_by(campaign_id=campaign_id, story_arc_id=preselect_site_id).all()}
+            arc_location_ids  = {l.id for l in Location.query.filter_by(campaign_id=campaign_id, story_arc_id=preselect_site_id).all()}
+            arc_quest_ids     = {q.id for q in Quest.query.filter_by(campaign_id=campaign_id, story_arc_id=preselect_site_id).all()}
+            arc_encounter_ids = {e.id for e in Encounter.query.filter_by(campaign_id=campaign_id, story_arc_id=preselect_site_id, session_id=None).all()}
+            for m in arc_site.get_milestones():
+                if not m.get('done'):
+                    arc_next_milestone = m['label']
+                    break
+
     return render_template('sessions/form.html', sess=None,
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
                            monsters=monsters, all_sites=all_sites,
-                           preselect_site_id=preselect_site_id)
+                           encounters=encounters,
+                           preselect_site_id=preselect_site_id,
+                           arc_site=arc_site, arc_next_milestone=arc_next_milestone,
+                           arc_npc_ids=arc_npc_ids, arc_location_ids=arc_location_ids,
+                           arc_quest_ids=arc_quest_ids, arc_encounter_ids=arc_encounter_ids)
 
 
 @sessions_bp.route('/sessions/<int:session_id>')
@@ -209,13 +245,19 @@ def create_next_session(session_id):
         .order_by(MonsterInstance.instance_name).all()
     all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
         .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+    encounters = Encounter.query.filter_by(campaign_id=campaign_id, session_id=None)\
+        .order_by(Encounter.name).all()
 
     return render_template('sessions/form.html', sess=None,
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
                            monsters=monsters, all_sites=all_sites,
+                           encounters=encounters,
                            preselect_site_id=None,
-                           carryover=carryover)
+                           carryover=carryover,
+                           arc_site=None, arc_next_milestone=None,
+                           arc_npc_ids=set(), arc_location_ids=set(),
+                           arc_quest_ids=set(), arc_encounter_ids=set())
 
 
 @sessions_bp.route('/sessions/<int:session_id>/edit', methods=['GET', 'POST'])
@@ -234,6 +276,11 @@ def edit_session(session_id):
         .order_by(MonsterInstance.instance_name).all()
     all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
         .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+    # Encounters available to plan: unassigned ones + ones already linked to this session
+    encounters = Encounter.query.filter(
+        Encounter.campaign_id == campaign_id,
+        db.or_(Encounter.session_id == None, Encounter.session_id == sess.id)
+    ).order_by(Encounter.name).all()
 
     if request.method == 'POST':
         date_str = request.form.get('date_played', '').strip()
@@ -246,7 +293,8 @@ def edit_session(session_id):
                 return render_template('sessions/form.html', sess=sess,
                                        npcs=npcs, locations=locations,
                                        items=items, quests=quests, pcs=pcs,
-                                       monsters=monsters, all_sites=all_sites)
+                                       monsters=monsters, all_sites=all_sites,
+                                       encounters=encounters)
 
         sess.number = request.form.get('number') or None
         sess.title = request.form.get('title', '').strip() or None
@@ -283,6 +331,14 @@ def edit_session(session_id):
         else:
             sess.adventure_sites = []
 
+        # Update encounter–session links: select new, deselect removed
+        selected_enc_ids = {int(i) for i in request.form.getlist('encounters_planned')}
+        for enc in encounters:
+            if enc.id in selected_enc_ids:
+                enc.session_id = sess.id
+            else:
+                enc.session_id = None
+
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         _save_attendance(sess, campaign_id)
         sess.is_player_visible = 'is_player_visible' in request.form
@@ -303,7 +359,11 @@ def edit_session(session_id):
     return render_template('sessions/form.html', sess=sess,
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
-                           monsters=monsters, all_sites=all_sites)
+                           monsters=monsters, all_sites=all_sites,
+                           encounters=encounters,
+                           arc_site=None, arc_next_milestone=None,
+                           arc_npc_ids=set(), arc_location_ids=set(),
+                           arc_quest_ids=set(), arc_encounter_ids=set())
 
 
 @sessions_bp.route('/sessions/<int:session_id>/delete', methods=['POST'])
