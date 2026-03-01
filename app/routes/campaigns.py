@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required, current_user
 from app import db
-from app.models import Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location, CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat
+from app.models import (Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location,
+                        CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat,
+                        AdventureSite)
 
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/campaigns')
 
@@ -106,7 +108,26 @@ def create_campaign():
 @login_required
 def campaign_detail(campaign_id):
     campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
-    return render_template('campaigns/detail.html', campaign=campaign)
+
+    # Aggregate stats for the campaign summary card
+    quests = campaign.quests
+    sites = campaign.adventure_sites
+
+    item_count = Item.query.filter_by(campaign_id=campaign_id).count()
+
+    stats = {
+        'sessions': len(campaign.sessions),
+        'npcs': len(campaign.npcs),
+        'locations': len(campaign.locations),
+        'item_count': item_count,
+        'quests_total': len(quests),
+        'quests_active': sum(1 for q in quests if q.status == 'active'),
+        'quests_completed': sum(1 for q in quests if q.status == 'completed'),
+        'sites_total': len(sites),
+        'sites_completed': sum(1 for s in sites if s.status == 'Completed'),
+    }
+
+    return render_template('campaigns/detail.html', campaign=campaign, stats=stats)
 
 
 @campaigns_bp.route('/<int:campaign_id>/edit', methods=['GET', 'POST'])

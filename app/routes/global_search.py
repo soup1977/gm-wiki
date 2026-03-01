@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import (
     NPC, Location, Quest, Session, Item, Faction, Encounter,
-    PlayerCharacter, CompendiumEntry, BestiaryEntry, RandomTable
+    PlayerCharacter, CompendiumEntry, BestiaryEntry, RandomTable,
+    AdventureSite
 )
 
 global_search_bp = Blueprint('global_search', __name__, url_prefix='/api')
@@ -21,6 +22,23 @@ SEARCH_CONFIG = {
     'compendium': (CompendiumEntry, 'title', 'compendium.entry_detail', 'entry_id', 'bi-journal-text', True),
     'bestiary': (BestiaryEntry, 'name', 'bestiary.entry_detail', 'entry_id', 'bi-collection', False),
     'table': (RandomTable, 'name', 'tables.table_detail', 'table_id', 'bi-dice-5', True),
+    'adventure_site': (AdventureSite, 'name', 'adventure_sites.site_detail', 'site_id', 'bi-map', True),
+}
+
+# Human-readable labels for each entity type
+TYPE_LABELS = {
+    'npc': 'NPCs',
+    'location': 'Locations',
+    'quest': 'Quests',
+    'session': 'Sessions',
+    'item': 'Items',
+    'faction': 'Factions',
+    'encounter': 'Encounters',
+    'pc': 'Player Characters',
+    'compendium': 'Compendium',
+    'bestiary': 'Bestiary',
+    'table': 'Random Tables',
+    'adventure_site': 'Adventure Sites',
 }
 
 # Player wiki mode only shows these types (no GM secrets)
@@ -41,11 +59,11 @@ def global_search():
     mode = request.args.get('mode', 'gm')
 
     if len(q) < 2:
-        return jsonify([])
+        return jsonify({'groups': [], 'total': 0})
 
     # GM mode requires login
     if mode != 'player_wiki' and not current_user.is_authenticated:
-        return jsonify([]), 401
+        return jsonify({'groups': [], 'total': 0}), 401
 
     # Use campaign_id from session (GM mode) or query param (player wiki mode)
     campaign_id = flask_session.get('active_campaign_id')
@@ -54,8 +72,10 @@ def global_search():
             campaign_id = int(request.args.get('campaign_id'))
         except (ValueError, TypeError):
             pass
-    results = []
+
     search_types = PLAYER_WIKI_TYPES if mode == 'player_wiki' else SEARCH_CONFIG.keys()
+    groups = []
+    total = 0
 
     for type_key in search_types:
         if type_key not in SEARCH_CONFIG:
@@ -76,6 +96,10 @@ def global_search():
                 query = query.filter(model.is_player_visible == True)
 
         matches = query.limit(5).all()
+        if not matches:
+            continue
+
+        group_results = []
         for item in matches:
             name = getattr(item, name_field)
 
@@ -96,16 +120,24 @@ def global_search():
                 subtitle = item.role
             elif type_key == 'session' and hasattr(item, 'number') and item.number:
                 subtitle = f'Session {item.number}'
+            elif type_key == 'adventure_site' and hasattr(item, 'status') and item.status:
+                subtitle = item.status
 
-            results.append({
-                'type': type_key,
+            group_results.append({
                 'name': name,
                 'url': url,
-                'icon': icon,
                 'subtitle': subtitle,
             })
 
-        if len(results) >= 20:
+        groups.append({
+            'type': type_key,
+            'label': TYPE_LABELS.get(type_key, type_key.replace('_', ' ').title()),
+            'icon': icon,
+            'results': group_results,
+        })
+        total += len(group_results)
+
+        if total >= 20:
             break
 
-    return jsonify(results[:20])
+    return jsonify({'groups': groups, 'total': total})

@@ -61,3 +61,42 @@ a:hover {
 .session-mode-indicator:hover {
     background-color: rgba(231, 76, 60, 0.3);
 }
+
+/* ── Status badge system ─────────────────────────────────── */
+:root {
+    --status-active:    #198754;  /* green — alive, active quests, active sites */
+    --status-completed: #0d6efd;  /* blue  — completed quests */
+    --status-failed:    #dc3545;  /* red   — failed quests, dead NPCs */
+    --status-on-hold:   #ffc107;  /* yellow — on hold, missing, planned */
+    --status-dead:      #dc3545;
+    --status-missing:   #ffc107;
+    --status-unknown:   #6c757d;  /* grey */
+    --status-planned:   #ffc107;
+    --status-alive:     #198754;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.375rem;
+    color: #fff;
+    background-color: var(--status-unknown);
+}
+
+.status-badge[data-status="active"],
+.status-badge[data-status="Active"],
+.status-badge[data-status="alive"]      { background-color: var(--status-active); }
+.status-badge[data-status="completed"],
+.status-badge[data-status="Completed"]  { background-color: var(--status-completed); }
+.status-badge[data-status="failed"],
+.status-badge[data-status="dead"]       { background-color: var(--status-failed); }
+.status-badge[data-status="on_hold"],
+.status-badge[data-status="missing"],
+.status-badge[data-status="planned"],
+.status-badge[data-status="Planned"]    { background-color: var(--status-on-hold); color: #212529; }
+.status-badge[data-status="unknown"]    { background-color: var(--status-unknown); }

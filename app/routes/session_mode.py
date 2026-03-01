@@ -179,9 +179,11 @@ def post_session():
         id=current_session_id, campaign_id=campaign_id
     ).first_or_404()
 
+    from app.ai_provider import is_ai_enabled
     return render_template(
         'session_mode/post_session.html',
         game_session=game_session,
+        ai_enabled=is_ai_enabled(),
     )
 
 
@@ -306,5 +308,200 @@ def npc_chat():
         effective_provider = requested_provider or get_feature_provider('npc_chat')
         response = ai_chat(system_prompt, messages, max_tokens=512, provider=effective_provider)
         return jsonify({'response': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502
+
+
+
+@session_mode_bp.route('/toggle-visibility', methods=['POST'])
+@login_required
+def toggle_visibility():
+    """AJAX endpoint to flip is_player_visible on an entity linked to the current session."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    entity_type = data.get('type', '')
+    entity_id = data.get('id')
+
+    if not entity_type or not entity_id:
+        return jsonify({'error': 'Missing type or id.'}), 400
+
+    type_map = {
+        'npc': NPC,
+        'quest': Quest,
+        'item': Item,
+        'location': Location,
+    }
+
+    model = type_map.get(entity_type)
+    if not model:
+        return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
+
+    entity = model.query.filter_by(id=entity_id, campaign_id=campaign_id).first()
+    if not entity:
+        return jsonify({'error': 'Entity not found.'}), 404
+
+    entity.is_player_visible = not entity.is_player_visible
+    db.session.commit()
+
+    return jsonify({
+        'visible': entity.is_player_visible,
+        'name': getattr(entity, 'name', ''),
+    })
+
+
+@session_mode_bp.route('/improv-encounter', methods=['POST'])
+@login_required
+def improv_encounter():
+    """Generate a quick on-the-fly combat encounter based on the current scene context."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Check Settings.'}), 403
+
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    location_name = (data.get('location_name') or 'unknown location').strip()
+    party_size = int(data.get('party_size') or 4)
+
+    campaign = Campaign.query.get(campaign_id)
+
+    parts = [
+        'You are a tabletop RPG encounter designer. Generate a quick, balanced combat encounter '
+        'the GM can run immediately at the table with minimal prep. '
+        'Format the output as Markdown with clear sections.'
+    ]
+    parts.append(f'Location: {location_name}')
+    parts.append(f'Party size: {party_size} players')
+    if campaign and campaign.ai_world_context:
+        parts.append(f'World context: {campaign.ai_world_context}')
+    parts.append(
+        '\nProvide:\n'
+        '- **Enemies:** Name, count, brief description\n'
+        '- **Stats:** HP, ATK, any special ability (1 line each)\n'
+        '- **Tactics:** 1-2 sentences on how they fight\n'
+        '- **Loot:** One quick loot suggestion\n'
+        'Keep it brief — the GM needs this fast, at the table.'
+    )
+
+    system_prompt = '\n\n'.join(parts)
+    messages = [{'role': 'user', 'content': f'Generate an improv encounter for {location_name}.'}]
+
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=512,
+                           provider=get_feature_provider('generate'))
+        return jsonify({'encounter': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@session_mode_bp.route('/hazard-flavor', methods=['POST'])
+@login_required
+def hazard_flavor():
+    """Generate vivid sensory flavor text for a hazard event."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Check Settings.'}), 403
+
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    hazard = (data.get('hazard') or '').strip()
+    if not hazard:
+        return jsonify({'error': 'Describe the hazard first.'}), 400
+
+    campaign = Campaign.query.get(campaign_id)
+
+    parts = [
+        'You are a tabletop RPG narrator. Write vivid, sensory flavor text for a GM to read '
+        'aloud when a hazard occurs at the table. '
+        'Focus on what the players see, hear, smell, and feel. '
+        'Keep it to 2-3 sentences — punchy and atmospheric, not a wall of text.'
+    ]
+    if campaign and campaign.ai_world_context:
+        parts.append(f'World context: {campaign.ai_world_context}')
+
+    system_prompt = '\n\n'.join(parts)
+    messages = [{'role': 'user', 'content': f'Write flavor text for this hazard: {hazard}'}]
+
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=256,
+                           provider=get_feature_provider('generate'))
+        return jsonify({'flavor': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@session_mode_bp.route('/suggest-consequences', methods=['POST'])
+@login_required
+def suggest_consequences():
+    """Suggest narrative ripple effects based on what happened this session."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Check Settings.'}), 403
+
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    session_id = data.get('session_id')
+    if not session_id:
+        return jsonify({'error': 'session_id required.'}), 400
+
+    game_session = GameSession.query.filter_by(id=session_id, campaign_id=campaign_id).first()
+    if not game_session:
+        return jsonify({'error': 'Session not found.'}), 404
+
+    campaign = Campaign.query.get(campaign_id)
+
+    context_parts = []
+    if game_session.summary:
+        context_parts.append(f'Session summary:\n{game_session.summary[:2000]}')
+    if game_session.gm_notes:
+        context_parts.append(f'GM notes:\n{game_session.gm_notes[:1000]}')
+
+    quest_lines = []
+    for q in game_session.quests_touched:
+        quest_lines.append(f'- {q.name} (status: {q.status})')
+    if quest_lines:
+        context_parts.append('Quest statuses:\n' + '\n'.join(quest_lines))
+
+    npc_lines = []
+    for n in game_session.npcs_featured:
+        npc_lines.append(f'- {n.name} (status: {n.status})')
+    if npc_lines:
+        context_parts.append('NPC statuses:\n' + '\n'.join(npc_lines))
+
+    if not context_parts:
+        return jsonify({'error': 'Not enough session data to suggest consequences. Add a summary first.'}), 400
+
+    system_prompt = (
+        'You are a narrative consequence designer for tabletop RPGs. '
+        'Based on what happened in the last session, suggest 3-5 ripple effects '
+        'that could emerge in future sessions — new threats, changed relationships, '
+        'opened opportunities, or lingering complications. '
+        'Format as a Markdown bullet list. Each consequence should be 1-2 sentences. '
+        'Be specific to the events described, not generic.'
+    )
+    if campaign and campaign.ai_world_context:
+        system_prompt += f'\n\nWorld context: {campaign.ai_world_context}'
+
+    user_content = '\n\n'.join(context_parts)
+    messages = [{'role': 'user', 'content': user_content}]
+
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=512,
+                           provider=get_feature_provider('generate'))
+        return jsonify({'consequences': response})
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 502

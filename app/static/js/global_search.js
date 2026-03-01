@@ -63,62 +63,70 @@
     fetch(url)
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        currentResults = data;
+        currentResults = [];
         renderResults(data);
       })
       .catch(function () { hideDropdown(); });
   }
 
-  // ── Render results ───────────────────────────────────────────────
-  function renderResults(items) {
+  // ── Render grouped results ─────────────────────────────────────
+  function renderResults(data) {
     dropdown.innerHTML = '';
     activeIndex = -1;
 
-    if (items.length === 0) {
+    var groups = data.groups || [];
+
+    if (groups.length === 0) {
       dropdown.innerHTML = '<div class="dropdown-item text-muted small">No results found</div>';
       dropdown.classList.add('show');
       return;
     }
 
-    items.forEach(function (item, idx) {
-      var el = document.createElement('a');
-      el.className = 'dropdown-item gs-result d-flex align-items-center gap-2';
-      el.href = item.url;
-      el.dataset.url = item.url;
-      el.dataset.index = idx;
+    var allResults = [];
 
-      // Icon
-      var icon = document.createElement('i');
-      icon.className = 'bi ' + item.icon + ' text-muted';
-      el.appendChild(icon);
+    groups.forEach(function (group) {
+      // Group header
+      var header = document.createElement('div');
+      header.className = 'dropdown-header d-flex align-items-center gap-2 text-muted small py-1';
+      header.innerHTML = '<i class="bi ' + group.icon + '"></i> ' + group.label +
+          ' <span class="badge bg-secondary ms-auto">' + group.results.length + '</span>';
+      dropdown.appendChild(header);
 
-      // Name
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'flex-grow-1 text-truncate';
-      nameSpan.textContent = item.name;
-      el.appendChild(nameSpan);
+      // Results in this group
+      group.results.forEach(function (item) {
+        var globalIdx = allResults.length;
+        allResults.push(item);
 
-      // Subtitle / type badge
-      if (item.subtitle) {
-        var sub = document.createElement('small');
-        sub.className = 'text-muted';
-        sub.textContent = item.subtitle;
-        el.appendChild(sub);
-      } else {
-        var badge = document.createElement('span');
-        badge.className = 'badge bg-secondary';
-        badge.textContent = item.type;
-        el.appendChild(badge);
-      }
+        var el = document.createElement('a');
+        el.className = 'dropdown-item gs-result d-flex align-items-center gap-2 ps-4';
+        el.href = item.url;
+        el.dataset.url = item.url;
+        el.dataset.index = globalIdx;
 
-      el.addEventListener('mouseenter', function () {
-        activeIndex = idx;
-        highlightItem(dropdown.querySelectorAll('.gs-result'));
+        // Name
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'flex-grow-1 text-truncate';
+        nameSpan.textContent = item.name;
+        el.appendChild(nameSpan);
+
+        // Subtitle
+        if (item.subtitle) {
+          var sub = document.createElement('small');
+          sub.className = 'text-muted';
+          sub.textContent = item.subtitle;
+          el.appendChild(sub);
+        }
+
+        el.addEventListener('mouseenter', function () {
+          activeIndex = globalIdx;
+          highlightItem(dropdown.querySelectorAll('.gs-result'));
+        });
+
+        dropdown.appendChild(el);
       });
-
-      dropdown.appendChild(el);
     });
 
+    currentResults = allResults;
     dropdown.classList.add('show');
   }
 

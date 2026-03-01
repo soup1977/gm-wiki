@@ -87,6 +87,14 @@ gm-wiki/
 | 7 | AI Smart Fill, SRD import, settings | Complete |
 | 7.5 | Auth, admin, factions, encounters, PCs, shortcodes, global search, Obsidian import, dice roller, quick create, SD image generation | Complete |
 | 8 | Security audit, hardening, documentation | Complete |
+| 9 | Adventure Sites entity (Markdown doc per area, sticky ToC, run state) | Complete |
+| 10 | Campaign Assistant (AI chat, per-feature provider selection) | Complete |
+| 11 | Entity-from-selection (text-select → create NPC/Location/Quest/Item in Adventure Sites) | Complete |
+| 12 | Session Workflow (carryover, post-session wrap-up, "Start Session Here" button) | Complete |
+| 13 | UX Polish (status badge system, campaign stats, grouped global search, wiki visibility toggle) | Complete — PR #9 |
+| 14 | AI Runtime Features (Improv Encounter, Hazard Flavor, Suggest Consequences, Suggest Milestones) | Complete — feature/ai-runtime-phase14 |
+| 15 | Dashboard Overhaul (site content in dashboard, shortcode popups, panel layout) | Planned — see docs/phase-15-plan.md |
+| 16 | Workflow Guidance (campaign wizard, planning checklist, entity grouping, theme toggle) | Planned — see docs/phase-16-plan.md |
 
 ---
 
@@ -97,6 +105,11 @@ gm-wiki/
 - Each campaign is self-contained — no data bleeds between campaigns
 - The app must work well on a tablet at a live game table (readable, fast, minimal clicks)
 - System-agnostic — no hardcoded D&D, ICRPG, or other system references
+
+### Phase planning:
+- **Always save phase plans to `docs/phase-N-plan.md`** when a new phase is discussed or its feature list is provided — never rely on conversation context alone
+- Each plan file must include a feature table (Feature | Status | Notes) and any split/dependency notes
+- Update the Build Phases table in this file when a phase is completed or a new one is defined
 
 ### Code style:
 - Use Flask application factory pattern (`create_app()` in `app/__init__.py`)

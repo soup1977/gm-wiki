@@ -40,15 +40,7 @@
         {% else %}
         <span class="badge bg-secondary align-self-center"><i class="bi bi-eye-slash"></i> Hidden from players</span>
         {% endif %}
-        {% if npc.status == 'alive' %}
-            <span class="badge bg-success fs-6">{{ npc.status }}</span>
-        {% elif npc.status == 'dead' %}
-            <span class="badge bg-danger fs-6">{{ npc.status }}</span>
-        {% elif npc.status == 'missing' %}
-            <span class="badge bg-warning text-dark fs-6">{{ npc.status }}</span>
-        {% else %}
-            <span class="badge bg-secondary fs-6">{{ npc.status }}</span>
-        {% endif %}
+        <span class="status-badge fs-6" data-status="{{ npc.status }}">{{ npc.status | replace('_', ' ') | title }}</span>
         <!-- Quick-status buttons -->
         {% if npc.status != 'dead' %}
         <form method="POST" action="{{ url_for('npcs.set_npc_status', npc_id=npc.id) }}">
