@@ -28,6 +28,19 @@
     {% endif %}
 </div>
 
+{% if carryover %}
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-arrow-right-circle fs-5"></i>
+    <div>
+        <strong>Continuing from Session
+            {% if carryover.from_session.number %}#{{ carryover.from_session.number }}{% endif %}
+            {% if carryover.from_session.title %} — {{ carryover.from_session.title }}{% endif %}
+        </strong>
+        <br><span class="small">Active quests, alive NPCs, adventure site, and attending players carried over automatically.</span>
+    </div>
+</div>
+{% endif %}
+
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row g-4">
@@ -42,7 +55,7 @@
                         <div class="col-4">
                             <label for="number" class="form-label">Session #</label>
                             <input type="number" class="form-control" id="number" name="number" min="1"
-                                   value="{{ sess.number if sess and sess.number else '' }}">
+                                   value="{{ sess.number if sess and sess.number else (carryover.next_number if carryover and carryover.next_number else '') }}">
                         </div>
                         <div class="col-8">
                             <label for="date_played" class="form-label">Date Played</label>
@@ -73,7 +86,10 @@
                             <option value="">— None —</option>
                             {% for site in all_sites %}
                             <option value="{{ site.id }}"
-                                {% if sess and sess.adventure_sites and site in sess.adventure_sites %}selected{% endif %}>
+                                {% if sess and sess.adventure_sites and site in sess.adventure_sites %}selected
+                                {% elif carryover and carryover.site_id == site.id %}selected
+                                {% elif preselect_site_id and preselect_site_id == site.id %}selected
+                                {% endif %}>
                                 {{ site.name }}{% if site.status %} ({{ site.status }}){% endif %}
                             </option>
                             {% endfor %}
@@ -88,7 +104,9 @@
                             <select class="form-select flex-grow-1" id="npcs_featured" name="npcs_featured" multiple size="5">
                                 {% for npc in npcs %}
                                 <option value="{{ npc.id }}"
-                                    {% if sess and npc in sess.npcs_featured %}selected{% endif %}>
+                                    {% if sess and npc in sess.npcs_featured %}selected
+                                    {% elif carryover and npc.id in carryover.npc_ids %}selected
+                                    {% endif %}>
                                     {{ npc.name }}
                                 </option>
                                 {% endfor %}
@@ -124,7 +142,9 @@
                             <select class="form-select flex-grow-1" id="quests_touched" name="quests_touched" multiple size="5">
                                 {% for quest in quests %}
                                 <option value="{{ quest.id }}"
-                                    {% if sess and quest in sess.quests_touched %}selected{% endif %}>
+                                    {% if sess and quest in sess.quests_touched %}selected
+                                    {% elif carryover and quest.id in carryover.quest_ids %}selected
+                                    {% endif %}>
                                     {{ quest.name }}
                                 </option>
                                 {% endfor %}
@@ -182,7 +202,9 @@
                                 <input class="form-check-input" type="checkbox"
                                        name="attended_pc_ids" value="{{ pc.id }}"
                                        id="pc_{{ pc.id }}"
-                                       {% if pc.id in attended_ids %}checked{% endif %}>
+                                       {% if pc.id in attended_ids %}checked
+                                       {% elif carryover and pc.id in carryover.pc_ids %}checked
+                                       {% endif %}>
                                 <label class="form-check-label d-flex align-items-center gap-2" for="pc_{{ pc.id }}">
                                     {% if pc.portrait_filename %}
                                     <img src="{{ url_for('static', filename='uploads/' + pc.portrait_filename) }}"
@@ -221,9 +243,16 @@
                 <div class="card-body d-flex flex-column gap-3">
 
                     <div>
-                        <label for="prep_notes" class="form-label">
-                            <i class="bi bi-journal-bookmark me-1 text-info"></i>Prep Notes
-                        </label>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <label for="prep_notes" class="form-label mb-0">
+                                <i class="bi bi-journal-bookmark me-1 text-info"></i>Prep Notes
+                            </label>
+                            {% if ai_enabled %}
+                            <button type="button" class="btn btn-outline-info btn-sm py-0 px-2" id="gen-prep-btn" onclick="generatePrepNotes()">
+                                <i class="bi bi-stars"></i> Generate Prep
+                            </button>
+                            {% endif %}
+                        </div>
                         <textarea class="form-control border-info" id="prep_notes" name="prep_notes" rows="6">{{ sess.prep_notes if sess and sess.prep_notes else '' }}</textarea>
                         <div class="form-text text-info">Planning notes for this session — shown in Session Mode during play. Markdown supported.</div>
                     </div>
@@ -259,5 +288,74 @@
 {% if ai_enabled %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'session';</script>
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+<script>
+function generatePrepNotes() {
+    var btn = document.getElementById('gen-prep-btn');
+    var textarea = document.getElementById('prep_notes');
+
+    if (textarea.value.trim() && !confirm('This will replace existing prep notes. Continue?')) {
+        return;
+    }
+
+    var siteSelect = document.getElementById('adventure_site_id');
+    var siteId = siteSelect ? siteSelect.value : '';
+    var sessionNumber = document.getElementById('number').value;
+
+    var npcSelect = document.getElementById('npcs_featured');
+    var npcNames = [];
+    if (npcSelect) {
+        for (var i = 0; i < npcSelect.options.length; i++) {
+            if (npcSelect.options[i].selected) npcNames.push(npcSelect.options[i].text.trim());
+        }
+    }
+
+    var questSelect = document.getElementById('quests_touched');
+    var questNames = [];
+    if (questSelect) {
+        for (var i = 0; i < questSelect.options.length; i++) {
+            if (questSelect.options[i].selected) questNames.push(questSelect.options[i].text.trim());
+        }
+    }
+
+    if (!siteId && npcNames.length === 0 && questNames.length === 0) {
+        alert('Select an adventure site, NPCs, or quests first to generate prep notes.');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+
+    fetch('/api/ai/session-prep', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            site_id: siteId || null,
+            session_number: sessionNumber || null,
+            npc_names: npcNames,
+            quest_names: questNames
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars"></i> Generate Prep';
+        if (data.error) { alert('Error: ' + data.error); return; }
+        if (data.prep_notes) {
+            textarea.value = data.prep_notes;
+            textarea.scrollTop = 0;
+        } else {
+            alert('No prep notes generated. Try again.');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars"></i> Generate Prep';
+        alert('Failed to generate prep notes. Check your AI provider settings.');
+    });
+}
+</script>
 {% endif %}
 {% endblock %}

@@ -11,11 +11,11 @@
         </li>
         {% else %}
         <li class="breadcrumb-item"><a href="{{ url_for('locations.list_locations') }}">Locations</a></li>
-        {% if location.parent_location %}
+        {% for ancestor in ancestors %}
         <li class="breadcrumb-item">
-            <a href="{{ url_for('locations.location_detail', location_id=location.parent_location.id) }}">{{ location.parent_location.name }}</a>
+            <a href="{{ url_for('locations.location_detail', location_id=ancestor.id) }}">{{ ancestor.name }}</a>
         </li>
-        {% endif %}
+        {% endfor %}
         {% endif %}
         <li class="breadcrumb-item active" aria-current="page">{{ location.name }}</li>
     </ol>

@@ -82,8 +82,16 @@ def wiki_location_detail(campaign_id, location_id):
     location = Location.query.filter_by(
         id=location_id, campaign_id=campaign_id, is_player_visible=True
     ).first_or_404()
+    ancestors = []
+    current = location.parent_location
+    while current and len(ancestors) < 10:
+        if current.is_player_visible:
+            ancestors.append(current)
+        current = current.parent_location
+    ancestors.reverse()
     return render_template(
-        'wiki/locations/detail.html', campaign=campaign, location=location
+        'wiki/locations/detail.html', campaign=campaign, location=location,
+        ancestors=ancestors
     )
 
 
