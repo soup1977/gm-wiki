@@ -93,6 +93,10 @@ def dashboard():
     other_active_count = len([q for q in active_quests
                                if not game_session or q not in session_quests])
 
+    # Adventure Site linked to this session (first one, if any)
+    active_site = (game_session.adventure_sites[0]
+                   if game_session and game_session.adventure_sites else None)
+
     return render_template(
         'session_mode/dashboard.html',
         game_session=game_session,
@@ -106,6 +110,7 @@ def dashboard():
         other_active_count=other_active_count,
         available_providers=available_providers,
         active_provider=active_provider,
+        active_site=active_site,
     )
 
 

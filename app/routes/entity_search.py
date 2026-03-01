@@ -1,7 +1,10 @@
-"""Unified entity search API for the shortcode autocomplete panel.
+"""Unified entity search and preview API.
 
 GET /api/entity-search?type=loc&q=Portland
 Returns JSON array of matching entities (max 10), scoped to active campaign.
+
+GET /api/entity-preview/<type>/<id>
+Returns a lightweight JSON summary of a single entity for shortcode popovers.
 """
 
 from flask import Blueprint, jsonify, request, session
@@ -46,3 +49,31 @@ def search():
         })
 
     return jsonify(results)
+
+
+@entity_search_bp.route('/entity-preview/<string:entity_type>/<int:entity_id>')
+@login_required
+def entity_preview(entity_type, entity_id):
+    """Return a lightweight JSON summary of one entity for shortcode hover popovers."""
+    if entity_type not in TYPE_CONFIG:
+        return jsonify({'error': 'Unknown type'}), 404
+
+    cfg = TYPE_CONFIG[entity_type]
+    try:
+        model_cls = _get_model(cfg['model'])
+    except AttributeError:
+        return jsonify({'error': 'Not found'}), 404
+
+    entity = model_cls.query.get(entity_id)
+    if not entity:
+        return jsonify({'error': 'Not found'}), 404
+
+    name = getattr(entity, cfg['name_field'], '')
+    # Try common subtitle/description fields in order of preference
+    subtitle = (getattr(entity, 'subtitle', None)
+                or getattr(entity, 'role', None)
+                or getattr(entity, 'type', None)
+                or '')
+    status = getattr(entity, 'status', None) or ''
+
+    return jsonify({'name': name, 'subtitle': subtitle, 'status': status})

@@ -164,7 +164,9 @@ def process_shortcodes(text, campaign_id, source_type, source_id):
         # Use the actual stored name (may differ in capitalisation)
         cfg = TYPE_CONFIG[type_key]
         display_name = getattr(entity, cfg['name_field'])
-        return f'[{display_name}]({link_url})'
+        return (f'<a href="{link_url}" class="shortcode-link"'
+                f' data-preview-type="{type_key}"'
+                f' data-preview-id="{entity.id}">{display_name}</a>')
 
     processed = SHORTCODE_RE.sub(replace_match, text)
     return (processed, mentions)
