@@ -9,6 +9,7 @@ If no AI provider is configured, both endpoints return a 403.
 """
 
 import json
+import re
 from flask import Blueprint, request, jsonify
 from flask_login import login_required
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
@@ -164,15 +165,7 @@ def smart_fill():
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=1024, json_mode=True,
                       provider=get_feature_provider('smart_fill'))
-
-        # Strip markdown code fences if the model added them despite instructions
-        # (shouldn't happen with json_mode, but kept as a safety net for Anthropic)
-        if raw.startswith('```'):
-            raw = raw.split('\n', 1)[-1]
-            if raw.endswith('```'):
-                raw = raw[:-3].strip()
-
-        result = json.loads(raw)
+        result = _extract_json(raw)
         return jsonify(result)
 
     except json.JSONDecodeError:
@@ -255,8 +248,49 @@ def _get_active_campaign():
     return None
 
 
+def _extract_json(raw):
+    """Robustly extract a JSON object from a model response.
+
+    Anthropic models sometimes add a preamble ("Here is the data:") or wrap
+    the JSON in code fences even when instructed not to. This function tries
+    progressively looser extraction until it finds parseable JSON.
+
+    Raises json.JSONDecodeError if no valid JSON object can be found.
+    """
+    raw = raw.strip()
+
+    # 1. Try direct parse — works when the model behaves
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # 2. Strip markdown code fences (```json ... ``` or ``` ... ```)
+    # Uses regex so it works even when there is leading text before the fence
+    fence_match = re.search(r'```(?:json)?\s*\n([\s\S]*?)\n```', raw)
+    if fence_match:
+        try:
+            return json.loads(fence_match.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+
+    # 3. Find the first '{' and try to parse a JSON object from there
+    brace_idx = raw.find('{')
+    if brace_idx != -1:
+        try:
+            return json.loads(raw[brace_idx:])
+        except json.JSONDecodeError:
+            pass
+
+    # Nothing worked — re-raise so the caller can return a clean error
+    raise json.JSONDecodeError('No valid JSON object found in model response', raw, 0)
+
+
+# Keep old name as an alias for callers that pass the raw string and expect
+# a string back (they call json.loads themselves).
 def _strip_code_fences(raw):
-    """Strip markdown code fences that some models add despite json_mode."""
+    """Legacy helper — prefer _extract_json for new code."""
+    raw = raw.strip()
     if raw.startswith('```'):
         raw = raw.split('\n', 1)[-1]
         if raw.endswith('```'):
@@ -318,15 +352,7 @@ def generate_entry():
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=max_out_tokens, json_mode=True,
                       provider=get_feature_provider('generate'))
-
-        # Strip markdown code fences if the model added them despite instructions
-        # (shouldn't happen with json_mode, but kept as a safety net for Anthropic)
-        if raw.startswith('```'):
-            raw = raw.split('\n', 1)[-1]
-            if raw.endswith('```'):
-                raw = raw[:-3].strip()
-
-        result = json.loads(raw)
+        result = _extract_json(raw)
         return jsonify(result)
 
     except json.JSONDecodeError:
@@ -403,7 +429,7 @@ Rules:
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
                       provider=get_feature_provider('generate'))
-        result = json.loads(_strip_code_fences(raw))
+        result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError:
         return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
@@ -464,7 +490,7 @@ Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
                       provider=get_feature_provider('generate'))
-        result = json.loads(_strip_code_fences(raw))
+        result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError:
         return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
@@ -562,7 +588,7 @@ Return ONLY a valid JSON object. No explanation, no code fences."""
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
                       provider=get_feature_provider('generate'))
-        result = json.loads(_strip_code_fences(raw))
+        result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError:
         return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
@@ -656,7 +682,7 @@ Return ONLY a valid JSON object. No explanation, no code fences."""
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
                       provider=get_feature_provider('generate'))
-        result = json.loads(_strip_code_fences(raw))
+        result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError:
         return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
