@@ -36,15 +36,7 @@
             <td><a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a></td>
             <td>{{ npc.role or '—' }}</td>
             <td>
-                {% if npc.status == 'alive' %}
-                    <span class="badge bg-success">{{ npc.status }}</span>
-                {% elif npc.status == 'dead' %}
-                    <span class="badge bg-danger">{{ npc.status }}</span>
-                {% elif npc.status == 'missing' %}
-                    <span class="badge bg-warning text-dark">{{ npc.status }}</span>
-                {% else %}
-                    <span class="badge bg-secondary">{{ npc.status }}</span>
-                {% endif %}
+                <span class="status-badge" data-status="{{ npc.status }}">{{ npc.status | replace('_', ' ') | title }}</span>
             </td>
             <td>
                 {% if npc.home_location %}
