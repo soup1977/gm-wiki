@@ -140,6 +140,11 @@
         // Build request body
         const body = { entity_type: entityType, prompt: concept };
 
+        // If this entity belongs to a Story Arc, pass the arc ID so AI has arc context
+        if (window.AI_STORY_ARC_ID) {
+            body.story_arc_id = window.AI_STORY_ARC_ID;
+        }
+
         // Include custom system prompt if the advanced section is visible and was edited
         if (!advancedDiv.classList.contains('d-none') && systemPromptInput.value.trim()) {
             body.system_prompt = systemPromptInput.value.trim();

@@ -50,10 +50,12 @@ def list_sites():
         key=lambda t: t.name
     )
 
+    from app.ai_provider import is_ai_enabled
     return render_template('adventure_sites/list.html', sites=sites,
                            grouped_sites=grouped_sites,
                            status_filter=status_filter, tag_filter=tag_filter,
-                           all_tags=all_tags, status_options=STATUS_OPTIONS)
+                           all_tags=all_tags, status_options=STATUS_OPTIONS,
+                           ai_enabled=is_ai_enabled())
 
 
 @adventure_sites_bp.route('/sites/new', methods=['GET', 'POST'])
@@ -117,16 +119,134 @@ def create_site():
                            all_sessions=all_sessions, status_options=STATUS_OPTIONS)
 
 
+# ---------------------------------------------------------------------------
+# Genesis Wizard — Phase 17 AI-orchestrated Story Arc creation
+# ---------------------------------------------------------------------------
+
+@adventure_sites_bp.route('/sites/genesis')
+@login_required
+def genesis_wizard():
+    """Render the 4-step Story Arc Genesis Wizard."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        flash('Select a campaign first.', 'warning')
+        return redirect(url_for('campaigns.list_campaigns'))
+
+    from app.ai_provider import is_ai_enabled
+    if not is_ai_enabled():
+        flash('AI features are not configured. Go to Settings to set up a provider.', 'warning')
+        return redirect(url_for('adventure_sites.list_sites'))
+
+    campaign = Campaign.query.get(campaign_id)
+    return render_template('adventure_sites/genesis_wizard.html', campaign=campaign)
+
+
+@adventure_sites_bp.route('/sites/genesis/save', methods=['POST'])
+@login_required
+def genesis_save():
+    """
+    Save the Story Arc created by the genesis wizard.
+    Called via JSON POST at the start of Step 4 (before entity generation begins).
+
+    Accepts JSON body:
+      { "title":              "...",
+        "subtitle":           "...",
+        "premise":            "...",
+        "hook":               "...",
+        "themes":             "...",
+        "estimated_sessions": "3-5",
+        "milestones":         ["milestone 1", "milestone 2", ...]
+      }
+    Returns JSON: { "site_id": 42, "name": "..." }
+    """
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign selected.'}), 400
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Request must be JSON.'}), 400
+
+    title = data.get('title', '').strip()
+    if not title:
+        return jsonify({'error': 'title is required.'}), 400
+
+    # Build a structured Markdown document from the arc fields
+    content_parts = []
+    premise = data.get('premise', '').strip()
+    hook    = data.get('hook', '').strip()
+    themes  = data.get('themes', '').strip()
+
+    if premise:
+        content_parts.append(f"## Overview\n\n{premise}")
+    if hook:
+        content_parts.append(f"## Hook\n\n{hook}")
+    if themes:
+        content_parts.append(f"**Themes:** {themes}")
+
+    content = '\n\n'.join(content_parts) if content_parts else None
+
+    # Parse estimated_sessions — accept "3-5" style or plain int
+    est_sessions_raw = data.get('estimated_sessions', '')
+    estimated_sessions = None
+    if est_sessions_raw:
+        # Try to extract the first number from strings like "3-5" or "4"
+        import re as _re
+        m = _re.search(r'\d+', str(est_sessions_raw))
+        if m:
+            estimated_sessions = int(m.group())
+
+    # Build milestones list
+    milestones_raw = data.get('milestones', [])
+    milestone_list = [{'label': m.strip(), 'done': False}
+                      for m in milestones_raw if isinstance(m, str) and m.strip()]
+
+    site = AdventureSite(
+        campaign_id=campaign_id,
+        name=title,
+        subtitle=data.get('subtitle', '').strip() or None,
+        status='Planned',
+        estimated_sessions=estimated_sessions,
+        content=content,
+        sort_order=0,
+        is_player_visible=False,
+    )
+    if milestone_list:
+        site.set_milestones(milestone_list)
+
+    db.session.add(site)
+    db.session.flush()
+
+    if site.content:
+        processed, mentions = process_shortcodes(site.content, campaign_id, 'site', site.id)
+        site.content = processed
+        for m in mentions:
+            db.session.add(m)
+
+    db.session.commit()
+    return jsonify({'site_id': site.id, 'name': site.name}), 201
+
+
 @adventure_sites_bp.route('/sites/<int:site_id>')
 @login_required
 def site_detail(site_id):
     from app.ai_provider import is_ai_enabled
+    from app.models import NPC, Location, Quest, Item
     campaign_id = get_active_campaign_id()
     site = AdventureSite.query.filter_by(id=site_id, campaign_id=campaign_id).first_or_404()
     mentions = resolve_mentions_for_target('site', site_id)
     linked_entities = resolve_mentions_for_source('site', site_id)
+
+    # Entities directly linked to this arc via story_arc_id (from genesis wizard or manual linking)
+    arc_npcs      = NPC.query.filter_by(campaign_id=campaign_id, story_arc_id=site_id).order_by(NPC.name).all()
+    arc_locations = Location.query.filter_by(campaign_id=campaign_id, story_arc_id=site_id).order_by(Location.name).all()
+    arc_quests    = Quest.query.filter_by(campaign_id=campaign_id, story_arc_id=site_id).order_by(Quest.name).all()
+    arc_items     = Item.query.filter_by(campaign_id=campaign_id, story_arc_id=site_id).order_by(Item.name).all()
+
     return render_template('adventure_sites/detail.html', site=site, mentions=mentions,
-                           linked_entities=linked_entities, ai_enabled=is_ai_enabled())
+                           linked_entities=linked_entities, ai_enabled=is_ai_enabled(),
+                           arc_npcs=arc_npcs, arc_locations=arc_locations,
+                           arc_quests=arc_quests, arc_items=arc_items)
 
 
 @adventure_sites_bp.route('/sites/<int:site_id>/edit', methods=['GET', 'POST'])

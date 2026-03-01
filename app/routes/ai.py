@@ -222,6 +222,65 @@ Guidelines:
 
 Return a JSON object: {"summary": "markdown string..."}
 Return ONLY a valid JSON object. No explanation, no code fences.""",
+
+    'generate_arc_structure': """\
+You are a creative assistant for a tabletop RPG Game Master.
+Your job is to take a seed idea and design a complete Story Arc structure for a campaign.
+{world_section}
+Return a JSON object with these fields:
+  "title": A short, evocative story arc title (5 words or fewer)
+  "subtitle": A one-line tagline (e.g. "A web of merchant betrayal and bandit war")
+  "premise": 2-3 sentences describing the arc's central conflict and what's at stake
+  "hook": The inciting incident that draws the players in (1-2 sentences)
+  "themes": Comma-separated themes (e.g. "betrayal, greed, unlikely alliances")
+  "estimated_sessions": Rough session count as a string (e.g. "3-5")
+  "milestones": A JSON array of 5-7 milestone strings — key narrative beats in order
+               (e.g. ["Players learn of the merchant guild's secret", "The bandit army makes its first strike"])
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Be creative but keep it grounded and immediately playable.
+- The milestones should form a clear narrative arc from discovery to resolution.
+- Match the tone of the campaign world context if provided.
+""",
+
+    'propose_arc_entities': """\
+You are a creative assistant for a tabletop RPG Game Master.
+Your job is to read a Story Arc description and propose the key NPCs, Locations, Quests, and Items \
+that the GM will need to run it.
+
+Propose ONLY what is narratively essential — not an exhaustive list. Aim for:
+  - 3-5 NPCs (villain or antagonist, 1-2 allies or neutral contacts, 1-2 minor characters)
+  - 2-4 Locations (primary location, 1-2 secondary locations)
+  - 2-3 Quests (1 main quest, 1-2 side quests)
+  - 1-2 Items (key McGuffin, reward, or plot item) — only if the arc naturally calls for them
+  - 1-2 Encounters (combat or social) — only if the arc naturally calls for them
+
+Return a JSON object:
+{
+  "npcs": [
+    {"name": "...", "role": "villain|ally|neutral|minor", "description": "One sentence about who they are and their role in this arc."}
+  ],
+  "locations": [
+    {"name": "...", "type": "city|dungeon|wilderness|building|etc", "description": "One sentence about this place and its significance."}
+  ],
+  "quests": [
+    {"name": "...", "type": "main|side", "hook": "One sentence describing what draws the players into this quest."}
+  ],
+  "items": [
+    {"name": "...", "description": "One sentence about this item and why it matters to the arc."}
+  ],
+  "encounters": [
+    {"name": "...", "description": "One sentence describing this encounter and what makes it interesting."}
+  ]
+}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Keep descriptions SHORT — one sentence each. The GM will flesh them out.
+- Every entity you propose should have a clear reason to exist in THIS specific arc.
+- If the arc doesn't naturally call for items or encounters, return empty arrays for those.
+""",
 }
 
 
@@ -307,7 +366,7 @@ def smart_fill():
 # Generate Entry — create a complete entry from a short concept prompt
 # ---------------------------------------------------------------------------
 
-def _build_generate_prompt(entity_type, concept, world_context=None):
+def _build_generate_prompt(entity_type, concept, world_context=None, arc_context=None):
     """Build the system prompt and messages for creative entity generation."""
     schema = ENTITY_SCHEMAS.get(entity_type)
     if not schema:
@@ -318,11 +377,15 @@ def _build_generate_prompt(entity_type, concept, world_context=None):
         for k, v in schema['fields'].items()
     )
 
-    # If the campaign has world context, inject it so AI output matches the setting
+    # Build world section — campaign context + optional story arc context
     world_section = ''
     if world_context:
         world_section = (
             f"\nCampaign world context (use this to inform tone, setting, and details):\n{world_context}\n"
+        )
+    if arc_context:
+        world_section += (
+            f"\nStory Arc context (this entity belongs to this arc — keep it consistent):\n{arc_context}\n"
         )
 
     system_prompt = _get_system_prompt('generate',
@@ -479,7 +542,25 @@ def generate_entry():
         return jsonify({'error': f'Concept is too long (max ~{concept_limit} characters).'}), 400
 
     world_context = _get_active_world_context()
-    messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context)
+
+    # If the caller passes a story_arc_id, inject that arc's name + premise as context
+    arc_context = None
+    story_arc_id = data.get('story_arc_id')
+    if story_arc_id:
+        from app.models import AdventureSite
+        campaign = _get_active_campaign()
+        if campaign:
+            arc = AdventureSite.query.filter_by(id=int(story_arc_id), campaign_id=campaign.id).first()
+            if arc:
+                arc_parts = [f"Story Arc: {arc.name}"]
+                if arc.subtitle:
+                    arc_parts.append(f"Tagline: {arc.subtitle}")
+                if arc.content:
+                    # First ~500 chars of arc content gives the AI enough narrative context
+                    arc_parts.append(f"Arc overview:\n{arc.content[:500]}")
+                arc_context = '\n'.join(arc_parts)
+
+    messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context, arc_context)
 
     # Allow optional custom system prompt override (from shift+click editor)
     custom_system = data.get('system_prompt', '').strip()
@@ -766,3 +847,235 @@ def draft_summary():
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Generate Arc Structure — Phase 17 Genesis Wizard Step 1→2
+# ---------------------------------------------------------------------------
+
+@ai_bp.route('/generate-arc-structure', methods=['POST'])
+@login_required
+def generate_arc_structure():
+    """
+    Takes a seed idea (free text + optional guided fields) and returns a
+    complete Story Arc structure: title, subtitle, premise, hook, themes,
+    estimated_sessions, and milestones[].
+
+    Accepts JSON body:
+      { "seed_text": "...",          # free-text premise (required)
+        "conflict": "...",           # optional guided field
+        "villain": "...",            # optional guided field
+        "location": "...",           # optional guided field
+        "hook": "...",               # optional guided field
+        "stakes": "..."              # optional guided field
+      }
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Request must be JSON.'}), 400
+
+    seed_text = data.get('seed_text', '').strip()
+    if not seed_text:
+        return jsonify({'error': 'seed_text is required.'}), 400
+
+    # Build user message — combine free text with any guided field answers
+    parts = [f"Seed idea: {seed_text}"]
+    for field, label in [
+        ('conflict', 'Central conflict'),
+        ('villain',  'Villain/antagonist'),
+        ('location', 'Primary location'),
+        ('hook',     'Player hook'),
+        ('stakes',   'Stakes'),
+    ]:
+        value = data.get(field, '').strip()
+        if value:
+            parts.append(f"{label}: {value}")
+
+    world_context = _get_active_world_context()
+    world_section = f"\nCampaign world context:\n{world_context}\n" if world_context else ''
+
+    system_prompt = _get_system_prompt('generate_arc_structure', world_section=world_section)
+
+    messages = [{'role': 'user', 'content': '\n'.join(parts)}]
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        return jsonify(result)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Propose Arc Entities — Phase 17 Genesis Wizard Step 2→3
+# ---------------------------------------------------------------------------
+
+@ai_bp.route('/propose-arc-entities', methods=['POST'])
+@login_required
+def propose_arc_entities():
+    """
+    Takes a Story Arc's content/premise and returns a proposed bundle of
+    NPCs, Locations, Quests, Items, and Encounters to create.
+
+    Accepts JSON body:
+      { "arc_title":   "...",
+        "arc_premise": "...",
+        "arc_content": "..."   # full arc description (optional but helps)
+      }
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Request must be JSON.'}), 400
+
+    arc_title   = data.get('arc_title', '').strip()
+    arc_premise = data.get('arc_premise', '').strip()
+    arc_content = data.get('arc_content', '').strip()
+
+    if not arc_title and not arc_premise:
+        return jsonify({'error': 'arc_title or arc_premise is required.'}), 400
+
+    # Build the user message with as much arc context as available
+    parts = []
+    if arc_title:
+        parts.append(f"Story Arc: {arc_title}")
+    if arc_premise:
+        parts.append(f"Premise: {arc_premise}")
+    if arc_content:
+        trimmed = arc_content[:2000]
+        if len(arc_content) > 2000:
+            trimmed += '\n[...truncated...]'
+        parts.append(f"\nArc details:\n{trimmed}")
+
+    world_context = _get_active_world_context()
+    if world_context:
+        parts.insert(0, f"Campaign world context: {world_context[:500]}")
+
+    system_prompt = _get_system_prompt('propose_arc_entities')
+
+    messages = [{'role': 'user', 'content': '\n'.join(parts) + '\n\nPropose the entities needed to run this arc.'}]
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=3000, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        return jsonify(result)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Genesis Create Entity — Phase 17: generate + save one entity in one shot
+# ---------------------------------------------------------------------------
+
+# Maps entity_type → (model class, valid schema fields, detail URL pattern)
+_GENESIS_ENTITY_CONFIG = {
+    'npc':      ('NPC',      ['name','role','status','faction','physical_description','personality','secrets','notes'],     '/npcs/{id}'),
+    'location': ('Location', ['name','type','description','gm_notes','notes'],                                              '/locations/{id}'),
+    'quest':    ('Quest',    ['name','status','hook','description','outcome','gm_notes'],                                   '/quests/{id}'),
+    'item':     ('Item',     ['name','type','rarity','description','gm_notes'],                                             '/items/{id}'),
+}
+
+
+@ai_bp.route('/genesis-create-entity', methods=['POST'])
+@login_required
+def genesis_create_entity():
+    """
+    Phase 17 Genesis Wizard — generates AND saves a single entity.
+    Called once per entity in the Step 4 progress loop.
+
+    Accepts JSON body:
+      { "entity_type": "npc",
+        "concept":     "A corrupt guild master who secretly funds bandits",
+        "story_arc_id": 42
+      }
+    Returns JSON: { "id": 1, "name": "...", "entity_type": "npc", "url": "/npcs/1" }
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured.'}), 403
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Request must be JSON.'}), 400
+
+    entity_type   = data.get('entity_type', '').strip().lower()
+    concept       = data.get('concept', '').strip()
+    story_arc_id  = data.get('story_arc_id')
+
+    if entity_type not in _GENESIS_ENTITY_CONFIG:
+        return jsonify({'error': f'Unsupported entity type for genesis: {entity_type}'}), 400
+    if not concept:
+        return jsonify({'error': 'concept is required.'}), 400
+
+    campaign = _get_active_campaign()
+    if not campaign:
+        return jsonify({'error': 'No active campaign selected.'}), 400
+
+    # Build arc context if story_arc_id was provided
+    arc_context = None
+    if story_arc_id:
+        from app.models import AdventureSite
+        arc = AdventureSite.query.filter_by(id=int(story_arc_id), campaign_id=campaign.id).first()
+        if arc:
+            arc_parts = [f"Story Arc: {arc.name}"]
+            if arc.subtitle:
+                arc_parts.append(f"Tagline: {arc.subtitle}")
+            if arc.content:
+                arc_parts.append(f"Arc overview:\n{arc.content[:500]}")
+            arc_context = '\n'.join(arc_parts)
+
+    world_context = _get_active_world_context()
+    messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context, arc_context)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        fields = _extract_json(raw)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+    # Resolve the model class and valid fields
+    model_name, valid_fields, url_pattern = _GENESIS_ENTITY_CONFIG[entity_type]
+    from app import models as app_models
+    ModelClass = getattr(app_models, model_name)
+
+    # Build kwargs from AI-returned fields (only those that exist on the model)
+    kwargs = {'campaign_id': campaign.id}
+    for field in valid_fields:
+        value = fields.get(field)
+        if value is not None and str(value).strip():
+            kwargs[field] = str(value).strip() if not isinstance(value, bool) else value
+
+    # Apply type-specific defaults
+    if entity_type == 'npc' and 'status' not in kwargs:
+        kwargs['status'] = 'alive'
+    if entity_type == 'quest' and 'status' not in kwargs:
+        kwargs['status'] = 'active'
+
+    # Link to story arc
+    if story_arc_id:
+        kwargs['story_arc_id'] = int(story_arc_id)
+
+    from app import db
+    entity = ModelClass(**kwargs)
+    db.session.add(entity)
+    db.session.commit()
+
+    return jsonify({
+        'id':          entity.id,
+        'name':        entity.name,
+        'entity_type': entity_type,
+        'url':         url_pattern.format(id=entity.id),
+    }), 201

@@ -345,14 +345,28 @@ function brainstormArcs() {
         arcs.forEach(function(arc) {
             var col = document.createElement('div');
             col.className = 'col-md-6';
+
+            // Compose seed paragraph for the genesis wizard
+            var seedParts = [];
+            if (arc.title)    seedParts.push(arc.title + ':');
+            if (arc.hook)     seedParts.push(arc.hook);
+            if (arc.stakes)   seedParts.push('Stakes: ' + arc.stakes);
+            if (arc.key_npcs) seedParts.push('Key NPCs: ' + arc.key_npcs);
+            var wizardUrl = '{{ url_for("adventure_sites.genesis_wizard") }}?seed=' + encodeURIComponent(seedParts.join(' '));
+
             col.innerHTML =
-                '<div class="card bg-dark border-secondary h-100">' +
-                    '<div class="card-body">' +
+                '<div class="card bg-dark border-secondary h-100 d-flex flex-column">' +
+                    '<div class="card-body flex-grow-1">' +
                         '<h6 class="card-title text-warning">' + escHtml(arc.title) + '</h6>' +
                         '<p class="small mb-1"><strong>Hook:</strong> ' + escHtml(arc.hook) + '</p>' +
                         '<p class="small mb-1"><strong>Stakes:</strong> ' + escHtml(arc.stakes) + '</p>' +
                         '<p class="small mb-1 text-muted"><strong>Key NPCs:</strong> ' + escHtml(arc.key_npcs) + '</p>' +
                         '<p class="small mb-0 text-muted"><strong>Est. sessions:</strong> ' + escHtml(arc.estimated_sessions) + '</p>' +
+                    '</div>' +
+                    '<div class="card-footer">' +
+                        '<a href="' + wizardUrl + '" class="btn btn-sm btn-warning">' +
+                            '<i class="bi bi-stars me-1"></i>Build with AI \u2192' +
+                        '</a>' +
                     '</div>' +
                 '</div>';
             cards.appendChild(col);

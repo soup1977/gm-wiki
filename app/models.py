@@ -220,8 +220,12 @@ class Location(db.Model):
     # Self-referencing parent (region > city > district)
     parent_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
+    # Home story arc (set when created via genesis wizard; nullable for manually created locations)
+    story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+
     # Relationships
     campaign = db.relationship('Campaign', backref='locations')
+    story_arc = db.relationship('AdventureSite', backref='arc_locations', foreign_keys=[story_arc_id])
     faction = db.relationship('Faction', backref='locations', foreign_keys=[faction_id])
     parent_location = db.relationship(
         'Location',
@@ -271,8 +275,12 @@ class NPC(db.Model):
     # Foreign key to Location (NPC's home)
     home_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
+    # Home story arc (set when created via genesis wizard; nullable for manually created NPCs)
+    story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+
     # Relationships
     campaign = db.relationship('Campaign', backref='npcs')
+    story_arc = db.relationship('AdventureSite', backref='arc_npcs', foreign_keys=[story_arc_id])
     faction_rel = db.relationship('Faction', backref='npcs', foreign_keys=[faction_id])
     home_location = db.relationship('Location', backref='npcs_living_here', foreign_keys=[home_location_id])
     # Locations this NPC is associated with (separate from home)
@@ -311,8 +319,12 @@ class Quest(db.Model):
     is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
     faction_id = db.Column(db.Integer, db.ForeignKey('factions.id'), nullable=True)
 
+    # Home story arc (set when created via genesis wizard; nullable for manually created quests)
+    story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+
     campaign = db.relationship('Campaign', backref='quests')
     faction = db.relationship('Faction', backref='quests', foreign_keys=[faction_id])
+    story_arc = db.relationship('AdventureSite', backref='arc_quests', foreign_keys=[story_arc_id])
     involved_npcs = db.relationship('NPC', secondary=quest_npc_link, backref='quests')
     involved_locations = db.relationship('Location', secondary=quest_location_link, backref='quests')
     tags = db.relationship('Tag', secondary=quest_tags)
@@ -339,7 +351,11 @@ class Item(db.Model):
     # Where it came from — null means unknown
     origin_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
+    # Home story arc (set when created via genesis wizard; nullable for manually created items)
+    story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+
     campaign = db.relationship('Campaign', backref='items')
+    story_arc = db.relationship('AdventureSite', backref='arc_items', foreign_keys=[story_arc_id])
     owner_npc = db.relationship('NPC', backref='items_owned', foreign_keys=[owner_npc_id])
     origin_location = db.relationship('Location', backref='items_found_here', foreign_keys=[origin_location_id])
     tags = db.relationship('Tag', secondary=item_tags)
