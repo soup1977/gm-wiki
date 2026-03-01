@@ -92,8 +92,10 @@ gm-wiki/
 | 11 | Entity-from-selection (text-select → create NPC/Location/Quest/Item in Adventure Sites) | Complete |
 | 12 | Session Workflow (carryover, post-session wrap-up, "Start Session Here" button) | Complete |
 | 13 | UX Polish (status badge system, campaign stats, grouped global search, wiki visibility toggle) | Complete — PR #9 |
-| 14 | AI Runtime Features (Improv Encounter, Hazard Flavor, Suggest Consequences, Suggest Milestones) | Complete — feature/ai-runtime-phase14 |
-| 15 | Dashboard Overhaul (site content in dashboard, shortcode popups, panel layout) | Planned — see docs/phase-15-plan.md |
+| 14 | AI Runtime Features (Improv Encounter, Hazard Flavor, Suggest Consequences, Suggest Milestones) | Complete |
+| 15a | Dashboard Overhaul — site content in Session Mode, shortcode popup previews | Complete — PRs #12, #13 |
+| 15b | Dashboard Overhaul — panel layout, pinned entities, map overlay, drag-to-rearrange | Planned — see docs/phase-15-plan.md |
+| 15.5 | Story Arcs rename (UI), editable AI prompts in Settings, Generate Entry fix | Complete — PR #14 |
 | 16 | Workflow Guidance (campaign wizard, planning checklist, entity grouping, theme toggle) | Planned — see docs/phase-16-plan.md |
 
 ---
@@ -134,6 +136,7 @@ Each entity type is its own page, cross-linked to others.
 9. **Bestiary** — global monster entries (not campaign-scoped), spawn instances per campaign
 10. **Encounters** — linked monsters, loot tables, tied to sessions
 11. **Random Tables** — weighted entries, one-click rolling, builtin + custom
+12. **Story Arcs** — one Markdown doc per adventure area; sticky ToC, run state, AI brainstorm/ideas/session-prep. UI label is "Story Arcs"; code/DB/URLs use `adventure_site`. Shortcode: `#site[Name]`
 
 ---
 

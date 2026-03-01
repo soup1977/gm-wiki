@@ -1,6 +1,6 @@
 # The War Table — Phase Roadmap (13–16)
 
-Phases 1–8 complete. Phases 9–12 complete.
+Phases 1–8 complete. Phases 9–12 complete. Phase 13 complete. Phase 14 complete. Phase 15a complete.
 
 ---
 
@@ -81,14 +81,14 @@ Build incrementally: (1) Site content in dashboard → (2) panel layout → (3) 
 ```
 Phase 9 (Data Foundations)  ←  COMPLETE
   ├──→ Phase 10 (Navigation Improvements)  ←  COMPLETE
-  │     ├──→ Phase 13 (UX Polish)
+  │     ├──→ Phase 13 (UX Polish)  ←  COMPLETE
   │     └──→ Phase 16 (Workflow Guidance)
   │
   ├──→ Phase 11 (AI Content Gen)  ←  COMPLETE
   │     └──→ Phase 12 (Session Workflow)  ←  COMPLETE
-  │           └──→ Phase 14 (AI Runtime)
+  │           └──→ Phase 14 (AI Runtime)  ←  COMPLETE
   │
-  └──→ Phase 15 (Dashboard Overhaul) ← after Phases 12 + 14
+  └──→ Phase 15 (Dashboard Overhaul) ←  15a COMPLETE; 15b planned
 ```
 
 Parallel tracks possible:

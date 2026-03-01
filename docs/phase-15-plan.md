@@ -5,8 +5,9 @@
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Session Mode dashboard | DONE | Phase 12: multi-panel layout, NPC chat, encounters, notes |
-| Adventure Site content in dashboard | TODO | **Phase 15a** — collapsible panel with rendered Markdown + ToC |
-| Shortcode popup previews | TODO | **Phase 15a** — Bootstrap popover on hover for entity links |
+| Story Arc content in dashboard | DONE | **Phase 15a** — collapsible panel with rendered Markdown + ToC — PR #12 |
+| Shortcode popup previews | DONE | **Phase 15a** — Bootstrap popover on hover for entity links — PR #12 |
+| Wiki ancestor breadcrumbs | DONE | PR #13 — locations show full parent chain in wiki |
 | Pinned entities with inline edit | TODO | Defer to Phase 15b |
 | Panel-based layout (Main/Toolkit/Controls) | TODO | **Phase 15b — defer** |
 | Map overlay viewer | TODO | **Phase 15b — defer** |
@@ -16,15 +17,15 @@
 ## Notes
 
 Phase 15 is split:
-- **15a**: Site content in dashboard + shortcode popup previews — both are independent and buildable now
+- **15a**: COMPLETE (PRs #12, #13) — Story Arc content in dashboard + shortcode popup previews + wiki breadcrumbs
 - **15b**: Panel system + presets + drag-to-rearrange — complex, deferred
 
 ---
 
-## Phase 15a: Adventure Site Content in Dashboard
+## Phase 15a: Story Arc Content in Dashboard ✅ DONE
 
 ### Goal
-When a session has a linked Adventure Site, show its Markdown (rendered) in a collapsible panel inside Session Mode. GM never has to leave the dashboard to read room descriptions.
+When a session has a linked Story Arc, show its Markdown (rendered) in a collapsible panel inside Session Mode. GM never has to leave the dashboard to read room descriptions.
 
 ### Backend Change
 **File:** `app/routes/session_mode.py` — `dashboard()` route
@@ -63,7 +64,7 @@ JS ToC generation reuses the exact same pattern as `adventure_sites/detail.html`
 
 ---
 
-## Phase 15a: Shortcode Popup Previews
+## Phase 15a: Shortcode Popup Previews ✅ DONE
 
 ### Goal
 Entity shortcode links (`[npc:42:Aldric]` → `<a href="/npcs/42">Aldric</a>`) show a Bootstrap popover on hover with name, status, and subtitle. No navigation needed for quick reference.

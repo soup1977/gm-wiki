@@ -19,6 +19,7 @@ This guide walks through everything you need to know to use The War Table as a G
 11. [AI Features](#ai-features)
 12. [Admin Features](#admin-features)
 13. [Keyboard and Navigation Tips](#keyboard-and-navigation-tips)
+14. [Settings Reference](#settings-reference)
 
 ---
 
@@ -124,10 +125,29 @@ Sessions are your game session logs.
 
 - **Session Number** — auto-increments if left blank
 - **Date Played** — date picker
+- **Story Arc** — which story arc this session took place in (optional but enables prep and summary AI features)
 - **Prep Notes** — GM-only, for pre-session planning
 - **Summary** — what happened during the session
 - **Linked Entities** — select NPCs, locations, items, quests, and monsters that appeared
 - **Attended PCs** — track which player characters were present
+
+### Story Arcs
+
+Story Arcs are free-form Markdown documents for planning and running adventure areas. Each arc is a hub for one adventure location, storyline, or dungeon.
+
+- **Name** (required), **Subtitle** — a one-line tagline
+- **Status** — Planned, Active, or Completed
+- **Content** — full Markdown. Use `## Headings` for sections; the page auto-generates a sticky table of contents from them
+- **Run State** — per-section progress tracking (mark zones explored or cleared)
+- **AI tools** built in to Story Arc detail pages:
+  - **Brainstorm Arcs** — generate 3–5 arc ideas from your campaign context
+  - **Suggest Ideas** — generate 4–6 new areas/encounters to add to the current arc
+  - **Generate Prep** — create session prep notes from the arc content and previous session summary
+  - **Draft Summary** — turn GM notes into a polished player-facing session recap
+
+**Entity-from-selection:** In the arc editor, highlight any text and choose a type (NPC, Location, etc.) to instantly create that entity and insert a shortcode. The text is replaced with a live link.
+
+**Shortcode:** `#site[Arc Name]` — links to a Story Arc from any Markdown field.
 
 ### Items
 
@@ -193,6 +213,7 @@ Any text field that supports Markdown also supports **shortcodes** — inline re
 #item[Item Name]
 #quest[Quest Name]
 #faction[Faction Name]
+#site[Story Arc Name]
 ```
 
 When you save an entity with shortcodes, The War Table:
@@ -332,34 +353,52 @@ Pre-built bestiary entries and random tables for ICRPG.
 
 ## AI Features
 
-AI features are optional and require configuration.
+AI features are optional and require configuration in Settings (Anthropic API key or local Ollama).
 
 ### Smart Fill
 
-With an **Anthropic API key** set in Settings:
-1. Open any entity create/edit form
-2. Click the **Smart Fill** button
-3. Paste raw text (session notes, character descriptions, etc.)
-4. The AI extracts structured data and fills in the form fields
+On any entity create/edit form, click **Smart Fill**, paste raw text (session notes, character descriptions, brainstormed ideas), and the AI extracts structured data to fill in the form fields.
 
-### AI Generate Entry
+### Generate Entry
 
-1. Click **Generate** on a create form
-2. Enter a concept (e.g., "a grizzled dwarf blacksmith who secretly works for the thieves' guild")
-3. The AI generates a full entity with all fields populated
+On any entity create form, click **Generate**, enter a short concept (e.g., "a grizzled dwarf blacksmith who secretly works for the thieves' guild"), and the AI generates a complete entity with all fields populated.
+
+> **Story Arc Generate** is tuned to create a focused 300–500 word arc overview — key scenes, central conflict, major NPCs, climax, and possible outcomes. Not a full campaign document.
+
+### Campaign Assistant
+
+Each campaign has a **Campaign Assistant** chat panel. Ask it anything about your world — it has access to the campaign's world context. The chat history persists within the session.
+
+### Story Arc AI Tools
+
+Story Arc detail pages have a toolbar with:
+
+| Button | What it does |
+|--------|-------------|
+| **Brainstorm Arcs** | Generates 3–5 new story arc ideas based on your existing campaign content |
+| **Suggest Ideas** | Generates 4–6 new areas, rooms, or encounters to add to the current arc |
+| **Generate Prep** | Creates session prep notes from the arc content and the previous session's summary |
+| **Draft Summary** | Turns your post-session GM notes into a polished player-facing recap |
+
+### Session Mode AI
+
+During a live session (Session Mode dashboard):
+- **Improv Encounter** — generates a quick combat encounter on the fly
+- **Hazard Flavor** — generates sensory descriptions for timers or environmental events
+- **Suggest Consequences** — after the session wrap-up, suggests 2–3 narrative ripple effects
+- **NPC Chat** — in-character dialogue for any linked NPC
 
 ### Image Generation
 
-With a Stable Diffusion instance configured in Settings:
-- Click the **Generate Image** button on entity forms
-- The AI creates a portrait or map based on the entity's description
-- Campaign-level style prompts are automatically prepended
+With a Stable Diffusion instance configured in Settings, click **Generate Image** on entity forms. The AI creates a portrait or scene image based on the entity's description. Campaign-level style prompts are automatically prepended.
 
-### Configuration
+### Per-Feature Provider
 
-Go to **User Menu > Settings** to configure:
-- Anthropic API key (for Smart Fill and Generate)
-- Stable Diffusion URL (for image generation)
+If both Anthropic and Ollama are configured, you can assign each AI feature to a specific provider in **Settings > AI Provider**. Use a fast cloud model for real-time features and a local model for longer generation tasks.
+
+### Editable AI Prompts
+
+**Settings > AI Prompts** (collapsed by default — Advanced section) shows the system prompt sent to the AI for each feature. You can customize any prompt for your campaign's tone or game system. Click **Reset** to restore the built-in default.
 
 ---
 
@@ -379,7 +418,27 @@ Admin users have access to additional tools.
 
 **User Menu > Settings**
 - Toggle **Allow Signup** — enable or disable self-registration
-- Configure AI and image generation providers
+- Configure AI and image generation providers (Anthropic API key, Ollama URL/model)
+- Configure Stable Diffusion (URL, model, sampler, dimensions)
+- **Per-feature AI provider** — assign each feature to Anthropic or Ollama when both are set up
+- **AI Prompts (Advanced)** — edit or reset the system prompt for each AI feature
+
+---
+
+## Settings Reference
+
+| Setting | Where | Description |
+|---------|-------|-------------|
+| Allow Signup | Settings | Show/hide the signup link on the login page |
+| AI Provider | Settings | Global AI backend: None, Ollama (local), or Anthropic (cloud) |
+| Anthropic API Key | Settings | Your key from console.anthropic.com |
+| Ollama URL / Model | Settings | URL and model name for local Ollama instance |
+| Per-Feature Provider | Settings | Override global AI provider per feature (Smart Fill, Generate, etc.) |
+| AI World Context | Campaign Edit | Campaign background text — AI uses this for tone and setting |
+| Image Style Prompt | Campaign Edit | Style prefix for AI-generated images (e.g., "dark fantasy oil painting") |
+| AI Prompts | Settings (Advanced) | System prompts for each AI feature — edit or reset to default |
+| SD URL / Model | Settings | Stable Diffusion connection and model selection |
+| SD Parameters | Settings | Steps, CFG scale, sampler, dimensions, negative prompt |
 
 ---
 
