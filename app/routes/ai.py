@@ -274,6 +274,15 @@ def _extract_json(raw):
         except json.JSONDecodeError:
             pass
 
+    # 2b. Code fence with no closing marker — response was truncated after JSON
+    # Try parsing everything after the opening fence line
+    open_fence = re.search(r'```(?:json)?\s*\n', raw)
+    if open_fence:
+        try:
+            return json.loads(raw[open_fence.end():].strip())
+        except json.JSONDecodeError:
+            pass
+
     # 3. Find the first '{' and try to parse a JSON object from there
     brace_idx = raw.find('{')
     if brace_idx != -1:
@@ -336,10 +345,17 @@ def generate_entry():
     if not concept:
         return jsonify({'error': 'No concept provided.'}), 400
 
-    # Adventure sites and bestiary entries need longer prompts and longer responses
-    large_output_types = {'adventure_site', 'bestiary'}
-    concept_limit = 5000 if entity_type in large_output_types else 2000
-    max_out_tokens = 4096 if entity_type in large_output_types else 2048
+    # Adventure sites need very long responses (full Markdown doc inside JSON)
+    # Bestiary needs moderate extra room for stat blocks
+    if entity_type == 'adventure_site':
+        concept_limit = 5000
+        max_out_tokens = 8000   # near Haiku's 8192 ceiling
+    elif entity_type == 'bestiary':
+        concept_limit = 5000
+        max_out_tokens = 4096
+    else:
+        concept_limit = 2000
+        max_out_tokens = 2048
 
     if len(concept) > concept_limit:
         return jsonify({'error': f'Concept is too long (max ~{concept_limit} characters).'}), 400
