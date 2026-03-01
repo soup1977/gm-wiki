@@ -193,6 +193,21 @@ def edit_npc(npc_id):
                            status_choices=NPC_STATUS_CHOICES, factions=factions)
 
 
+@npcs_bp.route('/<int:npc_id>/set-status', methods=['POST'])
+@login_required
+def set_npc_status(npc_id):
+    campaign_id = get_active_campaign_id()
+    npc = NPC.query.get_or_404(npc_id)
+    if npc.campaign_id != campaign_id:
+        flash('NPC not found in this campaign.', 'danger')
+        return redirect(url_for('npcs.list_npcs'))
+    new_status = request.form.get('status', '').strip()
+    if new_status in NPC_STATUS_CHOICES:
+        npc.status = new_status
+        db.session.commit()
+    return redirect(url_for('npcs.npc_detail', npc_id=npc_id))
+
+
 @npcs_bp.route('/<int:npc_id>/delete', methods=['POST'])
 @login_required
 def delete_npc(npc_id):

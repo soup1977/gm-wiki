@@ -195,6 +195,18 @@ def edit_quest(quest_id):
                            statuses=QUEST_STATUSES, factions=factions)
 
 
+@quests_bp.route('/quests/<int:quest_id>/set-status', methods=['POST'])
+@login_required
+def set_quest_status(quest_id):
+    campaign_id = get_active_campaign_id()
+    quest = Quest.query.filter_by(id=quest_id, campaign_id=campaign_id).first_or_404()
+    new_status = request.form.get('status', '').strip()
+    if new_status in QUEST_STATUSES:
+        quest.status = new_status
+        db.session.commit()
+    return redirect(url_for('quests.quest_detail', quest_id=quest_id))
+
+
 @quests_bp.route('/quests/<int:quest_id>/delete', methods=['POST'])
 @login_required
 def delete_quest(quest_id):
