@@ -1109,8 +1109,8 @@ def genesis_create_entity():
     if entity_type == 'quest' and 'status' not in kwargs:
         kwargs['status'] = 'active'
 
-    # Link to story arc (only entity types that have this column)
-    if story_arc_id and entity_type in ('npc', 'location', 'quest', 'item'):
+    # Link to story arc
+    if story_arc_id:
         kwargs['story_arc_id'] = int(story_arc_id)
 
     from app import db

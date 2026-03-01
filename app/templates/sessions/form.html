@@ -41,6 +41,14 @@
 </div>
 {% endif %}
 
+{% if arc_site %}
+<div class="alert alert-info mb-4">
+    <i class="bi bi-map me-1"></i> <strong>Starting session for: {{ arc_site.name }}</strong>
+    {% if arc_next_milestone %} — Working toward: <em>{{ arc_next_milestone }}</em>{% endif %}
+    <br><small class="text-muted">Arc entities are pre-selected below. Deselect anything you won't need tonight.</small>
+</div>
+{% endif %}
+
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row g-4">
@@ -104,9 +112,9 @@
                             <select class="form-select flex-grow-1" id="npcs_featured" name="npcs_featured" multiple size="5">
                                 {% for npc in npcs %}
                                 <option value="{{ npc.id }}"
-                                    {% if sess and npc in sess.npcs_featured %}selected
-                                    {% elif carryover and npc.id in carryover.npc_ids %}selected
-                                    {% endif %}>
+                                    {% if (sess and npc in sess.npcs_featured)
+                                       or npc.id in arc_npc_ids
+                                       or (carryover and npc.id in carryover.npc_ids) %}selected{% endif %}>
                                     {{ npc.name }}
                                 </option>
                                 {% endfor %}
@@ -124,7 +132,8 @@
                             <select class="form-select flex-grow-1" id="locations_visited" name="locations_visited" multiple size="5">
                                 {% for loc in locations %}
                                 <option value="{{ loc.id }}"
-                                    {% if sess and loc in sess.locations_visited %}selected{% endif %}>
+                                    {% if (sess and loc in sess.locations_visited)
+                                       or loc.id in arc_location_ids %}selected{% endif %}>
                                     {{ loc.name }}
                                 </option>
                                 {% endfor %}
@@ -142,9 +151,9 @@
                             <select class="form-select flex-grow-1" id="quests_touched" name="quests_touched" multiple size="5">
                                 {% for quest in quests %}
                                 <option value="{{ quest.id }}"
-                                    {% if sess and quest in sess.quests_touched %}selected
-                                    {% elif carryover and quest.id in carryover.quest_ids %}selected
-                                    {% endif %}>
+                                    {% if (sess and quest in sess.quests_touched)
+                                       or quest.id in arc_quest_ids
+                                       or (carryover and quest.id in carryover.quest_ids) %}selected{% endif %}>
                                     {{ quest.name }}
                                 </option>
                                 {% endfor %}
@@ -155,6 +164,21 @@
                             </button>
                         </div>
                     </div>
+
+                    {% if encounters %}
+                    <div>
+                        <label for="encounters_planned" class="form-label">Encounters Planned</label>
+                        <select class="form-select" id="encounters_planned" name="encounters_planned" multiple size="5">
+                            {% for enc in encounters %}
+                            <option value="{{ enc.id }}"
+                                {% if (sess and enc in sess.encounters)
+                                   or enc.id in arc_encounter_ids %}selected{% endif %}>
+                                {{ enc.name }}{% if enc.encounter_type %} ({{ enc.encounter_type }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
 
                     <div>
                         <label for="items_mentioned" class="form-label">Items Mentioned</label>

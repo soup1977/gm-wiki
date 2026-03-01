@@ -182,7 +182,15 @@ def genesis_save():
     if hook:
         content_parts.append(f"## Hook\n\n{hook}")
     if themes:
-        content_parts.append(f"**Themes:** {themes}")
+        content_parts.append(f"## Themes\n\n{themes}")
+
+    # Add milestones as runnable ## sections (empty bodies for GM to fill in)
+    milestones_raw = data.get('milestones', [])
+    milestone_labels = [m.strip() for m in milestones_raw if isinstance(m, str) and m.strip()]
+    if milestone_labels:
+        content_parts.append('---')
+        for i, label in enumerate(milestone_labels, 1):
+            content_parts.append(f"## Milestone {i} — {label}")
 
     content = '\n\n'.join(content_parts) if content_parts else None
 
