@@ -168,8 +168,8 @@ def smart_fill():
         result = _extract_json(raw)
         return jsonify(result)
 
-    except json.JSONDecodeError:
-        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
@@ -282,8 +282,11 @@ def _extract_json(raw):
         except json.JSONDecodeError:
             pass
 
-    # Nothing worked — re-raise so the caller can return a clean error
-    raise json.JSONDecodeError('No valid JSON object found in model response', raw, 0)
+    # Nothing worked — include a preview of the raw response in the error
+    preview = raw[:300].replace('\n', ' ') if raw else '(empty response)'
+    raise json.JSONDecodeError(
+        f'No valid JSON found. Model returned: {preview}', raw, 0
+    )
 
 
 # Keep old name as an alias for callers that pass the raw string and expect
@@ -355,8 +358,8 @@ def generate_entry():
         result = _extract_json(raw)
         return jsonify(result)
 
-    except json.JSONDecodeError:
-        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
@@ -431,8 +434,8 @@ Rules:
                       provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
-    except json.JSONDecodeError:
-        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
@@ -492,8 +495,8 @@ Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
                       provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
-    except json.JSONDecodeError:
-        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
@@ -590,8 +593,8 @@ Return ONLY a valid JSON object. No explanation, no code fences."""
                       provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
-    except json.JSONDecodeError:
-        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
 
@@ -684,7 +687,7 @@ Return ONLY a valid JSON object. No explanation, no code fences."""
                       provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
-    except json.JSONDecodeError:
-        return jsonify({'error': 'AI returned unexpected output. Try again.'}), 500
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 500
