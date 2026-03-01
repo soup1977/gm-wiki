@@ -115,7 +115,17 @@
                         {% set total = sheet.total_stat(key) %}
                         <tr>
                             <td>{{ key }}</td>
-                            <td class="text-center">{{ base }}</td>
+                            <td class="text-center" id="icrpg-stat-base-{{ key.lower() }}">
+                                {% if current_user.is_admin %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="-1">-</button>
+                                    <span class="icrpg-stat-base-val">{{ base }}</span>
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="1">+</button>
+                                </div>
+                                {% else %}
+                                {{ base }}
+                                {% endif %}
+                            </td>
                             <td class="text-center stat-bonus">{% if race %}+{{ race }}{% else %}&mdash;{% endif %}</td>
                             <td class="text-center stat-bonus">{% if loot %}+{{ loot }}{% else %}&mdash;{% endif %}</td>
                             <td class="text-end stat-total" id="icrpg-stat-{{ key }}">{{ total }}</td>
@@ -147,7 +157,17 @@
                         <tr>
                             <td>{{ key | capitalize }}</td>
                             <td class="text-center text-muted">{{ sheet.EFFORT_DICE[key] }}</td>
-                            <td class="text-center">{{ base }}</td>
+                            <td class="text-center" id="icrpg-effort-base-{{ key }}">
+                                {% if current_user.is_admin %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="-1">-</button>
+                                    <span class="icrpg-effort-base-val">{{ base }}</span>
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="1">+</button>
+                                </div>
+                                {% else %}
+                                {{ base }}
+                                {% endif %}
+                            </td>
                             <td class="text-center stat-bonus">{% if bonus %}+{{ bonus }}{% else %}&mdash;{% endif %}</td>
                             <td class="text-end stat-total" id="icrpg-effort-{{ key }}">{{ total }}</td>
                         </tr>
@@ -165,22 +185,24 @@
                 {# HP bar #}
                 {% set hp_pct = ((sheet.hp_current / sheet.hp_max * 100) if sheet.hp_max else 0) | int %}
                 <div class="mb-3">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="small fw-bold">
+                            <span id="icrpg-hp-current">{{ sheet.hp_current }}</span> / <span id="icrpg-hp-max">{{ sheet.hp_max }}</span> HP
+                        </span>
                         {% if can_edit %}
-                        <button class="btn btn-sm btn-outline-light icrpg-hp-btn" data-delta="-1" title="Lose 1 HP">-</button>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-light icrpg-hp-btn" data-delta="-1" title="Lose 1 HP">-</button>
+                            <button class="btn btn-sm btn-outline-light icrpg-hp-btn" data-delta="1" title="Gain 1 HP">+</button>
+                        </div>
                         {% endif %}
-                        <div class="flex-grow-1 icrpg-hp-bar-wrap">
-                            <div class="progress" style="height: 1.5rem;">
-                                <div id="icrpg-hp-bar" class="progress-bar {% if hp_pct > 50 %}bg-success{% elif hp_pct > 25 %}bg-warning{% else %}bg-danger{% endif %}"
-                                     role="progressbar" style="width: {{ hp_pct }}%"
-                                     aria-valuenow="{{ sheet.hp_current }}" aria-valuemin="0" aria-valuemax="{{ sheet.hp_max }}">
-                                    <span id="icrpg-hp-current">{{ sheet.hp_current }}</span>/<span id="icrpg-hp-max">{{ sheet.hp_max }}</span> HP
-                                </div>
+                    </div>
+                    <div class="icrpg-hp-bar-wrap">
+                        <div class="progress" style="height: 1.2rem;">
+                            <div id="icrpg-hp-bar" class="progress-bar {% if hp_pct > 50 %}bg-success{% elif hp_pct > 25 %}bg-warning{% else %}bg-danger{% endif %}"
+                                 role="progressbar" style="width: {{ hp_pct }}%"
+                                 aria-valuenow="{{ sheet.hp_current }}" aria-valuemin="0" aria-valuemax="{{ sheet.hp_max }}">
                             </div>
                         </div>
-                        {% if can_edit %}
-                        <button class="btn btn-sm btn-outline-light icrpg-hp-btn" data-delta="1" title="Gain 1 HP">+</button>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -264,12 +286,20 @@
                             <div class="icrpg-loot-desc">{{ item.display_description }}</div>
                             {% endif %}
                         </div>
-                        {% if can_edit %}
-                        <button class="btn btn-sm btn-outline-secondary icrpg-equip-btn ms-2 flex-shrink-0"
-                                data-loot-id="{{ item.id }}" data-new-slot="carried" title="Move to Carried">
-                            <i class="bi bi-box-arrow-down"></i>
-                        </button>
-                        {% endif %}
+                        <div class="d-flex gap-1 ms-2 flex-shrink-0">
+                            {% if can_edit %}
+                            <button class="btn btn-sm btn-outline-secondary icrpg-equip-btn"
+                                    data-loot-id="{{ item.id }}" data-new-slot="carried" title="Move to Carried">
+                                <i class="bi bi-box-arrow-down"></i>
+                            </button>
+                            {% endif %}
+                            {% if current_user.is_admin %}
+                            <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
+                                    data-loot-id="{{ item.id }}" title="Remove">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            {% endif %}
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -299,12 +329,20 @@
                             <div class="icrpg-loot-desc">{{ item.display_description }}</div>
                             {% endif %}
                         </div>
-                        {% if can_edit %}
-                        <button class="btn btn-sm btn-outline-info icrpg-equip-btn ms-2 flex-shrink-0"
-                                data-loot-id="{{ item.id }}" data-new-slot="equipped" title="Equip">
-                            <i class="bi bi-box-arrow-up"></i>
-                        </button>
-                        {% endif %}
+                        <div class="d-flex gap-1 ms-2 flex-shrink-0">
+                            {% if can_edit %}
+                            <button class="btn btn-sm btn-outline-info icrpg-equip-btn"
+                                    data-loot-id="{{ item.id }}" data-new-slot="equipped" title="Equip">
+                                <i class="bi bi-box-arrow-up"></i>
+                            </button>
+                            {% endif %}
+                            {% if current_user.is_admin %}
+                            <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
+                                    data-loot-id="{{ item.id }}" title="Remove">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            {% endif %}
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -326,10 +364,16 @@
                 {% if starting %}
                 <h6 class="text-info mb-2">Starting</h6>
                 {% for ab in starting %}
-                <div class="mb-2">
-                    <strong>{{ ab.display_name }}</strong>
-                    {% if ab.display_description %}
-                    <div class="text-muted small">{{ ab.display_description }}</div>
+                <div class="mb-2 d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>{{ ab.display_name }}</strong>
+                        {% if ab.display_description %}
+                        <div class="text-muted small">{{ ab.display_description }}</div>
+                        {% endif %}
+                    </div>
+                    {% if current_user.is_admin %}
+                    <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
+                            data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -338,10 +382,16 @@
                 {% if milestone %}
                 <h6 class="text-warning mb-2 {% if starting %}mt-3{% endif %}">Milestone</h6>
                 {% for ab in milestone %}
-                <div class="mb-2">
-                    <strong>{{ ab.display_name }}</strong>
-                    {% if ab.display_description %}
-                    <div class="text-muted small">{{ ab.display_description }}</div>
+                <div class="mb-2 d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>{{ ab.display_name }}</strong>
+                        {% if ab.display_description %}
+                        <div class="text-muted small">{{ ab.display_description }}</div>
+                        {% endif %}
+                    </div>
+                    {% if current_user.is_admin %}
+                    <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
+                            data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -350,10 +400,16 @@
                 {% if mastery %}
                 <h6 class="text-danger mb-2 {% if starting or milestone %}mt-3{% endif %}">Mastery</h6>
                 {% for ab in mastery %}
-                <div class="mb-2">
-                    <strong>{{ ab.display_name }}</strong>
-                    {% if ab.display_description %}
-                    <div class="text-muted small">{{ ab.display_description }}</div>
+                <div class="mb-2 d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>{{ ab.display_name }}</strong>
+                        {% if ab.display_description %}
+                        <div class="text-muted small">{{ ab.display_description }}</div>
+                        {% endif %}
+                    </div>
+                    {% if current_user.is_admin %}
+                    <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
+                            data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                     {% endif %}
                 </div>
                 {% endfor %}

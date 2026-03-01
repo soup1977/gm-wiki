@@ -126,7 +126,67 @@
                 var lootId = parseInt(btn.dataset.lootId);
                 var newSlot = btn.dataset.newSlot;
                 postAction('equip', { loot_id: lootId, slot: newSlot }, function () {
-                    // Reload to refresh stat totals, defense, slot counts
+                    window.location.reload();
+                });
+            });
+        });
+
+        // ── Stat adjustment (GM only) ─────────────────────────────
+        document.querySelectorAll('.icrpg-stat-adj').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var key = btn.dataset.key;
+                var delta = parseInt(btn.dataset.delta);
+                postAction('update-stat', { key: key, delta: delta }, function (data) {
+                    // Update base value
+                    var cell = document.getElementById('icrpg-stat-base-' + key.toLowerCase());
+                    if (cell) {
+                        var valSpan = cell.querySelector('.icrpg-stat-base-val');
+                        if (valSpan) valSpan.textContent = data.base;
+                    }
+                    // Update total
+                    var totalEl = document.getElementById('icrpg-stat-' + data.key);
+                    if (totalEl) totalEl.textContent = data.total;
+                    // Update defense if CON changed
+                    var defEl = document.getElementById('icrpg-defense');
+                    if (defEl) defEl.textContent = data.defense;
+                });
+            });
+        });
+
+        // ── Effort adjustment (GM only) ───────────────────────────
+        document.querySelectorAll('.icrpg-effort-adj').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var key = btn.dataset.key;
+                var delta = parseInt(btn.dataset.delta);
+                postAction('update-effort', { key: key, delta: delta }, function (data) {
+                    var cell = document.getElementById('icrpg-effort-base-' + data.key);
+                    if (cell) {
+                        var valSpan = cell.querySelector('.icrpg-effort-base-val');
+                        if (valSpan) valSpan.textContent = data.base;
+                    }
+                    var totalEl = document.getElementById('icrpg-effort-' + data.key);
+                    if (totalEl) totalEl.textContent = data.total;
+                });
+            });
+        });
+
+        // ── Remove Loot (GM only) ─────────────────────────────────
+        document.querySelectorAll('.icrpg-remove-loot-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!confirm('Remove this item?')) return;
+                var lootId = parseInt(btn.dataset.lootId);
+                postAction('remove-loot', { loot_id: lootId }, function () {
+                    window.location.reload();
+                });
+            });
+        });
+
+        // ── Remove Ability (GM only) ──────────────────────────────
+        document.querySelectorAll('.icrpg-remove-ability-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!confirm('Remove this ability?')) return;
+                var abId = parseInt(btn.dataset.abilityId);
+                postAction('remove-ability', { ability_id: abId }, function () {
                     window.location.reload();
                 });
             });

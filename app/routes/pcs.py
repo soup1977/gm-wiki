@@ -412,6 +412,163 @@ def icrpg_equip_loot(pc_id):
     return jsonify({'ok': True})
 
 
+@pcs_bp.route('/<int:pc_id>/icrpg/update-stat', methods=['POST'])
+@login_required
+def icrpg_update_stat(pc_id):
+    """Adjust a base stat by +1/-1. GM only."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
+    data = request.get_json(silent=True) or {}
+    key = data.get('key', '').lower()
+    delta = int(data.get('delta', 0))
+    if key not in ('str', 'dex', 'con', 'int', 'wis', 'cha'):
+        return jsonify({'error': 'Invalid stat.'}), 400
+    attr = f'stat_{key}'
+    current = getattr(sheet, attr) or 0
+    new_val = max(0, min(current + delta, 10))
+    setattr(sheet, attr, new_val)
+    db.session.commit()
+    return jsonify({
+        'key': key.upper(), 'base': new_val,
+        'total': sheet.total_stat(key.upper()),
+        'defense': sheet.defense,
+    })
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/update-effort', methods=['POST'])
+@login_required
+def icrpg_update_effort(pc_id):
+    """Adjust a base effort by +1/-1. GM only."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
+    data = request.get_json(silent=True) or {}
+    key = data.get('key', '').lower()
+    delta = int(data.get('delta', 0))
+    if key not in ('basic', 'weapons', 'guns', 'magic', 'ultimate'):
+        return jsonify({'error': 'Invalid effort.'}), 400
+    attr = f'effort_{key}'
+    current = getattr(sheet, attr) or 0
+    new_val = max(0, min(current + delta, 10))
+    setattr(sheet, attr, new_val)
+    db.session.commit()
+    return jsonify({
+        'key': key, 'base': new_val,
+        'total': sheet.total_effort(key),
+    })
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/add-loot', methods=['POST'])
+@login_required
+def icrpg_add_loot(pc_id):
+    """Add a loot item to the character sheet. GM only."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
+    data = request.get_json(silent=True) or {}
+    loot_def_id = data.get('loot_def_id')
+    spell_id = data.get('spell_id')
+    slot = data.get('slot', 'carried')
+    if slot not in ('equipped', 'carried'):
+        slot = 'carried'
+
+    from app.models import ICRPGLootDef, ICRPGSpell
+    if loot_def_id:
+        if not ICRPGLootDef.query.get(loot_def_id):
+            return jsonify({'error': 'Loot not found.'}), 404
+    elif spell_id:
+        if not ICRPGSpell.query.get(spell_id):
+            return jsonify({'error': 'Spell not found.'}), 404
+    else:
+        return jsonify({'error': 'Must specify loot_def_id or spell_id.'}), 400
+
+    new_item = ICRPGCharLoot(
+        sheet_id=sheet.id,
+        loot_def_id=loot_def_id,
+        spell_id=spell_id,
+        slot=slot,
+        display_order=len(sheet.loot_items),
+    )
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_item.id})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/remove-loot', methods=['POST'])
+@login_required
+def icrpg_remove_loot(pc_id):
+    """Remove a loot item from the character sheet. GM only."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
+    data = request.get_json(silent=True) or {}
+    loot_id = data.get('loot_id')
+    char_loot = ICRPGCharLoot.query.filter_by(id=loot_id, sheet_id=sheet.id).first()
+    if not char_loot:
+        return jsonify({'error': 'Loot not found.'}), 404
+    db.session.delete(char_loot)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/add-ability', methods=['POST'])
+@login_required
+def icrpg_add_ability(pc_id):
+    """Add an ability to the character sheet. GM only."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
+    data = request.get_json(silent=True) or {}
+    ability_id = data.get('ability_id')
+    ability_kind = data.get('ability_kind', 'starting')
+    if ability_id:
+        ab = ICRPGAbility.query.get(ability_id)
+        if not ab:
+            return jsonify({'error': 'Ability not found.'}), 404
+        ability_kind = ab.ability_kind
+    new_ab = ICRPGCharAbility(
+        sheet_id=sheet.id,
+        ability_id=ability_id,
+        ability_kind=ability_kind,
+        custom_name=data.get('custom_name'),
+        custom_desc=data.get('custom_desc'),
+        display_order=len(sheet.char_abilities),
+    )
+    db.session.add(new_ab)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_ab.id})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/remove-ability', methods=['POST'])
+@login_required
+def icrpg_remove_ability(pc_id):
+    """Remove an ability from the character sheet. GM only."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
+    data = request.get_json(silent=True) or {}
+    char_ab_id = data.get('ability_id')
+    char_ab = ICRPGCharAbility.query.filter_by(id=char_ab_id, sheet_id=sheet.id).first()
+    if not char_ab:
+        return jsonify({'error': 'Ability not found.'}), 404
+    db.session.delete(char_ab)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # ICRPG CHARACTER CREATION WIZARD
 # ═══════════════════════════════════════════════════════════════════════════
