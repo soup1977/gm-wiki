@@ -1037,8 +1037,11 @@ def genesis_create_entity():
     world_context = _get_active_world_context()
     messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context, arc_context)
 
+    # Match the token limits used by the standard generate-entry endpoint
+    gen_tokens = 4096 if entity_type in ('location', 'npc') else 2048
+
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
+        raw = ai_chat(system_prompt, messages, max_tokens=gen_tokens, json_mode=True,
                       provider=get_feature_provider('generate'))
         fields = _extract_json(raw)
     except json.JSONDecodeError as e:
