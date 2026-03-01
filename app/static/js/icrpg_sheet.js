@@ -191,5 +191,148 @@
                 });
             });
         });
+
+        // ── Add Loot Modal (GM only) ─────────────────────────────
+        if (typeof SHEET_CATALOG !== 'undefined') {
+            var addLootModal = document.getElementById('addLootModal');
+            var lootTypeFilter = document.getElementById('loot-type-filter');
+            var lootCatalogSelect = document.getElementById('loot-catalog-select');
+            var lootCatalogDesc = document.getElementById('loot-catalog-desc');
+            var spellCatalogSelect = document.getElementById('spell-catalog-select');
+            var spellCatalogDesc = document.getElementById('spell-catalog-desc');
+            var lootSlotSelect = document.getElementById('loot-slot-select');
+
+            // Populate loot type filter options
+            var lootTypes = {};
+            SHEET_CATALOG.loot_defs.forEach(function (ld) {
+                if (ld.loot_type) lootTypes[ld.loot_type] = true;
+            });
+            Object.keys(lootTypes).sort().forEach(function (t) {
+                var opt = document.createElement('option');
+                opt.value = t; opt.textContent = t;
+                lootTypeFilter.appendChild(opt);
+            });
+
+            function populateLootSelect() {
+                var filter = lootTypeFilter.value;
+                lootCatalogSelect.innerHTML = '';
+                lootCatalogDesc.textContent = '';
+                SHEET_CATALOG.loot_defs.forEach(function (ld) {
+                    if (filter && ld.loot_type !== filter) return;
+                    var opt = document.createElement('option');
+                    opt.value = ld.id;
+                    opt.textContent = ld.name + (ld.loot_type ? ' (' + ld.loot_type + ')' : '');
+                    opt.dataset.desc = ld.description;
+                    lootCatalogSelect.appendChild(opt);
+                });
+            }
+
+            function populateSpellSelect() {
+                spellCatalogSelect.innerHTML = '';
+                spellCatalogDesc.textContent = '';
+                SHEET_CATALOG.spells.forEach(function (sp) {
+                    var opt = document.createElement('option');
+                    opt.value = sp.id;
+                    opt.textContent = sp.name + (sp.spell_type ? ' (' + sp.spell_type + ')' : '');
+                    opt.dataset.desc = sp.description;
+                    spellCatalogSelect.appendChild(opt);
+                });
+            }
+
+            populateLootSelect();
+            populateSpellSelect();
+
+            lootTypeFilter.addEventListener('change', populateLootSelect);
+
+            lootCatalogSelect.addEventListener('change', function () {
+                var sel = lootCatalogSelect.options[lootCatalogSelect.selectedIndex];
+                lootCatalogDesc.textContent = sel ? (sel.dataset.desc || '') : '';
+            });
+
+            spellCatalogSelect.addEventListener('change', function () {
+                var sel = spellCatalogSelect.options[spellCatalogSelect.selectedIndex];
+                spellCatalogDesc.textContent = sel ? (sel.dataset.desc || '') : '';
+            });
+
+            // Open modal with default slot from trigger button
+            document.querySelectorAll('.icrpg-open-add-loot').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    lootSlotSelect.value = btn.dataset.defaultSlot || 'carried';
+                    var modal = new bootstrap.Modal(addLootModal);
+                    modal.show();
+                });
+            });
+
+            // Submit Add Loot
+            document.getElementById('btn-add-loot').addEventListener('click', function () {
+                var activeTab = addLootModal.querySelector('.tab-pane.active');
+                var body = { slot: lootSlotSelect.value };
+
+                if (activeTab.id === 'loot-tab-catalog') {
+                    if (!lootCatalogSelect.value) { alert('Select an item.'); return; }
+                    body.loot_def_id = parseInt(lootCatalogSelect.value);
+                } else if (activeTab.id === 'loot-tab-spell') {
+                    if (!spellCatalogSelect.value) { alert('Select a spell.'); return; }
+                    body.spell_id = parseInt(spellCatalogSelect.value);
+                } else {
+                    var name = document.getElementById('custom-loot-name').value.trim();
+                    if (!name) { alert('Enter a name.'); return; }
+                    body.custom_name = name;
+                    body.custom_desc = document.getElementById('custom-loot-desc').value.trim();
+                }
+
+                postAction('add-loot', body, function () {
+                    window.location.reload();
+                });
+            });
+
+            // ── Add Ability Modal (GM only) ───────────────────────────
+            var abilityKindFilter = document.getElementById('ability-kind-filter');
+            var abilityCatalogSelect = document.getElementById('ability-catalog-select');
+            var abilityCatalogDesc = document.getElementById('ability-catalog-desc');
+
+            function populateAbilitySelect() {
+                var filter = abilityKindFilter.value;
+                abilityCatalogSelect.innerHTML = '';
+                abilityCatalogDesc.textContent = '';
+                SHEET_CATALOG.abilities.forEach(function (ab) {
+                    if (filter && ab.ability_kind !== filter) return;
+                    var opt = document.createElement('option');
+                    opt.value = ab.id;
+                    opt.textContent = ab.name + (ab.type_name ? ' (' + ab.type_name + ')' : '') + ' [' + ab.ability_kind + ']';
+                    opt.dataset.desc = ab.description;
+                    abilityCatalogSelect.appendChild(opt);
+                });
+            }
+
+            populateAbilitySelect();
+            abilityKindFilter.addEventListener('change', populateAbilitySelect);
+
+            abilityCatalogSelect.addEventListener('change', function () {
+                var sel = abilityCatalogSelect.options[abilityCatalogSelect.selectedIndex];
+                abilityCatalogDesc.textContent = sel ? (sel.dataset.desc || '') : '';
+            });
+
+            // Submit Add Ability
+            document.getElementById('btn-add-ability').addEventListener('click', function () {
+                var activeTab = document.querySelector('#addAbilityModal .tab-pane.active');
+                var body = {};
+
+                if (activeTab.id === 'ability-tab-catalog') {
+                    if (!abilityCatalogSelect.value) { alert('Select an ability.'); return; }
+                    body.ability_id = parseInt(abilityCatalogSelect.value);
+                } else {
+                    var name = document.getElementById('custom-ability-name').value.trim();
+                    if (!name) { alert('Enter a name.'); return; }
+                    body.custom_name = name;
+                    body.custom_desc = document.getElementById('custom-ability-desc').value.trim();
+                    body.ability_kind = document.getElementById('custom-ability-kind').value;
+                }
+
+                postAction('add-ability', body, function () {
+                    window.location.reload();
+                });
+            });
+        }
     });
 })();

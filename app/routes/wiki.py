@@ -257,6 +257,14 @@ def wiki_pc_detail(campaign_id, pc_id):
     pc = PlayerCharacter.query.filter_by(
         id=pc_id, campaign_id=campaign_id
     ).first_or_404()
+
+    # ICRPG campaign with a sheet → dedicated read-only template
+    is_icrpg = 'icrpg' in (campaign.system or '').lower()
+    if is_icrpg and pc.icrpg_sheet:
+        return render_template('wiki/pcs/icrpg_detail.html',
+                               campaign=campaign, pc=pc,
+                               sheet=pc.icrpg_sheet)
+
     template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
         .order_by(CampaignStatTemplate.display_order).all()
     stat_lookup = {s.template_field_id: s.stat_value for s in pc.stats}

@@ -357,11 +357,12 @@ function autoAddAllPCs() {
     SESSION_PCS.forEach(pc => {
         // Skip if this PC is already in the initiative list
         if (state.combatants.some(c => c.characterId === pc.id)) return;
-        const hp = findHpValue(pc.stats);
+        const hp = pc.hp_max || findHpValue(pc.stats);
         addCombatant({
             name: pc.character_name,
             initiative: 0,  // GM will set initiative for each PC
             maxHp: hp,
+            currentHp: pc.hp_current || hp,
             isPC: true,
             characterId: pc.id
         });
@@ -387,7 +388,7 @@ function prefillFromPC(indexStr) {
     if (!pc) return;
     document.getElementById('add-name').value = pc.character_name;
     document.getElementById('add-initiative').value = '';  // GM enters initiative
-    document.getElementById('add-max-hp').value = findHpValue(pc.stats) || '';
+    document.getElementById('add-max-hp').value = pc.hp_max || findHpValue(pc.stats) || '';
 }
 
 // Handle the "Add" button in the modal

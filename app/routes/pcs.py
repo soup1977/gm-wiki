@@ -4,7 +4,7 @@ from app import db, save_upload
 from app.models import (PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate,
                          Location, Campaign, ICRPGCharacterSheet, ICRPGCharLoot,
                          ICRPGCharAbility, ICRPGWorld, ICRPGLifeForm, ICRPGType,
-                         ICRPGAbility, ICRPGStartingLoot)
+                         ICRPGAbility, ICRPGStartingLoot, ICRPGLootDef, ICRPGSpell)
 
 pcs_bp = Blueprint('pcs', __name__, url_prefix='/pcs')
 
@@ -50,6 +50,43 @@ def _is_owner(pc):
     """True if the current user is the claiming player (not admin)."""
     return (pc.user_id and pc.user_id == current_user.id
             and not current_user.is_admin)
+
+
+def _build_sheet_catalog(campaign_id):
+    """Build a JSON-serializable catalog dict for the Add Loot/Ability modals."""
+    loot_defs = ICRPGLootDef.query.filter(
+        db.or_(ICRPGLootDef.is_builtin == True,
+               ICRPGLootDef.campaign_id == campaign_id)
+    ).order_by(ICRPGLootDef.name).all()
+
+    spells = ICRPGSpell.query.filter(
+        db.or_(ICRPGSpell.is_builtin == True,
+               ICRPGSpell.campaign_id == campaign_id)
+    ).order_by(ICRPGSpell.name).all()
+
+    abilities = ICRPGAbility.query.filter(
+        db.or_(ICRPGAbility.is_builtin == True,
+               ICRPGAbility.campaign_id == campaign_id)
+    ).order_by(ICRPGAbility.ability_kind, ICRPGAbility.name).all()
+
+    return {
+        'loot_defs': [
+            {'id': ld.id, 'name': ld.name, 'loot_type': ld.loot_type or '',
+             'description': ld.description or '', 'slot_cost': ld.slot_cost}
+            for ld in loot_defs
+        ],
+        'spells': [
+            {'id': sp.id, 'name': sp.name, 'spell_type': sp.spell_type or '',
+             'description': sp.description or ''}
+            for sp in spells
+        ],
+        'abilities': [
+            {'id': ab.id, 'name': ab.name, 'description': ab.description or '',
+             'ability_kind': ab.ability_kind,
+             'type_name': ab.type_ref.name if ab.type_ref else ''}
+            for ab in abilities
+        ],
+    }
 
 
 @pcs_bp.route('/')
@@ -176,10 +213,15 @@ def pc_detail(pc_id):
     if is_icrpg:
         sheet = pc.icrpg_sheet  # 1:1 backref, may be None
         if sheet:
+            # Build catalog for Add Loot / Add Ability modals (GM only)
+            sheet_catalog = None
+            if current_user.is_admin:
+                sheet_catalog = _build_sheet_catalog(campaign_id)
             return render_template('pcs/icrpg_sheet.html',
                                    pc=pc, sheet=sheet,
                                    can_edit=_can_edit(pc),
-                                   is_owner=_is_owner(pc))
+                                   is_owner=_is_owner(pc),
+                                   sheet_catalog=sheet_catalog)
         else:
             return render_template('pcs/detail.html', pc=pc,
                                    stats_display=stats_display,
@@ -479,7 +521,6 @@ def icrpg_add_loot(pc_id):
     if slot not in ('equipped', 'carried'):
         slot = 'carried'
 
-    from app.models import ICRPGLootDef, ICRPGSpell
     if loot_def_id:
         if not ICRPGLootDef.query.get(loot_def_id):
             return jsonify({'error': 'Loot not found.'}), 404
@@ -487,12 +528,17 @@ def icrpg_add_loot(pc_id):
         if not ICRPGSpell.query.get(spell_id):
             return jsonify({'error': 'Spell not found.'}), 404
     else:
-        return jsonify({'error': 'Must specify loot_def_id or spell_id.'}), 400
+        # Custom item — must have at least a name
+        custom_name = (data.get('custom_name') or '').strip()
+        if not custom_name:
+            return jsonify({'error': 'Must specify loot_def_id, spell_id, or custom_name.'}), 400
 
     new_item = ICRPGCharLoot(
         sheet_id=sheet.id,
         loot_def_id=loot_def_id,
         spell_id=spell_id,
+        custom_name=data.get('custom_name'),
+        custom_desc=data.get('custom_desc'),
         slot=slot,
         display_order=len(sheet.loot_items),
     )

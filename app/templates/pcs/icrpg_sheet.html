@@ -268,9 +268,16 @@
 
         {# ── EQUIPPED LOOT ────────────────────────────────────── #}
         <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2 d-flex justify-content-between">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
                 <strong>Equipped Loot</strong>
-                <span class="text-muted small" id="icrpg-equipped-slots">{{ sheet.equipped_slots_used }} / 10 slots</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small" id="icrpg-equipped-slots">{{ sheet.equipped_slots_used }} / 10 slots</span>
+                    {% if current_user.is_admin %}
+                    <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="equipped" title="Add Loot">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                    {% endif %}
+                </div>
             </div>
             <div class="card-body p-0">
                 {% if sheet.equipped_loot %}
@@ -311,9 +318,16 @@
 
         {# ── CARRIED LOOT ─────────────────────────────────────── #}
         <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2 d-flex justify-content-between">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
                 <strong>Carried Loot</strong>
-                <span class="text-muted small" id="icrpg-carried-slots">{{ sheet.carried_slots_used }} / 10 slots</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small" id="icrpg-carried-slots">{{ sheet.carried_slots_used }} / 10 slots</span>
+                    {% if current_user.is_admin %}
+                    <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="carried" title="Add Loot">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                    {% endif %}
+                </div>
             </div>
             <div class="card-body p-0">
                 {% if sheet.carried_loot %}
@@ -357,9 +371,15 @@
         {% set milestone = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'milestone') | list %}
         {% set mastery = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'mastery') | list %}
 
-        {% if starting or milestone or mastery %}
         <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2"><strong>Abilities</strong></div>
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                <strong>Abilities</strong>
+                {% if current_user.is_admin %}
+                <button class="btn btn-sm btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#addAbilityModal" title="Add Ability">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+                {% endif %}
+            </div>
             <div class="card-body">
                 {% if starting %}
                 <h6 class="text-info mb-2">Starting</h6>
@@ -414,9 +434,11 @@
                 </div>
                 {% endfor %}
                 {% endif %}
+                {% if not starting and not milestone and not mastery %}
+                <p class="text-muted small mb-0">No abilities yet.</p>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
 
         {# ── MASTERY PROGRESS ─────────────────────────────────── #}
         <div class="card bg-dark border-secondary mb-3">
@@ -504,6 +526,121 @@
 
 <p class="text-muted small mt-4">Created {{ pc.created_at.strftime('%Y-%m-%d') }}</p>
 
+{# ── ADD LOOT MODAL ──────────────────────────────────────── #}
+{% if current_user.is_admin %}
+<div class="modal fade" id="addLootModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Add Loot</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#loot-tab-catalog">Catalog</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#loot-tab-spell">Spell</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#loot-tab-custom">Custom</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="loot-tab-catalog">
+                        <div class="mb-2">
+                            <select id="loot-type-filter" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">All types</option>
+                            </select>
+                        </div>
+                        <select id="loot-catalog-select" class="form-select bg-dark text-light border-secondary" size="8"></select>
+                        <div id="loot-catalog-desc" class="text-muted small mt-2" style="min-height:2em;"></div>
+                    </div>
+                    <div class="tab-pane" id="loot-tab-spell">
+                        <select id="spell-catalog-select" class="form-select bg-dark text-light border-secondary" size="8"></select>
+                        <div id="spell-catalog-desc" class="text-muted small mt-2" style="min-height:2em;"></div>
+                    </div>
+                    <div class="tab-pane" id="loot-tab-custom">
+                        <div class="mb-2">
+                            <label class="form-label small">Name</label>
+                            <input type="text" id="custom-loot-name" class="form-control form-control-sm bg-dark text-light border-secondary">
+                        </div>
+                        <div>
+                            <label class="form-label small">Description</label>
+                            <textarea id="custom-loot-desc" class="form-control form-control-sm bg-dark text-light border-secondary" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="form-label small">Slot</label>
+                    <select id="loot-slot-select" class="form-select form-select-sm bg-dark text-light border-secondary">
+                        <option value="equipped">Equipped</option>
+                        <option value="carried">Carried</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm" id="btn-add-loot">
+                    <i class="bi bi-plus-circle"></i> Add
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── ADD ABILITY MODAL ─────────────────────────────────────── #}
+<div class="modal fade" id="addAbilityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Add Ability</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#ability-tab-catalog">Catalog</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#ability-tab-custom">Custom</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="ability-tab-catalog">
+                        <div class="mb-2">
+                            <select id="ability-kind-filter" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">All kinds</option>
+                                <option value="starting">Starting</option>
+                                <option value="milestone">Milestone</option>
+                                <option value="mastery">Mastery</option>
+                            </select>
+                        </div>
+                        <select id="ability-catalog-select" class="form-select bg-dark text-light border-secondary" size="8"></select>
+                        <div id="ability-catalog-desc" class="text-muted small mt-2" style="min-height:2em;"></div>
+                    </div>
+                    <div class="tab-pane" id="ability-tab-custom">
+                        <div class="mb-2">
+                            <label class="form-label small">Name</label>
+                            <input type="text" id="custom-ability-name" class="form-control form-control-sm bg-dark text-light border-secondary">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Description</label>
+                            <textarea id="custom-ability-desc" class="form-control form-control-sm bg-dark text-light border-secondary" rows="3"></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label small">Kind</label>
+                            <select id="custom-ability-kind" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="starting">Starting</option>
+                                <option value="milestone">Milestone</option>
+                                <option value="mastery">Mastery</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm" id="btn-add-ability">
+                    <i class="bi bi-plus-circle"></i> Add
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {# Data attributes for JS #}
 <div id="icrpg-data"
      data-pc-id="{{ pc.id }}"
@@ -512,5 +649,8 @@
 {% endblock %}
 
 {% block scripts %}
+{% if current_user.is_admin and sheet_catalog %}
+<script>var SHEET_CATALOG = {{ sheet_catalog | tojson }};</script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/icrpg_sheet.js') }}"></script>
 {% endblock %}
