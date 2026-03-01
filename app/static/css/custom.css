@@ -100,3 +100,15 @@ a:hover {
 .status-badge[data-status="planned"],
 .status-badge[data-status="Planned"]    { background-color: var(--status-on-hold); color: #212529; }
 .status-badge[data-status="unknown"]    { background-color: var(--status-unknown); }
+
+/* ── ICRPG Character Sheet ──────────────────────────────── */
+.icrpg-stat-table td { vertical-align: middle; }
+.icrpg-stat-table .stat-total { font-weight: 700; font-size: 1.1em; }
+.icrpg-stat-table .stat-bonus { color: #6c757d; font-size: 0.85em; }
+.icrpg-hp-bar-wrap .progress { height: 1.5rem; }
+.icrpg-hp-bar-wrap .progress-bar { transition: width 0.3s ease; }
+.icrpg-hero-coin.btn-warning i { color: #ffd700; }
+.icrpg-dying-pips i { font-size: 1.2rem; }
+.icrpg-loot-item { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.icrpg-loot-item:last-child { border-bottom: none; }
+.icrpg-loot-desc { font-size: 0.85em; color: #adb5bd; }

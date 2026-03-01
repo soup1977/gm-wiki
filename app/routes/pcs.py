@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import login_required, current_user
 from app import db, save_upload
-from app.models import PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate, Location
+from app.models import (PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate,
+                         Location, Campaign, ICRPGCharacterSheet, ICRPGCharLoot)
 
 pcs_bp = Blueprint('pcs', __name__, url_prefix='/pcs')
 
@@ -162,6 +163,23 @@ def pc_detail(pc_id):
         for field in template_fields
     ]
 
+    # Check if this is an ICRPG campaign — show the ICRPG sheet instead
+    campaign = Campaign.query.get(campaign_id)
+    is_icrpg = 'icrpg' in (campaign.system or '').lower()
+
+    if is_icrpg:
+        sheet = pc.icrpg_sheet  # 1:1 backref, may be None
+        if sheet:
+            return render_template('pcs/icrpg_sheet.html',
+                                   pc=pc, sheet=sheet,
+                                   can_edit=_can_edit(pc),
+                                   is_owner=_is_owner(pc))
+        else:
+            return render_template('pcs/detail.html', pc=pc,
+                                   stats_display=stats_display,
+                                   can_edit=_can_edit(pc),
+                                   show_icrpg_banner=True)
+
     return render_template('pcs/detail.html', pc=pc, stats_display=stats_display,
                            can_edit=_can_edit(pc))
 
@@ -284,4 +302,127 @@ def unclaim_pc(pc_id):
     pc.user_id = None
     db.session.commit()
     flash(f'"{pc.character_name}" is now unclaimed.', 'info')
+    return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ICRPG QUICK-EDIT ENDPOINTS (AJAX, return JSON)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _get_sheet_or_error(pc_id):
+    """Load PC + ICRPG sheet with campaign and permission checks.
+    Returns (sheet, error_response). If error_response is not None, return it."""
+    pc = PlayerCharacter.query.get(pc_id)
+    if not pc or pc.campaign_id != get_active_campaign_id():
+        return None, (jsonify({'error': 'Not found.'}), 404)
+    if not _can_edit(pc):
+        return None, (jsonify({'error': 'Permission denied.'}), 403)
+    sheet = pc.icrpg_sheet
+    if not sheet:
+        return None, (jsonify({'error': 'No ICRPG sheet.'}), 404)
+    return sheet, None
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/hp', methods=['POST'])
+@login_required
+def icrpg_adjust_hp(pc_id):
+    """Adjust HP by a delta (+1 or -1). Clamps to 0..hp_max."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    delta = int(data.get('delta', 0))
+    sheet.hp_current = max(0, min(sheet.hp_current + delta, sheet.hp_max))
+    db.session.commit()
+    return jsonify({'hp_current': sheet.hp_current, 'hp_max': sheet.hp_max})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/hero-coin', methods=['POST'])
+@login_required
+def icrpg_toggle_hero_coin(pc_id):
+    """Toggle hero coin on/off."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    sheet.hero_coin = not sheet.hero_coin
+    db.session.commit()
+    return jsonify({'hero_coin': sheet.hero_coin})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/dying', methods=['POST'])
+@login_required
+def icrpg_adjust_dying(pc_id):
+    """Adjust dying timer by a delta. Clamps to 0..3."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    delta = int(data.get('delta', 0))
+    sheet.dying_timer = max(0, min(sheet.dying_timer + delta, 3))
+    db.session.commit()
+    return jsonify({'dying_timer': sheet.dying_timer})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/nat20', methods=['POST'])
+@login_required
+def icrpg_increment_nat20(pc_id):
+    """Increment nat 20 count. Auto-awards mastery at 20 (resets counter)."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    sheet.nat20_count += 1
+    if sheet.nat20_count >= 20 and sheet.mastery_count < 3:
+        sheet.mastery_count += 1
+        sheet.nat20_count = 0
+    db.session.commit()
+    return jsonify({
+        'nat20_count': sheet.nat20_count,
+        'mastery_count': sheet.mastery_count,
+    })
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/equip', methods=['POST'])
+@login_required
+def icrpg_equip_loot(pc_id):
+    """Move loot between equipped and carried slots."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    loot_id = data.get('loot_id')
+    new_slot = data.get('slot')
+    if new_slot not in ('equipped', 'carried'):
+        return jsonify({'error': 'Invalid slot.'}), 400
+    char_loot = ICRPGCharLoot.query.filter_by(id=loot_id, sheet_id=sheet.id).first()
+    if not char_loot:
+        return jsonify({'error': 'Loot not found.'}), 404
+    # Check slot capacity when equipping
+    if new_slot == 'equipped':
+        cost = char_loot.loot_def.slot_cost if char_loot.loot_def else 1
+        if sheet.equipped_slots_used + cost > 10:
+            return jsonify({'error': 'Not enough equipped slots.'}), 400
+    char_loot.slot = new_slot
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/create-sheet', methods=['POST'])
+@login_required
+def icrpg_create_sheet(pc_id):
+    """Create a blank ICRPG sheet for a PC. GM/admin only."""
+    campaign_id = get_active_campaign_id()
+    pc = PlayerCharacter.query.get_or_404(pc_id)
+    if pc.campaign_id != campaign_id:
+        flash('Character not found in this campaign.', 'danger')
+        return redirect(url_for('pcs.list_pcs'))
+    if not current_user.is_admin:
+        flash('Only the GM can create ICRPG sheets.', 'danger')
+        return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+    if pc.icrpg_sheet:
+        flash('This character already has an ICRPG sheet.', 'info')
+        return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
+    sheet = ICRPGCharacterSheet(pc_id=pc.id)
+    db.session.add(sheet)
+    db.session.commit()
+    flash(f'ICRPG sheet created for "{pc.character_name}".', 'success')
     return redirect(url_for('pcs.pc_detail', pc_id=pc.id))

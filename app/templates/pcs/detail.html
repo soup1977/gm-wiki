@@ -9,6 +9,20 @@
     </ol>
 </nav>
 
+{% if show_icrpg_banner is defined and show_icrpg_banner %}
+<div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+    <span><i class="bi bi-info-circle me-2"></i>This is an ICRPG campaign, but this character doesn't have an ICRPG sheet yet.</span>
+    {% if current_user.is_admin %}
+    <form method="POST" action="{{ url_for('pcs.icrpg_create_sheet', pc_id=pc.id) }}" class="d-inline ms-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-info btn-sm">
+            <i class="bi bi-file-earmark-plus me-1"></i>Create ICRPG Sheet
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
         <h2 class="mb-1">{{ pc.character_name }}</h2>
