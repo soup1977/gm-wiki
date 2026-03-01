@@ -71,6 +71,31 @@ ENTITY_SCHEMAS = {
             'gm_notes':  'GM-only notes — what went well, what to follow up on next time',
         },
     },
+    'faction': {
+        'fields': {
+            'name':        'Name of the faction or organization',
+            'disposition': 'One of: friendly, neutral, hostile, unknown',
+            'description': 'What this faction is, what they do, their goals and methods',
+            'gm_notes':    'GM-only notes — secret agendas, internal conflicts, plot hooks',
+        },
+    },
+    'adventure_site': {
+        'fields': {
+            'name':     'Name of the adventure site',
+            'subtitle': 'A one-line tagline or description (e.g. "Flooded temple of a forgotten god")',
+            'status':   'One of: Planned, Active, Completed',
+            'content':  'Full Markdown content for the site — use ## headings for zones/areas, include encounters, traps, loot, NPCs',
+        },
+    },
+    'bestiary': {
+        'fields': {
+            'name':       'Monster/creature name',
+            'system':     'Game system (e.g. "D&D 5e", "ICRPG", "Pathfinder 2e")',
+            'cr_level':   'Challenge rating or level (e.g. "CR 3", "Level 5")',
+            'tags':       'Comma-separated tags (e.g. "undead, boss, cave")',
+            'stat_block': 'Full stat block in Markdown — HP, AC, attacks, abilities, special traits. Format for readability.',
+        },
+    },
 }
 
 

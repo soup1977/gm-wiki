@@ -143,10 +143,14 @@ def create_session():
         flash(f'{label} created.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))
 
+    # Check for preselect_site_id from query param (e.g. "Start Session Here" on Site detail)
+    preselect_site_id = request.args.get('site_id', type=int)
+
     return render_template('sessions/form.html', sess=None,
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
-                           monsters=monsters, all_sites=all_sites)
+                           monsters=monsters, all_sites=all_sites,
+                           preselect_site_id=preselect_site_id)
 
 
 @sessions_bp.route('/sessions/<int:session_id>')
@@ -161,6 +165,57 @@ def session_detail(session_id):
         session.pop('session_title', None)
 
     return render_template('sessions/detail.html', sess=sess)
+
+
+@sessions_bp.route('/sessions/<int:session_id>/next')
+@login_required
+def create_next_session(session_id):
+    """Create a new session form pre-populated with carryover from the previous session."""
+    campaign_id = get_active_campaign_id()
+    if not campaign_id:
+        flash('Select a campaign first.', 'warning')
+        return redirect(url_for('campaigns.list_campaigns'))
+
+    prev = Session.query.filter_by(id=session_id, campaign_id=campaign_id).first_or_404()
+
+    # Build carryover data
+    next_number = (prev.number + 1) if prev.number else None
+    carryover_quest_ids = {q.id for q in prev.quests_touched if q.status == 'active'}
+    carryover_npc_ids = {n.id for n in prev.npcs_featured if n.status in ('alive', 'unknown')}
+    carryover_site_id = None
+    for s in prev.adventure_sites:
+        if s.status == 'Active':
+            carryover_site_id = s.id
+            break
+    carryover_pc_ids = {pc.id for pc in prev.attending_pcs}
+
+    carryover = {
+        'from_session': prev,
+        'next_number': next_number,
+        'quest_ids': carryover_quest_ids,
+        'npc_ids': carryover_npc_ids,
+        'site_id': carryover_site_id,
+        'pc_ids': carryover_pc_ids,
+    }
+
+    # Fetch all entity lists for the form
+    npcs = NPC.query.filter_by(campaign_id=campaign_id).order_by(NPC.name).all()
+    locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
+    items = Item.query.filter_by(campaign_id=campaign_id).order_by(Item.name).all()
+    quests = Quest.query.filter_by(campaign_id=campaign_id).order_by(Quest.name).all()
+    pcs = PlayerCharacter.query.filter_by(campaign_id=campaign_id)\
+        .order_by(PlayerCharacter.character_name).all()
+    monsters = MonsterInstance.query.filter_by(campaign_id=campaign_id)\
+        .order_by(MonsterInstance.instance_name).all()
+    all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
+        .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+
+    return render_template('sessions/form.html', sess=None,
+                           npcs=npcs, locations=locations,
+                           items=items, quests=quests, pcs=pcs,
+                           monsters=monsters, all_sites=all_sites,
+                           preselect_site_id=None,
+                           carryover=carryover)
 
 
 @sessions_bp.route('/sessions/<int:session_id>/edit', methods=['GET', 'POST'])

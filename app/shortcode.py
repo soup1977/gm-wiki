@@ -12,7 +12,7 @@ On save, each shortcode is:
 import re
 from flask import url_for
 
-SHORTCODE_RE = re.compile(r'#(npc|loc|item|quest|comp|pc)\[([^\]]+)\]')
+SHORTCODE_RE = re.compile(r'#(npc|loc|item|quest|comp|pc|site)\[([^\]]+)\]')
 
 # Maps type prefix → model class name, name field, URL route, and route id param.
 # Model classes are imported lazily inside functions to avoid circular imports.
@@ -184,6 +184,43 @@ def clear_mentions(source_type, source_id):
         source_type=source_type,
         source_id=source_id
     ).delete()
+
+
+def resolve_mentions_for_source(source_type, source_id):
+    """Return a list of dicts describing entities that this source mentions (forward links).
+
+    Each dict has: type, id, label, type_label, url
+    Used by detail routes to populate a "Linked Entities" section.
+    """
+    from app.models import EntityMention
+
+    raw = EntityMention.query.filter_by(
+        source_type=source_type,
+        source_id=source_id
+    ).all()
+
+    results = []
+    for m in raw:
+        cfg = TYPE_CONFIG.get(m.target_type)
+        if not cfg:
+            continue
+        try:
+            model_cls = _get_model(cfg['model'])
+            entity = model_cls.query.get(m.target_id)
+            if entity:
+                display_name = getattr(entity, cfg['name_field'])
+                url = _entity_url(m.target_type, m.target_id)
+                results.append({
+                    'type':       m.target_type,
+                    'id':         m.target_id,
+                    'label':      display_name,
+                    'type_label': cfg['label'],
+                    'url':        url,
+                })
+        except Exception:
+            continue
+
+    return results
 
 
 def resolve_mentions_for_target(target_type, target_id):

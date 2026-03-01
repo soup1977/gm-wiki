@@ -15,7 +15,19 @@
     </ol>
 </nav>
 
-<h2 class="mb-4">{% if entry %}Edit: {{ entry.name }}{% else %}Add Bestiary Entry{% endif %}</h2>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="mb-0">{% if entry %}Edit: {{ entry.name }}{% else %}Add Bestiary Entry{% endif %}</h2>
+    {% if ai_enabled %}
+    <button type="button" class="btn btn-outline-primary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#smartFillModal">
+        <i class="bi bi-stars"></i> Smart Fill
+    </button>
+    <button type="button" class="btn btn-outline-info btn-sm"
+            data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
+        <i class="bi bi-magic"></i> Generate Entry
+    </button>
+    {% endif %}
+</div>
 
 <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -132,4 +144,11 @@
         {% endif %}
     </div>
 </form>
+
+{% if ai_enabled %}
+<script>window.SMART_FILL_ENTITY_TYPE = 'bestiary';</script>
+<script>window.AI_GENERATE_ENTITY_TYPE = 'bestiary';</script>
+<script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_generate.js') }}"></script>
+{% endif %}
 {% endblock %}

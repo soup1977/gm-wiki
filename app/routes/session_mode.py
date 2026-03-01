@@ -233,6 +233,15 @@ def save_post_session():
 
     db.session.commit()
 
+    # Check if the GM wants to start the next session
+    if request.form.get('action') == 'next_session':
+        session_id_to_carry = game_session.id
+        # Clear session mode before redirecting
+        session.pop('in_session_mode', None)
+        session.pop('current_session_id', None)
+        session.pop('session_title', None)
+        return redirect(url_for('sessions.create_next_session', session_id=session_id_to_carry))
+
     # Clear session mode
     session.pop('in_session_mode', None)
     session.pop('current_session_id', None)

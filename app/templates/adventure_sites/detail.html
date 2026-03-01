@@ -2,6 +2,8 @@
 {% block title %}{{ site.name }} — The War Table{% endblock %}
 
 {% block content %}
+<div id="efs-context" data-site-id="{{ site.id }}" data-mode="detail" class="d-none"></div>
+
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.list_sites') }}">Adventure Sites</a></li>
@@ -20,7 +22,15 @@
         <p class="text-muted fst-italic mt-1 mb-0">{{ site.subtitle }}</p>
         {% endif %}
     </div>
-    <div class="d-flex gap-2 flex-shrink-0">
+    <div class="d-flex gap-2 flex-shrink-0 align-items-center">
+        {% if site.is_player_visible %}
+        <span class="badge bg-info"><i class="bi bi-people-fill"></i> Player Visible</span>
+        {% else %}
+        <span class="badge bg-secondary"><i class="bi bi-eye-slash"></i> Hidden</span>
+        {% endif %}
+        <a href="{{ url_for('sessions.create_session') }}?site_id={{ site.id }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-play-circle"></i> Start Session Here
+        </a>
         <a href="{{ url_for('adventure_sites.edit_site', site_id=site.id) }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-pencil"></i> Edit
         </a>
@@ -134,8 +144,42 @@
             </div>
             {% endif %}
 
+            <!-- DB-backed Milestones card -->
+            {% set milestone_list = site.get_milestones() %}
+            {% if milestone_list %}
+            <div class="card bg-dark border-secondary mb-3" id="milestones-card">
+                <div class="card-header py-2">
+                    <span class="small fw-bold text-muted text-uppercase">
+                        <i class="bi bi-flag-fill text-warning"></i> Milestones
+                    </span>
+                </div>
+                <div class="card-body py-2 px-3">
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div class="progress-bar bg-success" id="milestone-progress" role="progressbar"
+                             style="width: {{ site.progress_pct }}%"
+                             aria-valuenow="{{ site.progress_pct }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-2" id="milestone-summary">
+                        {{ milestone_list | selectattr('done') | list | length }} / {{ milestone_list | length }} complete
+                    </p>
+                    <div id="milestone-checks">
+                        {% for m in milestone_list %}
+                        <div class="form-check mb-1">
+                            <input type="checkbox" class="form-check-input milestone-cb"
+                                   id="ms-{{ loop.index0 }}" data-index="{{ loop.index0 }}"
+                                   {% if m.done %}checked{% endif %}>
+                            <label class="form-check-label small {% if m.done %}text-decoration-line-through text-muted{% endif %}"
+                                   for="ms-{{ loop.index0 }}">{{ m.label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             {% if ai_enabled %}
-            <!-- Milestones card -->
+            <!-- AI Milestone Suggestions card -->
             <div class="card bg-dark border-secondary mb-3">
                 <div class="card-header py-2 d-flex justify-content-between align-items-center">
                     <span class="small fw-bold text-muted text-uppercase">
@@ -156,6 +200,38 @@
     </div><!-- sidebar col -->
 
 </div><!-- row -->
+
+{% if linked_entities %}
+<div class="mt-4 border-top border-secondary pt-3">
+    <h6 class="text-muted small"><i class="bi bi-box-arrow-up-right me-1"></i>Linked Entities</h6>
+    <div class="d-flex flex-wrap gap-2">
+        {% for e in linked_entities %}
+        <a href="{{ e.url }}" class="btn btn-sm btn-outline-light">
+            {% if e.type == 'npc' %}<i class="bi bi-person"></i>
+            {% elif e.type == 'loc' %}<i class="bi bi-geo-alt"></i>
+            {% elif e.type == 'quest' %}<i class="bi bi-flag"></i>
+            {% elif e.type == 'item' %}<i class="bi bi-backpack"></i>
+            {% elif e.type == 'comp' %}<i class="bi bi-journal-text"></i>
+            {% elif e.type == 'pc' %}<i class="bi bi-person-badge"></i>
+            {% else %}<i class="bi bi-link-45deg"></i>
+            {% endif %}
+            {{ e.label }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if mentions %}
+<div class="mt-4 border-top border-secondary pt-3">
+    <h6 class="text-muted small"><i class="bi bi-link-45deg me-1"></i>Referenced by</h6>
+    <div class="d-flex flex-wrap gap-2">
+        {% for m in mentions %}
+        <a href="{{ m.url }}" class="badge bg-secondary text-decoration-none">{{ m.label }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- JS: ToC generation + Run State persistence -->
 <script>
@@ -288,6 +364,55 @@
 
     // Load saved state after a short delay to let JS build the checkboxes first
     loadState();
+
+    // ── DB-backed Milestones ──────────────────────────────────────────────────
+    var milestoneCbs = document.querySelectorAll('.milestone-cb');
+    if (milestoneCbs.length > 0) {
+        milestoneCbs.forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                var lbl = document.querySelector('label[for="' + cb.id + '"]');
+                if (cb.checked) {
+                    lbl.classList.add('text-decoration-line-through', 'text-muted');
+                } else {
+                    lbl.classList.remove('text-decoration-line-through', 'text-muted');
+                }
+                saveMilestones();
+            });
+        });
+    }
+
+    function saveMilestones() {
+        var milestones = [];
+        document.querySelectorAll('.milestone-cb').forEach(function(cb) {
+            var lbl = document.querySelector('label[for="' + cb.id + '"]');
+            milestones.push({ label: lbl.textContent.trim(), done: cb.checked });
+        });
+
+        fetch('/sites/' + SITE_ID + '/update-milestones', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ milestones: milestones })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var bar = document.getElementById('milestone-progress');
+                if (bar) {
+                    bar.style.width = data.progress_pct + '%';
+                    bar.setAttribute('aria-valuenow', data.progress_pct);
+                }
+                var done = milestones.filter(function(m) { return m.done; }).length;
+                var summary = document.getElementById('milestone-summary');
+                if (summary) {
+                    summary.textContent = done + ' / ' + milestones.length + ' complete';
+                }
+            }
+        })
+        .catch(function() {}); // silently ignore failures
+    }
 })();
 </script>
 
