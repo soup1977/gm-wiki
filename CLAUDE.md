@@ -102,7 +102,8 @@ gm-wiki/
 | 19a | ICRPG Character Sheet Builder — catalog models, seed data, CLI command | Complete — PR #20 |
 | 19b | ICRPG Character Sheet View + Quick Edit (AJAX HP/hero coin/equip) | Complete — PR #20 |
 | 19c | ICRPG Character Creation Wizard (8-step multi-step form) | Complete — PR #20 |
-| 19d | ICRPG Homebrew Catalog CRUD, Add Loot/Ability UI, wiki/combat integration | In Progress — see docs/phase-19d-plan.md |
+| 19d | ICRPG Homebrew Catalog CRUD, Add Loot/Ability UI, wiki/combat integration | Complete — PR #21 |
+| 19e | Player Sheet Permissions (loot/ability for owners, per-PC stat toggle) | In Progress — see docs/phase-19e-plan.md |
 
 ---
 

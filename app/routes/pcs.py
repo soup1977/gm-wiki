@@ -213,13 +213,17 @@ def pc_detail(pc_id):
     if is_icrpg:
         sheet = pc.icrpg_sheet  # 1:1 backref, may be None
         if sheet:
-            # Build catalog for Add Loot / Add Ability modals (GM only)
+            # Build catalog for Add Loot / Add Ability modals (anyone who can edit)
             sheet_catalog = None
-            if current_user.is_admin:
+            if _can_edit(pc):
                 sheet_catalog = _build_sheet_catalog(campaign_id)
+            can_edit_stats = current_user.is_admin or (
+                sheet.allow_player_edit and _is_owner(pc)
+            )
             return render_template('pcs/icrpg_sheet.html',
                                    pc=pc, sheet=sheet,
                                    can_edit=_can_edit(pc),
+                                   can_edit_stats=can_edit_stats,
                                    is_owner=_is_owner(pc),
                                    sheet_catalog=sheet_catalog)
         else:
@@ -457,12 +461,13 @@ def icrpg_equip_loot(pc_id):
 @pcs_bp.route('/<int:pc_id>/icrpg/update-stat', methods=['POST'])
 @login_required
 def icrpg_update_stat(pc_id):
-    """Adjust a base stat by +1/-1. GM only."""
+    """Adjust a base stat by +1/-1. GM or player with toggle."""
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
     if not current_user.is_admin:
-        return jsonify({'error': 'GM only.'}), 403
+        if not (sheet.allow_player_edit and sheet.pc.user_id == current_user.id):
+            return jsonify({'error': 'GM only.'}), 403
     data = request.get_json(silent=True) or {}
     key = data.get('key', '').lower()
     delta = int(data.get('delta', 0))
@@ -483,12 +488,13 @@ def icrpg_update_stat(pc_id):
 @pcs_bp.route('/<int:pc_id>/icrpg/update-effort', methods=['POST'])
 @login_required
 def icrpg_update_effort(pc_id):
-    """Adjust a base effort by +1/-1. GM only."""
+    """Adjust a base effort by +1/-1. GM or player with toggle."""
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
     if not current_user.is_admin:
-        return jsonify({'error': 'GM only.'}), 403
+        if not (sheet.allow_player_edit and sheet.pc.user_id == current_user.id):
+            return jsonify({'error': 'GM only.'}), 403
     data = request.get_json(silent=True) or {}
     key = data.get('key', '').lower()
     delta = int(data.get('delta', 0))
@@ -505,15 +511,27 @@ def icrpg_update_effort(pc_id):
     })
 
 
-@pcs_bp.route('/<int:pc_id>/icrpg/add-loot', methods=['POST'])
+@pcs_bp.route('/<int:pc_id>/icrpg/toggle-player-edit', methods=['POST'])
 @login_required
-def icrpg_add_loot(pc_id):
-    """Add a loot item to the character sheet. GM only."""
+def icrpg_toggle_player_edit(pc_id):
+    """Toggle whether the owning player can edit base stats/efforts. GM only."""
+    if not current_user.is_admin:
+        return jsonify({'error': 'GM only.'}), 403
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
-    if not current_user.is_admin:
-        return jsonify({'error': 'GM only.'}), 403
+    sheet.allow_player_edit = not sheet.allow_player_edit
+    db.session.commit()
+    return jsonify({'allow_player_edit': sheet.allow_player_edit})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/add-loot', methods=['POST'])
+@login_required
+def icrpg_add_loot(pc_id):
+    """Add a loot item to the character sheet."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
     data = request.get_json(silent=True) or {}
     loot_def_id = data.get('loot_def_id')
     spell_id = data.get('spell_id')
@@ -550,12 +568,10 @@ def icrpg_add_loot(pc_id):
 @pcs_bp.route('/<int:pc_id>/icrpg/remove-loot', methods=['POST'])
 @login_required
 def icrpg_remove_loot(pc_id):
-    """Remove a loot item from the character sheet. GM only."""
+    """Remove a loot item from the character sheet."""
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
-    if not current_user.is_admin:
-        return jsonify({'error': 'GM only.'}), 403
     data = request.get_json(silent=True) or {}
     loot_id = data.get('loot_id')
     char_loot = ICRPGCharLoot.query.filter_by(id=loot_id, sheet_id=sheet.id).first()
@@ -569,12 +585,10 @@ def icrpg_remove_loot(pc_id):
 @pcs_bp.route('/<int:pc_id>/icrpg/add-ability', methods=['POST'])
 @login_required
 def icrpg_add_ability(pc_id):
-    """Add an ability to the character sheet. GM only."""
+    """Add an ability to the character sheet."""
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
-    if not current_user.is_admin:
-        return jsonify({'error': 'GM only.'}), 403
     data = request.get_json(silent=True) or {}
     ability_id = data.get('ability_id')
     ability_kind = data.get('ability_kind', 'starting')
@@ -599,12 +613,10 @@ def icrpg_add_ability(pc_id):
 @pcs_bp.route('/<int:pc_id>/icrpg/remove-ability', methods=['POST'])
 @login_required
 def icrpg_remove_ability(pc_id):
-    """Remove an ability from the character sheet. GM only."""
+    """Remove an ability from the character sheet."""
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
-    if not current_user.is_admin:
-        return jsonify({'error': 'GM only.'}), 403
     data = request.get_json(silent=True) or {}
     char_ab_id = data.get('ability_id')
     char_ab = ICRPGCharAbility.query.filter_by(id=char_ab_id, sheet_id=sheet.id).first()
