@@ -298,8 +298,14 @@ def generate_entry():
         return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
     if not concept:
         return jsonify({'error': 'No concept provided.'}), 400
-    if len(concept) > 2000:
-        return jsonify({'error': 'Concept is too long (max ~2000 characters).'}), 400
+
+    # Adventure sites and bestiary entries need longer prompts and longer responses
+    large_output_types = {'adventure_site', 'bestiary'}
+    concept_limit = 5000 if entity_type in large_output_types else 2000
+    max_out_tokens = 4096 if entity_type in large_output_types else 2048
+
+    if len(concept) > concept_limit:
+        return jsonify({'error': f'Concept is too long (max ~{concept_limit} characters).'}), 400
 
     world_context = _get_active_world_context()
     messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context)
@@ -310,7 +316,7 @@ def generate_entry():
         system_prompt = custom_system
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
+        raw = ai_chat(system_prompt, messages, max_tokens=max_out_tokens, json_mode=True,
                       provider=get_feature_provider('generate'))
 
         # Strip markdown code fences if the model added them despite instructions
