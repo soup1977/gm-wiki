@@ -53,13 +53,13 @@
         {% else %}
         <span class="badge bg-secondary"><i class="bi bi-eye-slash"></i> Hidden from players</span>
         {% endif %}
-        <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn-secondary">
+        <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>
         <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}"
               onsubmit="return confirm('Delete item \'{{ item.name }}\'? This cannot be undone.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
         </form>

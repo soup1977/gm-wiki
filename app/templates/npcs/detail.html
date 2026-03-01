@@ -63,13 +63,13 @@
             <button class="btn btn-sm btn-outline-success">Mark Alive</button>
         </form>
         {% endif %}
-        <a href="{{ url_for('npcs.edit_npc', npc_id=npc.id) }}" class="btn btn-primary">
+        <a href="{{ url_for('npcs.edit_npc', npc_id=npc.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>
         <form method="POST" action="{{ url_for('npcs.delete_npc', npc_id=npc.id) }}"
               onsubmit="return confirm('Delete this NPC? This cannot be undone.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-outline-danger">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
         </form>

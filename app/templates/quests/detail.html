@@ -71,13 +71,13 @@
         {% else %}
         <span class="badge bg-secondary"><i class="bi bi-eye-slash"></i> Hidden from players</span>
         {% endif %}
-        <a href="{{ url_for('quests.edit_quest', quest_id=quest.id) }}" class="btn btn-secondary">
+        <a href="{{ url_for('quests.edit_quest', quest_id=quest.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>
         <form method="POST" action="{{ url_for('quests.delete_quest', quest_id=quest.id) }}"
               onsubmit="return confirm('Delete quest \'{{ quest.name }}\'? This cannot be undone.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>
         </form>
