@@ -2,6 +2,10 @@
 {% block title %}{% if site %}Edit {{ site.name }}{% else %}New Adventure Site{% endif %} — The War Table{% endblock %}
 
 {% block content %}
+{% if site %}
+<div id="efs-context" data-site-id="{{ site.id }}" data-mode="edit" class="d-none"></div>
+{% endif %}
+
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.list_sites') }}">Adventure Sites</a></li>
@@ -14,7 +18,19 @@
     </ol>
 </nav>
 
-<h2 class="mb-4">{% if site %}Edit Adventure Site{% else %}New Adventure Site{% endif %}</h2>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <h2 class="mb-0">{% if site %}Edit Adventure Site{% else %}New Adventure Site{% endif %}</h2>
+    {% if ai_enabled %}
+    <button type="button" class="btn btn-outline-primary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#smartFillModal">
+        <i class="bi bi-stars"></i> Smart Fill
+    </button>
+    <button type="button" class="btn btn-outline-info btn-sm"
+            data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
+        <i class="bi bi-magic"></i> Generate Entry
+    </button>
+    {% endif %}
+</div>
 
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -97,6 +113,22 @@
                         <div class="form-text">Which sessions ran or are planned for this site.</div>
                     </div>
 
+                    <div>
+                        <label for="milestones" class="form-label">Milestones</label>
+                        <textarea class="form-control font-monospace" id="milestones" name="milestones" rows="4"
+                                  placeholder="One milestone per line&#10;e.g. Sorting Bay Cleared&#10;Boss Defeated">{{ site.get_milestones() | map(attribute='label') | join('\n') if site else '' }}</textarea>
+                        <div class="form-text">One per line. Check them off on the detail page during play.</div>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" name="is_player_visible" id="is_player_visible"
+                               class="form-check-input"
+                               {% if site and site.is_player_visible %}checked{% endif %}>
+                        <label class="form-check-label" for="is_player_visible">
+                            <i class="bi bi-people"></i> Visible in Player Wiki
+                        </label>
+                    </div>
+
                 </div><!-- card-body -->
             </div><!-- card -->
         </div><!-- col-md-4 -->
@@ -111,6 +143,28 @@
                         <textarea class="form-control font-monospace" id="content" name="content" rows="22"
                                   style="resize: vertical;">{{ site.content if site else '' }}</textarea>
                     </div>
+
+                    {% if ai_enabled %}
+                    <!-- Generate Ideas button -->
+                    <div>
+                        <button type="button" class="btn btn-outline-warning btn-sm" id="site-ideas-btn" onclick="generateSiteIdeas()">
+                            <i class="bi bi-lightbulb"></i> Generate Ideas
+                        </button>
+                        <span class="text-muted small ms-2">AI suggests rooms, encounters, and areas based on your content</span>
+                    </div>
+
+                    <!-- Site Ideas results -->
+                    <div id="site-ideas-results" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-bold text-warning">Suggested Areas</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                    onclick="document.getElementById('site-ideas-results').style.display='none'">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                        <div id="site-ideas-cards"></div>
+                    </div>
+                    {% endif %}
 
                     <!-- Planning Checklist accordion -->
                     <div class="accordion accordion-flush mb-2" id="planningChecklist">
@@ -230,4 +284,82 @@
     };
 })();
 </script>
+{% endblock %}
+
+{% block scripts %}
+{% if site %}
+<script src="{{ url_for('static', filename='js/entity_from_selection.js') }}"></script>
+{% endif %}
+{% if ai_enabled %}
+<script>window.SMART_FILL_ENTITY_TYPE = 'adventure_site';</script>
+<script>window.AI_GENERATE_ENTITY_TYPE = 'adventure_site';</script>
+<script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_generate.js') }}"></script>
+<script>
+function generateSiteIdeas() {
+    var btn = document.getElementById('site-ideas-btn');
+    var results = document.getElementById('site-ideas-results');
+    var cards = document.getElementById('site-ideas-cards');
+    var nameEl = document.getElementById('name');
+    var contentEl = document.getElementById('content');
+
+    var siteName = nameEl ? nameEl.value.trim() : '';
+    if (!siteName) {
+        alert('Enter a site name first.');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating... (10-15s)';
+
+    fetch('/api/ai/site-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: siteName, content: contentEl ? contentEl.value : '' })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightbulb"></i> Generate Ideas';
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        var ideas = data.ideas || [];
+        if (ideas.length === 0) {
+            alert('No ideas generated. Try again.');
+            return;
+        }
+
+        cards.innerHTML = '';
+        ideas.forEach(function(idea) {
+            var div = document.createElement('div');
+            div.className = 'card bg-dark border-warning mb-2';
+            div.innerHTML =
+                '<div class="card-body py-2 px-3">' +
+                    '<p class="small fw-bold text-warning mb-1">' + escHtml(idea.heading) + '</p>' +
+                    '<p class="small mb-0">' + escHtml(idea.description) + '</p>' +
+                '</div>';
+            cards.appendChild(div);
+        });
+
+        results.style.display = 'block';
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightbulb"></i> Generate Ideas';
+        alert('Failed to generate ideas. Check your AI provider settings.');
+    });
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+</script>
+{% endif %}
 {% endblock %}

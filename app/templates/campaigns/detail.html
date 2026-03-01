@@ -275,19 +275,117 @@
 
 <hr class="border-secondary mt-4 mb-3">
 
-<!-- Campaign Assistant CTA -->
+<!-- AI Tools -->
+{% if ai_enabled %}
+<div class="d-flex gap-3 flex-wrap align-items-start">
+
+    <!-- Campaign Assistant CTA -->
+    <div class="card bg-dark border-secondary" style="max-width: 500px;">
+        <div class="card-body d-flex align-items-center gap-3">
+            <i class="bi bi-robot text-success" style="font-size: 2rem; flex-shrink: 0;"></i>
+            <div>
+                <p class="mb-1 fw-semibold">Campaign Assistant</p>
+                <p class="text-muted small mb-2">Use AI to brainstorm ideas, create NPCs, locations, quests, and more.</p>
+                <a href="{{ url_for('campaign_assistant.chat') }}" class="btn btn-sm btn-success">
+                    <i class="bi bi-robot me-1"></i>Open Assistant
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brainstorm Arcs -->
+    <div class="card bg-dark border-secondary" style="max-width: 500px;">
+        <div class="card-body d-flex align-items-center gap-3">
+            <i class="bi bi-lightning-charge text-warning" style="font-size: 2rem; flex-shrink: 0;"></i>
+            <div>
+                <p class="mb-1 fw-semibold">Brainstorm Story Arcs</p>
+                <p class="text-muted small mb-2">Generate 3-5 story arc ideas based on your campaign's NPCs, factions, and world.</p>
+                <button type="button" class="btn btn-sm btn-warning" id="brainstorm-btn" onclick="brainstormArcs()">
+                    <i class="bi bi-lightning-charge me-1"></i>Brainstorm
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Brainstorm results -->
+<div id="brainstorm-results" class="mt-3" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge text-warning"></i> Story Arc Ideas</h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                onclick="document.getElementById('brainstorm-results').style.display='none'">
+            <i class="bi bi-x"></i> Dismiss
+        </button>
+    </div>
+    <div id="brainstorm-cards" class="row g-3"></div>
+</div>
+
+<script>
+function brainstormArcs() {
+    var btn     = document.getElementById('brainstorm-btn');
+    var results = document.getElementById('brainstorm-results');
+    var cards   = document.getElementById('brainstorm-cards');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating... (10-15s)';
+
+    fetch('/api/ai/brainstorm-arcs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightning-charge me-1"></i>Brainstorm';
+        if (data.error) { alert('Error: ' + data.error); return; }
+        var arcs = data.arcs || [];
+        if (arcs.length === 0) { alert('No arcs generated. Try again.'); return; }
+        cards.innerHTML = '';
+        arcs.forEach(function(arc) {
+            var col = document.createElement('div');
+            col.className = 'col-md-6';
+            col.innerHTML =
+                '<div class="card bg-dark border-secondary h-100">' +
+                    '<div class="card-body">' +
+                        '<h6 class="card-title text-warning">' + escHtml(arc.title) + '</h6>' +
+                        '<p class="small mb-1"><strong>Hook:</strong> ' + escHtml(arc.hook) + '</p>' +
+                        '<p class="small mb-1"><strong>Stakes:</strong> ' + escHtml(arc.stakes) + '</p>' +
+                        '<p class="small mb-1 text-muted"><strong>Key NPCs:</strong> ' + escHtml(arc.key_npcs) + '</p>' +
+                        '<p class="small mb-0 text-muted"><strong>Est. sessions:</strong> ' + escHtml(arc.estimated_sessions) + '</p>' +
+                    '</div>' +
+                '</div>';
+            cards.appendChild(col);
+        });
+        results.style.display = 'block';
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightning-charge me-1"></i>Brainstorm';
+        alert('Failed to generate arcs. Check your AI provider settings.');
+    });
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+</script>
+
+{% else %}
 <div class="card bg-dark border-secondary" style="max-width: 500px;">
     <div class="card-body d-flex align-items-center gap-3">
-        <i class="bi bi-robot text-success" style="font-size: 2rem; flex-shrink: 0;"></i>
+        <i class="bi bi-robot text-secondary" style="font-size: 2rem; flex-shrink: 0;"></i>
         <div>
-            <p class="mb-1 fw-semibold">Campaign Assistant</p>
-            <p class="text-muted small mb-2">Use AI to brainstorm ideas, create NPCs, locations, quests, and more for this campaign.</p>
-            <a href="{{ url_for('campaign_assistant.chat') }}" class="btn btn-sm btn-success">
-                <i class="bi bi-robot me-1"></i>Open Assistant
-            </a>
+            <p class="mb-1 fw-semibold text-muted">AI Features</p>
+            <p class="text-muted small mb-0">Configure an AI provider in
+                <a href="{{ url_for('settings.settings') }}">Settings</a> to unlock AI features.</p>
         </div>
     </div>
 </div>
+{% endif %}
 
 <p class="text-muted small mt-4">Created {{ campaign.created_at.strftime('%Y-%m-%d') }}</p>
 

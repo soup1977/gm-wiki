@@ -1,8 +1,10 @@
+from collections import defaultdict
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from app import db
 from app.models import AdventureSite, Session, Tag, get_or_create_tags, Campaign
-from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
+from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target, resolve_mentions_for_source
 
 adventure_sites_bp = Blueprint('adventure_sites', __name__)
 
@@ -33,12 +35,23 @@ def list_sites():
 
     sites = query.order_by(AdventureSite.sort_order, AdventureSite.name).all()
 
+    # Group sites by status in display order
+    groups = defaultdict(list)
+    for site in sites:
+        groups[site.status or 'Planned'].append(site)
+    grouped_sites = {
+        status: groups[status]
+        for status in STATUS_OPTIONS
+        if groups[status]
+    }
+
     all_tags = sorted(
         {t for s in AdventureSite.query.filter_by(campaign_id=campaign_id).all() for t in s.tags},
         key=lambda t: t.name
     )
 
     return render_template('adventure_sites/list.html', sites=sites,
+                           grouped_sites=grouped_sites,
                            status_filter=status_filter, tag_filter=tag_filter,
                            all_tags=all_tags, status_options=STATUS_OPTIONS)
 
@@ -71,7 +84,15 @@ def create_site():
             estimated_sessions=request.form.get('estimated_sessions') or None,
             content=request.form.get('content', '').strip() or None,
             sort_order=int(request.form.get('sort_order') or 0),
+            is_player_visible='is_player_visible' in request.form,
         )
+
+        # Parse milestones from form (one per line)
+        milestones_raw = request.form.get('milestones', '').strip()
+        if milestones_raw:
+            milestone_list = [{'label': line.strip(), 'done': False}
+                              for line in milestones_raw.splitlines() if line.strip()]
+            site.set_milestones(milestone_list)
 
         site.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         site.sessions = Session.query.filter(
@@ -103,8 +124,9 @@ def site_detail(site_id):
     campaign_id = get_active_campaign_id()
     site = AdventureSite.query.filter_by(id=site_id, campaign_id=campaign_id).first_or_404()
     mentions = resolve_mentions_for_target('site', site_id)
+    linked_entities = resolve_mentions_for_source('site', site_id)
     return render_template('adventure_sites/detail.html', site=site, mentions=mentions,
-                           ai_enabled=is_ai_enabled())
+                           linked_entities=linked_entities, ai_enabled=is_ai_enabled())
 
 
 @adventure_sites_bp.route('/sites/<int:site_id>/edit', methods=['GET', 'POST'])
@@ -131,6 +153,20 @@ def edit_site(site_id):
         site.estimated_sessions = request.form.get('estimated_sessions') or None
         site.content = request.form.get('content', '').strip() or None
         site.sort_order = int(request.form.get('sort_order') or 0)
+        site.is_player_visible = 'is_player_visible' in request.form
+
+        # Parse milestones from form (one per line), preserving existing done state
+        milestones_raw = request.form.get('milestones', '').strip()
+        existing = {m['label']: m.get('done', False) for m in site.get_milestones()}
+        if milestones_raw:
+            milestone_list = []
+            for line in milestones_raw.splitlines():
+                label = line.strip()
+                if label:
+                    milestone_list.append({'label': label, 'done': existing.get(label, False)})
+            site.set_milestones(milestone_list)
+        else:
+            site.set_milestones([])
 
         site.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         site.sessions = Session.query.filter(
@@ -164,6 +200,55 @@ def delete_site(site_id):
     db.session.commit()
     flash(f'Adventure Site "{name}" deleted.', 'success')
     return redirect(url_for('adventure_sites.list_sites'))
+
+
+@adventure_sites_bp.route('/sites/<int:site_id>/replace-text', methods=['POST'])
+@login_required
+def replace_text(site_id):
+    """AJAX endpoint: find-and-replace a single occurrence in site content."""
+    campaign_id = get_active_campaign_id()
+    site = AdventureSite.query.filter_by(id=site_id, campaign_id=campaign_id).first_or_404()
+
+    data = request.get_json(silent=True) or {}
+    find = data.get('find', '')
+    replace = data.get('replace', '')
+
+    if not find:
+        return jsonify({'error': 'find is required'}), 400
+
+    if not site.content or find not in site.content:
+        return jsonify({'error': 'Text not found in site content'}), 404
+
+    site.content = site.content.replace(find, replace, 1)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@adventure_sites_bp.route('/sites/<int:site_id>/update-milestones', methods=['POST'])
+@login_required
+def update_milestones(site_id):
+    """AJAX endpoint: update milestone done/undone state from the detail page."""
+    campaign_id = get_active_campaign_id()
+    site = AdventureSite.query.filter_by(id=site_id, campaign_id=campaign_id).first_or_404()
+
+    data = request.get_json(silent=True) or {}
+    milestones = data.get('milestones')
+
+    if milestones is None:
+        return jsonify({'error': 'milestones is required'}), 400
+
+    if not isinstance(milestones, list):
+        return jsonify({'error': 'milestones must be a list'}), 400
+
+    cleaned = []
+    for m in milestones:
+        if isinstance(m, dict) and 'label' in m:
+            cleaned.append({'label': str(m['label']), 'done': bool(m.get('done', False))})
+
+    site.set_milestones(cleaned)
+    db.session.commit()
+
+    return jsonify({'success': True, 'progress_pct': site.progress_pct})
 
 
 @adventure_sites_bp.route('/sites/<int:site_id>/suggest-milestones', methods=['POST'])

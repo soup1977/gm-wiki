@@ -137,7 +137,17 @@ def location_detail(location_id):
         session.pop('session_title', None)
 
     mentions = resolve_mentions_for_target('loc', location_id)
-    return render_template('locations/detail.html', location=location, mentions=mentions)
+
+    # Build full ancestor chain for breadcrumbs (root first)
+    ancestors = []
+    current = location.parent_location
+    while current and len(ancestors) < 10:  # safety limit
+        ancestors.append(current)
+        current = current.parent_location
+    ancestors.reverse()
+
+    return render_template('locations/detail.html', location=location,
+                           mentions=mentions, ancestors=ancestors)
 
 
 @locations_bp.route('/<int:location_id>/edit', methods=['GET', 'POST'])

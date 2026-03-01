@@ -617,10 +617,38 @@ class AdventureSite(db.Model):
     estimated_sessions = db.Column(db.Integer)
     content            = db.Column(db.Text)               # full Markdown body
     sort_order         = db.Column(db.Integer, default=0)
+    is_player_visible  = db.Column(db.Boolean, default=False)
+    milestones         = db.Column(db.Text)               # JSON list: [{"label": "...", "done": false}, ...]
+    progress_pct       = db.Column(db.Integer, default=0) # 0-100, auto-calculated from milestones
 
     campaign = db.relationship('Campaign', backref='adventure_sites')
     tags     = db.relationship('Tag', secondary=adventure_site_tags, backref='adventure_sites')
     sessions = db.relationship('Session', secondary=adventure_site_session, backref='adventure_sites')
+
+    def get_milestones(self):
+        """Parse milestones JSON string into a Python list."""
+        if not self.milestones:
+            return []
+        import json
+        try:
+            return json.loads(self.milestones)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    def set_milestones(self, milestone_list):
+        """Set milestones from a Python list and update progress_pct."""
+        import json
+        self.milestones = json.dumps(milestone_list) if milestone_list else None
+        self.update_progress()
+
+    def update_progress(self):
+        """Recalculate progress_pct from milestones."""
+        items = self.get_milestones()
+        if not items:
+            self.progress_pct = 0
+            return
+        done = sum(1 for m in items if m.get('done'))
+        self.progress_pct = round((done / len(items)) * 100)
 
     def __repr__(self):
         return f'<AdventureSite {self.name}>'

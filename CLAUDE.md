@@ -151,12 +151,20 @@ Each entity type is its own page, cross-linked to others.
 - Could break existing functionality if something goes wrong
 
 **Steps Claude must follow at the start of a significant task:**
-1. Check `git status` to confirm we're on `main` and working tree is clean
-2. Create a branch: `git checkout -b feature/<short-description>`
-3. Do all work on that branch
-4. At the end, remind Craig to commit and open a PR to merge into `main`
+1. Run `git stash list` AND `git status` — if a stash exists or the working tree is dirty, STOP and alert Craig before doing anything else
+2. If there is a stash, ask whether to apply it, commit it to a branch, or leave it — NEVER silently abandon stash work
+3. Confirm we're on the correct base branch, then create: `git checkout -b feature/<short-description>`
+4. Do all work on that branch
+5. At the end, remind Craig to commit and open a PR to merge into `main`
 
 **Never code directly on `main`** for anything bigger than a typo fix or single-line tweak.
+
+### Stash Safety Rules — CRITICAL
+**Stash work is WIP that has not been committed. It is easy to lose.**
+- **At session start**: Always run `git stash list`. If any stash exists, surface it to Craig immediately.
+- **Before any branch switch**: Run `git stash list` AND `git status`. If there is a stash or uncommitted changes, do NOT switch branches until Craig has decided what to do with them.
+- **If a stash is found**: Describe what's in it (`git stash show stash@{N}`) and ask Craig: "Apply it, commit it to a branch, or intentionally discard it?"
+- **Never silently switch branches when a stash or dirty working tree exists.**
 
 If the work is already done on `main` (like this session), remind Craig to retroactively create a branch using:
 ```

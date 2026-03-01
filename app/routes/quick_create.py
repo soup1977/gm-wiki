@@ -11,6 +11,23 @@ def get_active_campaign_id():
     return session.get('active_campaign_id')
 
 
+# Shortcode prefix for entity types that support text-selection linking
+SHORTCODE_PREFIXES = {
+    'npc':      'npc',
+    'location': 'loc',
+    'quest':    'quest',
+    'item':     'item',
+}
+
+# Which model field to store the description in, per entity type
+DESCRIPTION_FIELD = {
+    'npc':      'role',
+    'location': 'description',
+    'quest':    'notes',
+    'item':     'notes',
+}
+
+
 # Config for each entity type: model class, name field, campaign-scoped, defaults
 ENTITY_CONFIG = {
     'faction': {
@@ -75,6 +92,7 @@ def quick_create(entity_type):
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Name is required.'}), 400
+    description = (data.get('description') or '').strip() or None
 
     model = config['model']
     name_field = config['name_field']
@@ -91,13 +109,21 @@ def quick_create(entity_type):
     existing = query.first()
 
     if existing:
-        return jsonify({'id': existing.id, 'name': getattr(existing, name_field)})
+        resp = {'id': existing.id, 'name': getattr(existing, name_field)}
+        prefix = SHORTCODE_PREFIXES.get(entity_type)
+        if prefix:
+            resp['shortcode'] = f'#{prefix}[{resp["name"]}]'
+        return jsonify(resp)
 
     # Build the new record
     kwargs = {name_field: name}
     kwargs.update(config['defaults'])
     if campaign_scoped:
         kwargs['campaign_id'] = campaign_id
+
+    # Store description in the appropriate field
+    if description and entity_type in DESCRIPTION_FIELD:
+        kwargs[DESCRIPTION_FIELD[entity_type]] = description
 
     # Auto-assign next session number
     if entity_type == 'session':
@@ -110,4 +136,8 @@ def quick_create(entity_type):
     db.session.add(record)
     db.session.commit()
 
-    return jsonify({'id': record.id, 'name': getattr(record, name_field)}), 201
+    resp = {'id': record.id, 'name': getattr(record, name_field)}
+    prefix = SHORTCODE_PREFIXES.get(entity_type)
+    if prefix:
+        resp['shortcode'] = f'#{prefix}[{resp["name"]}]'
+    return jsonify(resp), 201
