@@ -64,7 +64,7 @@ TYPE_CONFIG = {
         'name_field': 'name',
         'route':      'adventure_sites.site_detail',
         'id_param':   'site_id',
-        'label':      'Adventure Site',
+        'label':      'Story Arc',
     },
 }
 

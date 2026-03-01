@@ -34,6 +34,10 @@ def index():
                            request.form.get(f'ai_feature_{key}', 'default'))
         # User registration toggle
         AppSetting.set('allow_signup', 'true' if request.form.get('allow_signup') else 'false')
+        # Editable AI prompts (empty string means "use hardcoded default")
+        for key in ('ai_prompt_smart_fill', 'ai_prompt_generate', 'ai_prompt_brainstorm_arcs',
+                    'ai_prompt_site_ideas', 'ai_prompt_session_prep', 'ai_prompt_draft_summary'):
+            AppSetting.set(key, request.form.get(key, '').strip())
         flash('Settings saved.', 'success')
         return redirect(url_for('settings.index'))
 
@@ -57,10 +61,18 @@ def index():
 
     allow_signup = AppSetting.get('allow_signup', 'true') == 'true'
 
+    # Load editable AI prompts (empty string = use default)
+    ai_prompts = {
+        key: AppSetting.get(f'ai_prompt_{key}', '')
+        for key in ('smart_fill', 'generate', 'brainstorm_arcs',
+                    'site_ideas', 'session_prep', 'draft_summary')
+    }
+
     return render_template('settings/index.html', ai_config=config, stats=stats,
                            allow_signup=allow_signup,
                            available_providers=available_providers,
-                           feature_providers=feature_providers)
+                           feature_providers=feature_providers,
+                           ai_prompts=ai_prompts)
 
 
 @settings_bp.route('/test-ollama')

@@ -38,7 +38,7 @@ TYPE_LABELS = {
     'compendium': 'Compendium',
     'bestiary': 'Bestiary',
     'table': 'Random Tables',
-    'adventure_site': 'Adventure Sites',
+    'adventure_site': 'Story Arcs',
 }
 
 # Player wiki mode only shows these types (no GM secrets)

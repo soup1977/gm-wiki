@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if site %}Edit {{ site.name }}{% else %}New Adventure Site{% endif %} — The War Table{% endblock %}
+{% block title %}{% if site %}Edit {{ site.name }}{% else %}New Story Arc{% endif %} — The War Table{% endblock %}
 
 {% block content %}
 {% if site %}
@@ -8,7 +8,7 @@
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.list_sites') }}">Adventure Sites</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.list_sites') }}">Story Arcs</a></li>
         {% if site %}
             <li class="breadcrumb-item"><a href="{{ url_for('adventure_sites.site_detail', site_id=site.id) }}">{{ site.name }}</a></li>
             <li class="breadcrumb-item active">Edit</li>
@@ -19,7 +19,7 @@
 </nav>
 
 <div class="d-flex align-items-center gap-3 mb-4">
-    <h2 class="mb-0">{% if site %}Edit Adventure Site{% else %}New Adventure Site{% endif %}</h2>
+    <h2 class="mb-0">{% if site %}Edit Story Arc{% else %}New Story Arc{% endif %}</h2>
     {% if ai_enabled %}
     <button type="button" class="btn btn-outline-primary btn-sm"
             data-bs-toggle="modal" data-bs-target="#smartFillModal">
