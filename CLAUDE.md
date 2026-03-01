@@ -99,6 +99,10 @@ gm-wiki/
 | 16 | Workflow Guidance (campaign wizard, planning checklist, entity grouping, theme toggle) | Planned — see docs/phase-16-plan.md |
 | 17 | AI Campaign Genesis (genesis wizard, entity-arc linking, arc-aware AI, campaign quick-start) | Complete |
 | 18 | Arc-Session Workflow (encounter arc-linking, richer arc doc, encounters on session form, arc-aware prefill) | Planned — see docs/phase-18-plan.md |
+| 19a | ICRPG Character Sheet Builder — catalog models, seed data, CLI command | Complete |
+| 19b | ICRPG Character Sheet View + Quick Edit (AJAX HP/hero coin/equip) | In Progress — see docs/phase-19b-plan.md |
+| 19c | ICRPG Character Creation Wizard (8-step multi-step form) | Planned — see docs/phase-19-plan.md |
+| 19d | ICRPG Homebrew Catalog CRUD + wiki/combat integration | Planned — see docs/phase-19-plan.md |
 
 ---
 

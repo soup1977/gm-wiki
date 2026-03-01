@@ -1,0 +1,508 @@
+[
+  {
+    "world": "Alfheim",
+    "name": "Warrior",
+    "description": "A master of steel who can take a beating. Front-line fighter with high durability and consistent damage.",
+    "starting_abilities": [
+      {"name": "Slayer", "description": "If attacking an enemy you have already harmed, do ULTIMATE damage"},
+      {"name": "Defender", "description": "Allies within CLOSE range of you may use your DEFENSE stat"},
+      {"name": "Pit Fighter", "description": "When you take damage, add the amount of the last hit against you to the next hit you make"}
+    ],
+    "starting_loot": [
+      {"name": "Weapon Gem", "description": "Customize any 1 WEAPON with a special counterweight. Give this WEAPON a +2 EFFORT bonus. The gem cannot be removed", "loot_type": "Item"},
+      {"name": "Shield Glove", "description": "A strapped glove and belt harness for carrying shields. Shields occupy no space in your INVENTORY", "loot_type": "Item"},
+      {"name": "Battle Standard", "description": "A tabard or banner with your inspiring war insignia. Choose 1 ally per ROUND, their next roll is EASY", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Power Strike", "description": "On an attack roll of modified 15+, do your maximum EFFORT"},
+      {"name": "Intervention", "description": "Once per ROUND, intercept an attack against a CLOSE ally"},
+      {"name": "Endurance", "description": "When RECOVERING, add 1D6 to the normal amount"},
+      {"name": "Hurler", "description": "Use your STR to attack with any WEAPON as a thrown WEAPON"},
+      {"name": "Revenge", "description": "Enemies you injure will only fight you until dead or defeated"},
+      {"name": "Berserk", "description": "Spend 1D4 HP to add an additional attack on your turn"}
+    ],
+    "mastery_abilities": [
+      {"name": "Slayer Mastery", "description": "Any time you destroy an enemy, hit another enemy within CLOSE range, with no limit on the chain reaction"},
+      {"name": "Defender Mastery", "description": "Any time an enemy fails to hit you because of DEFENSE, gain 1D4 HP"},
+      {"name": "Pit Fighter Mastery", "description": "With any type of WEAPON, roll STR to hit and add STR to your EFFORT roll"}
+    ]
+  },
+  {
+    "world": "Alfheim",
+    "name": "Hunter",
+    "description": "A marksman with a knack for survival. Excels at ranged combat and tactical positioning.",
+    "starting_abilities": [
+      {"name": "Quick Draw", "description": "On a ranged attack roll of modified 15+, fire again"},
+      {"name": "Dead Eye", "description": "Use one TURN to aim. Your next successful hit deals max damage"},
+      {"name": "Trap Expert", "description": "Your traps damage all victims NEAR the trap when tripped"}
+    ],
+    "starting_loot": [
+      {"name": "Crystal Scope", "description": "Attach this glass contraption to any 1 ranged WEAPON. Never roll HARD to hit with that WEAPON", "loot_type": "Item"},
+      {"name": "Arcane Cartridge", "description": "An enchanted steel sleeve imbues your ammunition with a spark of magic. Your shots inflict ENERGY damage", "loot_type": "Item"},
+      {"name": "Trap Launcher", "description": "With this spring-loaded gadget, roll a ranged attack to place a trap anywhere you can see", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Spread Shot", "description": "Hit up to 3 targets CLOSE to each other, spend 1 TURN reloading"},
+      {"name": "Piercing Aim", "description": "Your aimed shots penetrate up to 3 foes, continuing in a line"},
+      {"name": "Firebug", "description": "Your traps and ammo inflict an additional 1D6 fire damage"},
+      {"name": "Scattershot", "description": "Every attack you make inflicts an extra 1D4 on all NEAR enemies"},
+      {"name": "Lethal Aim", "description": "Your aimed shots drop the target to 0 HP"},
+      {"name": "Whip Shot", "description": "If an enemy is harmed at range, instantly roll an attack on it"}
+    ],
+    "mastery_abilities": [
+      {"name": "Quick Draw Mastery", "description": "Your Quick Draw ability triggers on a modified attack roll of 12+"},
+      {"name": "Dead Eye Mastery", "description": "Any time you use a TURN to aim, you employ a silencer. Your next shot is undetected"},
+      {"name": "Trap Expert Mastery", "description": "Place or launch a trap instantly, use none of your TURN time to do so"}
+    ]
+  },
+  {
+    "world": "Alfheim",
+    "name": "Shadow",
+    "description": "A master of stealth and subterfuge. Handles traps, locks, stealth, and burst damage.",
+    "starting_abilities": [
+      {"name": "Assassin", "description": "If a target doesn't know you're there, your first attack cannot miss"},
+      {"name": "Thief", "description": "Your stealth rolls are always EASY"},
+      {"name": "Scout", "description": "When using WIS to seek out details or hidden truths, roll EASY"}
+    ],
+    "starting_loot": [
+      {"name": "Dagger Kit", "description": "A set of three masterwork blades score critical hits on natural 18, 19, or 20 rolls", "loot_type": "Weapon"},
+      {"name": "Spider Claws", "description": "With these special clawed gloves, you can move as normal on any surface, including ceilings", "loot_type": "Item"},
+      {"name": "Pocket Cloak", "description": "A special cloak with 2 versions: Treat all CARRIED inventory spaces as EQUIPPED or add 10 CARRIED spaces to your inventory", "loot_type": "Armor"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT or craft a blade for your Dagger Kit"},
+      {"name": "Poison Blades", "description": "After a blade attack, do the damage again the next ROUND"},
+      {"name": "Sticky Fingers", "description": "If undetected, roll DEX to steal 1 item from a target unnoticed"},
+      {"name": "Grapple Arrow", "description": "A light hook arrow to climb, pull, or catch yourself in a fall"},
+      {"name": "Blade Storm", "description": "If an attack kills its target, make another attack instantly"},
+      {"name": "Smoke Form", "description": "Roll INT to use shadow magic. Become smoke for 1D4 ROUNDS"},
+      {"name": "Disappear", "description": "Make a stealth roll even when in plain sight to simply vanish"}
+    ],
+    "mastery_abilities": [
+      {"name": "Assassin Mastery", "description": "When you attack a target who doesn't detect you, do max damage"},
+      {"name": "Thief Mastery", "description": "Foes make a WIS roll to detect you, even after being attacked"},
+      {"name": "Scout Mastery", "description": "When using CHA to lie, deceive, or trick foes into revealing critical information, roll EASY"}
+    ]
+  },
+  {
+    "world": "Alfheim",
+    "name": "Bard",
+    "description": "An inspiring and devious tale-teller. Masters of morale, deception, and battlefield control through performance.",
+    "starting_abilities": [
+      {"name": "Battle Hymn", "description": "Provide music with a CHA roll, reduce allies' TARGET by 2"},
+      {"name": "Provoker", "description": "Hurl insults at any 1 enemy, they cannot resist dueling with you"},
+      {"name": "Thespian", "description": "With a CHA roll, you can convince subjects of even wildly ridiculous fibs. Their belief lasts 1D4 ROUNDS per roll made"}
+    ],
+    "starting_loot": [
+      {"name": "Fine Instrument", "description": "Your Battle Hymns grant each ally a D8 to boost any 1 roll", "loot_type": "Item"},
+      {"name": "Heirloom", "description": "Your weapon is a treasure. Always do ULTIMATE when dueling", "loot_type": "Weapon"},
+      {"name": "Reverse Cloak", "description": "A modular costume cape. Your fibs last 2D4 ROUNDS", "loot_type": "Armor"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT or gain 100 coin"},
+      {"name": "Blood and Thunder", "description": "With a CHA roll, grant 1 ally a critical hit next roll"},
+      {"name": "To the Pain", "description": "When dueling, roll opposed CHA to send your foe fleeing in fear"},
+      {"name": "The Troupe", "description": "Roll CHA to summon an old colleague to your aid"},
+      {"name": "Dirge of Fear", "description": "Roll CHA to prevent all enemy critical hits for 1 ROUND"},
+      {"name": "Nemesis", "description": "Choose a Nemesis in battle. When it is killed, heal to full HP"},
+      {"name": "The Prestige", "description": "Roll CHA to create realistic effects such as teleportation, self-cloning, disappearance or theatric illusions"}
+    ],
+    "mastery_abilities": [
+      {"name": "Battle Hymn Mastery", "description": "Your Battle Hymns heal all allies the same amount they reduce the TARGET"},
+      {"name": "Provoker Mastery", "description": "You can now provoke groups of enemies, up to 5"},
+      {"name": "Thespian Mastery", "description": "Your legend precedes you. NPCs always react favorably to you, even in bad circumstances"}
+    ]
+  },
+  {
+    "world": "Alfheim",
+    "name": "Mage",
+    "description": "A collector and conduit of arcane secrets. Ranged damage and utility with powerful area effects.",
+    "starting_abilities": [
+      {"name": "Spell Scholar", "description": "If you find a written SPELL, gain an extra SPELL"},
+      {"name": "Wild Power", "description": "Any time you roll a max die, roll it again"},
+      {"name": "Dark Pact", "description": "Sacrifice any amount of your HP to boost any 1 roll"}
+    ],
+    "starting_loot": [
+      {"name": "Astral Grimoire", "description": "Your SPELL book is drawn to you by a subtle kinetic force. Gain any 3 INT SPELLS instantly. The book will slide toward you if it can", "loot_type": "Item"},
+      {"name": "Memory Ring", "description": "Gain any 3 INT SPELLS. On any TURN when not casting a SPELL, roll 1D6. Keep that dice for use later on any 1 roll. Store up to 6D6", "loot_type": "Item"},
+      {"name": "The Master's Skull", "description": "A small, demonic skull. Fill this skull with blood to store 10 points of HP. Use this HP to heal, or as part of your Dark Pact ABILITY", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT or learn 1 new INT SPELL"},
+      {"name": "Glyph Maker", "description": "Roll INT to store a SPELL in an etched symbol triggered by touch"},
+      {"name": "Bend Magic", "description": "Once per encounter, roll INT to redirect an enemy SPELL"},
+      {"name": "Pale Clone", "description": "Roll INT to form a 1 HP clone of yourself from thin air"},
+      {"name": "Magic Theorist", "description": "Roll HARD INT to modify or create SPELLS"},
+      {"name": "Primal Form", "description": "Become fire, air, or water for 1D4 ROUNDS"},
+      {"name": "Summoner", "description": "Roll INT to conjure a monster you know"}
+    ],
+    "mastery_abilities": [
+      {"name": "Spell Scholar Mastery", "description": "INT SPELLS occupy no inventory spaces, even if they are scrolls or books"},
+      {"name": "Wild Power Mastery", "description": "When any die is added to your Memory Ring, it becomes a 6"},
+      {"name": "Dark Pact Mastery", "description": "Your Master's Skull holds 20 HP"}
+    ]
+  },
+  {
+    "world": "Alfheim",
+    "name": "Priest",
+    "description": "A righteous avatar of divine might. Healer and support who keeps the party alive and buffs allies.",
+    "starting_abilities": [
+      {"name": "Elemental", "description": "Nature or weather magic is always EASY to cast"},
+      {"name": "Healer", "description": "Any healing magic you cast does ULTIMATE EFFORT"},
+      {"name": "Monk", "description": "Use your WIS STAT when making unarmed attacks"}
+    ],
+    "starting_loot": [
+      {"name": "Greenstaff", "description": "Store your elemental magic in a wooden staff. Gain any 3 WIS SPELLS instantly. If your staff is lost, it comically turns up in 1D4 ROUNDS", "loot_type": "Weapon"},
+      {"name": "Book of Truths", "description": "A tome of religious texts. Gain any 5 WIS SPELLS instantly, but if the book is lost or destroyed, the SPELLS are gone", "loot_type": "Item"},
+      {"name": "Amber Beads", "description": "A necklace of large orange spheres gives you focus. Gain any 1 WIS SPELL. That SPELL dwells within the beads, and only fails on a natural 1", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT or learn 1 new WIS SPELL"},
+      {"name": "Stormcaller", "description": "When outdoors, your WIS SPELLS also heal all allies for 1 HP"},
+      {"name": "Radiant Power", "description": "Your single target healing SPELLS now heal up to 3 targets"},
+      {"name": "Iron Fist", "description": "Your fists and feet are hardened with focus, doing WEAPON damage"},
+      {"name": "Attuned", "description": "You are immune to nature and weather magic"},
+      {"name": "Chosen One", "description": "Choose 1 ally. As long as you live, they cannot fall below 1 HP"},
+      {"name": "Master", "description": "Inflict MAGIC EFFORT with bare hands and feet. If unarmed attack inflicts 10+ damage, cast a WIS SPELL instantly with no roll"}
+    ],
+    "mastery_abilities": [
+      {"name": "Elemental Mastery", "description": "Place any 1 WIS SPELL you know into a stone or stick by rolling to cast. Anyone can use this SPELL by destroying the object"},
+      {"name": "Healer Mastery", "description": "To be within CLOSE range of you, truly evil creatures must roll CON or take MAGIC damage and be pushed away"},
+      {"name": "Monk Mastery", "description": "Extend your touch, presence, and perceptive self up to FAR range, interacting with people and things as if you were in that location"}
+    ]
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Pilot",
+    "description": "A headstrong daredevil with rare skill. Excels at vehicle operation and quick thinking under fire.",
+    "starting_abilities": [
+      {"name": "Ace", "description": "All vehicle rolls are EASY"},
+      {"name": "Rally", "description": "Give a rousing speech with a CHA roll: all allies get +3 to their next roll"},
+      {"name": "Quick Repair", "description": "Roll INT to instantly repair a machine or vehicle for 1 HEART"}
+    ],
+    "starting_loot": [
+      {"name": "Flight Helmet", "description": "All vehicle-related rolls gain +2. Built-in comm system", "loot_type": "Armor"},
+      {"name": "Lucky Dice", "description": "Once per encounter, re-roll any die roll", "loot_type": "Item"},
+      {"name": "Sidearm Blaster", "description": "A trusty blaster pistol. Never runs out of ammo. +1 GUN EFFORT", "loot_type": "Weapon"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Barrel Roll", "description": "When piloting, negate 1 attack per ROUND with a DEX roll"},
+      {"name": "Inspiring Leader", "description": "Rally now also heals 1D4 HP to all allies"},
+      {"name": "Field Mechanic", "description": "Quick Repair now restores 2 HEARTS"},
+      {"name": "Evasive", "description": "DEX defense rolls are always EASY"},
+      {"name": "Hotshot", "description": "When piloting, your vehicle attacks do ULTIMATE damage"},
+      {"name": "Commander", "description": "Once per ROUND, grant an ally an extra action on their turn"}
+    ],
+    "mastery_abilities": [
+      {"name": "Ace Mastery", "description": "Vehicle rolls are always EASY and critical hits on 18+"},
+      {"name": "Rally Mastery", "description": "Rally affects all allies within FAR. On successful CHA rolls, treat the next round of rolls as if RALLY was used"},
+      {"name": "Quick Repair Mastery", "description": "Repairs are instant and restore full HP to any machine"}
+    ]
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Gunner",
+    "description": "The one you call to blow things up. Heavy weapons specialist with devastating firepower.",
+    "starting_abilities": [
+      {"name": "Rapid Fire", "description": "Make 2 GUN attacks per TURN instead of 1"},
+      {"name": "Heavy Gunner", "description": "Your GUN attacks do ULTIMATE damage but you cannot move on your TURN"},
+      {"name": "Overwatch", "description": "Skip your TURN to automatically attack the next enemy that moves within FAR range"}
+    ],
+    "starting_loot": [
+      {"name": "Auto-Cannon", "description": "A powerful rapid-fire weapon. 3 inventory slots. Hits 1D4 targets on a successful attack", "loot_type": "Weapon"},
+      {"name": "Grenade Belt", "description": "6 grenades. ULTIMATE damage in a NEAR radius. Once used, they're gone", "loot_type": "Weapon"},
+      {"name": "Targeting Visor", "description": "GUN attacks are never HARD. Built-in range finder", "loot_type": "Armor"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Explosive Rounds", "description": "Your gun attacks also damage all enemies CLOSE to the target for 1D4"},
+      {"name": "Suppressing Fire", "description": "All enemies within NEAR must make CON or lose their next TURN"},
+      {"name": "Armor Piercing", "description": "Ignore target's DEFENSE on a modified roll of 15+"},
+      {"name": "Ammo Fabricator", "description": "Your weapon never runs empty, and does maximum damage"},
+      {"name": "Fortify", "description": "Hunker down: +3 DEFENSE until you move"},
+      {"name": "Kill Zone", "description": "Designate a NEAR area. Any enemy entering takes automatic GUN damage"}
+    ],
+    "mastery_abilities": [
+      {"name": "Rapid Fire Mastery", "description": "Make 3 GUN attacks per TURN"},
+      {"name": "Heavy Gunner Mastery", "description": "Heavy Gunner no longer prevents movement"},
+      {"name": "Overwatch Mastery", "description": "Overwatch triggers on any enemy action, not just movement"}
+    ]
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Mechanic",
+    "description": "An expert on every nut and bolt in space. Masters of repair, invention, and technological solutions.",
+    "starting_abilities": [
+      {"name": "Create Device", "description": "Roll INT to create a small, single-use device from spare parts"},
+      {"name": "Repair", "description": "Roll INT to restore 1 HEART to any machine, armor, or weapon"},
+      {"name": "Overclock", "description": "Boost a machine or weapon: +3 to its next roll, then it breaks down"}
+    ],
+    "starting_loot": [
+      {"name": "Multi-Tool", "description": "All repair and creation rolls are EASY. Can cut, weld, and analyze", "loot_type": "Tool"},
+      {"name": "Drone Companion", "description": "A small flying drone with 1 HEART. Can scout, carry items, and make BASIC attacks", "loot_type": "Item"},
+      {"name": "Scrap Armor", "description": "+2 DEFENSE. Can be repaired from any junk. Self-repairs 1 DEFENSE per ROUND", "loot_type": "Armor"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Upgrade", "description": "Permanently add +1 to any weapon or armor you modify"},
+      {"name": "EMP Burst", "description": "Roll INT to disable all machines within NEAR for 1D4 ROUNDS"},
+      {"name": "Shield Generator", "description": "Create a shield that absorbs 1 HEART of damage, then breaks"},
+      {"name": "Hack", "description": "Roll INT to take control of an enemy machine for 1D4 ROUNDS"},
+      {"name": "Nanobots", "description": "Heal 1D6 HP to any organic or machine target as an action"},
+      {"name": "Tuner", "description": "When you tune a machine, it jumps to ULTIMATE EFFORT"}
+    ],
+    "mastery_abilities": [
+      {"name": "Create Device Mastery", "description": "Devices you create are permanent and reusable"},
+      {"name": "Repair Mastery", "description": "Repair restores full HP and removes all conditions"},
+      {"name": "Overclock Mastery", "description": "Overclocked items no longer break down after use"}
+    ]
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Navigator",
+    "description": "A psychic link to the cosmos. Psionic warrior who manipulates space, time, and minds.",
+    "starting_abilities": [
+      {"name": "Psionic Blade", "description": "Create a melee weapon of pure psionic energy. Does MAGIC EFFORT"},
+      {"name": "Telekinesis", "description": "Move objects up to FAR range with a WIS roll. Can throw for MAGIC EFFORT damage"},
+      {"name": "Invisibility", "description": "Roll WIS to become invisible for 1D4 ROUNDS. Attacking breaks invisibility"}
+    ],
+    "starting_loot": [
+      {"name": "Psi-Amp Headband", "description": "+2 to all WIS rolls. Glows when psionic powers are active", "loot_type": "Armor"},
+      {"name": "Phase Cloak", "description": "Become intangible for 1 ROUND. Pass through solid matter", "loot_type": "Armor"},
+      {"name": "Mind Crystal", "description": "Store 1 psionic effect for later use. Can be triggered remotely", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Mind Shield", "description": "Immune to psychic attacks and mind control"},
+      {"name": "Teleport", "description": "Roll WIS to teleport to any location within FAR range"},
+      {"name": "Psychic Storm", "description": "All enemies in NEAR radius take MAGIC EFFORT damage"},
+      {"name": "Precognition", "description": "Once per encounter, declare that an attack misses you"},
+      {"name": "Mind Link", "description": "Communicate telepathically with all allies within FAR range"},
+      {"name": "Infiltrator", "description": "Your psionic weapons are upgraded to ULTIMATE damage when not invisible"}
+    ],
+    "mastery_abilities": [
+      {"name": "Psionic Blade Mastery", "description": "Psionic Blade does ULTIMATE damage and can hit up to 3 targets"},
+      {"name": "Telekinesis Mastery", "description": "Telekinesis can affect objects of any size and does ULTIMATE EFFORT"},
+      {"name": "Invisibility Mastery", "description": "Invisibility no longer breaks when attacking"}
+    ]
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Scientist",
+    "description": "A disciplined mind set on answers. Expert at analysis, biological manipulation, and discovery.",
+    "starting_abilities": [
+      {"name": "Analyzer", "description": "Roll INT to discover a creature's weakness, reducing TARGET against it by 3"},
+      {"name": "Bio-Engineer", "description": "Roll INT to create a biological compound: healing salve, acid, or poison"},
+      {"name": "Xenobiologist", "description": "You can communicate with any living creature and mimic 1 of its abilities for 1D4 ROUNDS"}
+    ],
+    "starting_loot": [
+      {"name": "Analysis Scanner", "description": "Instantly identify any substance, creature type, or technology. +2 INT rolls for analysis", "loot_type": "Tool"},
+      {"name": "Bio-Kit", "description": "Create compounds that heal 1 HEART or deal MAGIC EFFORT as acid/poison", "loot_type": "Tool"},
+      {"name": "Specimen Cage", "description": "Capture a creature of 1 HEART or less. Study it to permanently gain 1 of its abilities", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Mutation", "description": "Roll INT to temporarily gain a physical mutation: claws, wings, gills, etc."},
+      {"name": "Antidote", "description": "Instantly cure any poison, disease, or biological condition"},
+      {"name": "Neural Boost", "description": "Grant an ally +3 to INT for 1D4 ROUNDS"},
+      {"name": "Evolution", "description": "Permanently adapt to one environmental hazard (vacuum, heat, cold, etc.)"},
+      {"name": "Chimera", "description": "Mimic 2 creature abilities at a time, rather than 1"},
+      {"name": "Genesis", "description": "Roll INT to create a small living organism with 1 HEART that obeys commands"}
+    ],
+    "mastery_abilities": [
+      {"name": "Analyzer Mastery", "description": "Analysis is instant and reveals all weaknesses and immunities"},
+      {"name": "Bio-Engineer Mastery", "description": "Compounds you create are permanent and can be mass-produced"},
+      {"name": "Xenobiologist Mastery", "description": "Permanently gain abilities from creatures you study, no limit"}
+    ]
+  },
+  {
+    "world": "Warp Shell",
+    "name": "Echo",
+    "description": "The quantum results of time distortion. Masters of temporal manipulation and paradox.",
+    "starting_abilities": [
+      {"name": "Time Slip", "description": "Once per encounter, take 2 TURNS in a row"},
+      {"name": "Rewind", "description": "Roll INT to undo the last action taken by any creature within NEAR"},
+      {"name": "Echo Clone", "description": "Create a time-shifted copy of yourself with 1 HEART. It mimics your last action each TURN"}
+    ],
+    "starting_loot": [
+      {"name": "Chrono Gauntlet", "description": "Touch an object to age it or restore it. Can break or repair non-magical items instantly", "loot_type": "Item"},
+      {"name": "Temporal Anchor", "description": "Place a time anchor. Teleport back to it at any time within 1D4 ROUNDS", "loot_type": "Item"},
+      {"name": "Paradox Blade", "description": "A weapon that exists in two timelines. Attacks hit twice but you take 1 damage per use", "loot_type": "Weapon"}
+    ],
+    "milestone_abilities": [
+      {"name": "Ever Stronger", "description": "Add 1 to any STAT"},
+      {"name": "Haste", "description": "Move FAR and still take an action on your TURN"},
+      {"name": "Slow Field", "description": "All enemies in NEAR radius lose their move action for 1D4 ROUNDS"},
+      {"name": "Future Sight", "description": "Ask the GM one yes/no question about the immediate future"},
+      {"name": "Age", "description": "Touch a target to age them: -3 to all STATS for 1D4 ROUNDS"},
+      {"name": "Temporal Shield", "description": "Negate 1 attack per ROUND by shifting it to another timeline"},
+      {"name": "Draw Power", "description": "Drain EFFORT from simpler sources such as plants, animals, open flames or crashing water"}
+    ],
+    "mastery_abilities": [
+      {"name": "Time Slip Mastery", "description": "Time Slip can be used every ROUND instead of once per encounter"},
+      {"name": "Rewind Mastery", "description": "Rewind can undo up to 3 actions, affecting the entire ROUND"},
+      {"name": "Echo Clone Mastery", "description": "Create up to 3 Echo Clones, each with 2 HEARTS"}
+    ]
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Tracker",
+    "description": "Keen as a razor, masters of the wild. Expert survivalists and marksmen on the frontier.",
+    "starting_abilities": [
+      {"name": "Bushcraft", "description": "Disappear from sight for 1D4 ROUNDS, even in plain sight"},
+      {"name": "Crystal Scope", "description": "Mount on any rifle: Roll 'Aim for Vitals' as NORMAL instead of HARD"}
+    ],
+    "starting_loot": [
+      {"name": "Bush Blanket", "description": "Disappear 1D4 ROUNDS even in plain sight", "loot_type": "Item"},
+      {"name": "Crystal Scope", "description": "Mount on any RIFLE, Roll 'Aim for Vitals' as NORMAL", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Mushroom Tea", "description": "5 count. Use no SUPPLIES for 3 days"},
+      {"name": "Tar Arrows", "description": "10 count. HARD STR roll to break free"},
+      {"name": "Antique Sawed-off", "description": "NEAR range, DOUBLE WEAPON EFFORT"},
+      {"name": "Shady Brady", "description": "All TRACKING Attempts and Checks are EASY"},
+      {"name": "Black Flag", "description": "5 count. TOUCH a target, all attacks against it are ULTIMATE"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Wraith",
+    "description": "The devils you can talk to, if you keep your eyes on the dirt. Spectral entities wielding infernal magic.",
+    "starting_abilities": [
+      {"name": "Demon Glyph", "description": "Turn immaterial at will"}
+    ],
+    "starting_loot": [
+      {"name": "Demon Glyph", "description": "Turn immaterial at will", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Soul Gem", "description": "Occupy any other creature for 1D4 ROUNDS with an INT roll"},
+      {"name": "Ignite", "description": "INFERNAL Spell: Touch an object to ignite it"},
+      {"name": "Bone Lance", "description": "INFERNAL Spell: Hits ALL targets in a straight line to FAR"},
+      {"name": "Death Aura", "description": "INFERNAL Spell: If touched by an enemy, inflict MAGIC damage"},
+      {"name": "Fury", "description": "INFERNAL Spell: Touch a target, they kill at random until making a CHA roll"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Brave",
+    "description": "Hepawa are fierce as bears. You'll not find deadlier knife-fighters than one of their Braves.",
+    "starting_abilities": [
+      {"name": "Great Eagle Feather", "description": "When fighting with knives, attacks of 15+ earn another attack and a NEAR move if desired"}
+    ],
+    "starting_loot": [
+      {"name": "Great Eagle Feather", "description": "When fighting with knives, attacks of 15+ earn another attack and a NEAR move", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Antler Knife", "description": "A MAGIC knife weapon"},
+      {"name": "Bear Hide Cloak", "description": "Any time you're hurt, ignore 1D6 of damage done"},
+      {"name": "Treated Hide Armor", "description": "+3 Armor, waterproof"},
+      {"name": "Cougar Tooth Talisman", "description": "+1 STR"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Gambler",
+    "description": "The west is won and lost over blackjack and whiskey. Shrewd, clever, lonely buggers with the Devil in their eyes.",
+    "starting_abilities": [
+      {"name": "Devil's Deck", "description": "When firing a pistol, DRAW for damage"},
+      {"name": "Bad Bet", "description": "DRAW. If a RED, heal that amount. If a BLACK, take as damage"},
+      {"name": "Lucky", "description": "Replace any ATTEMPT or CHECK with a DRAW. The DM DRAWS too. High card wins. ACE = critical success"}
+    ],
+    "starting_loot": [
+      {"name": "Devil's Deck", "description": "When firing a pistol, DRAW for damage", "loot_type": "Item"},
+      {"name": "Bad Bet Cards", "description": "DRAW. RED heals, BLACK damages", "loot_type": "Item"},
+      {"name": "Lucky Cards", "description": "Replace any roll with a card draw. High card wins", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "Slam Loader", "description": "Reload a firearm in no time"},
+      {"name": "Steel-Knit Vest", "description": "5 uses. If shot, take only 1 damage"},
+      {"name": "Snakebite Whiskey", "description": "10 drinks. Pass out for 1D4 ROUNDS"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Shaman",
+    "description": "They don't mess with infernal magic or holy spirits. They find power in the stones and the natural world.",
+    "starting_abilities": [
+      {"name": "Dream Catcher", "description": "Speak with, or use CHA to persuade, animals and natural forces"}
+    ],
+    "starting_loot": [
+      {"name": "Dream Catcher", "description": "Speak with, or use CHA to persuade, animals and natural forces", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "WIS Spells", "description": "Choose any 2 WIS Spells"},
+      {"name": "Masterful Boots", "description": "+1 DEX"},
+      {"name": "Animal Form Hood", "description": "Choose 1 animal. Take its form for 1D4 ROUNDS"},
+      {"name": "Dream Chain", "description": "Heal 1 ally with a touch. Any NEAR allies also benefit, and any allies NEAR them in turn"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Mariachi",
+    "description": "There's always hope as long as there's music. No one knows it better than the Mariachi.",
+    "starting_abilities": [
+      {"name": "Embroidered Sombrero", "description": "+3 CHA when performing"},
+      {"name": "Gun Case", "description": "Holds 4 concealed guns, infinite ammo"},
+      {"name": "Cookin' Spit", "description": "If camping, allies recover full HP in 1 hour"}
+    ],
+    "starting_loot": [
+      {"name": "Embroidered Sombrero", "description": "+3 CHA when performing", "loot_type": "Armor"},
+      {"name": "Gun Case", "description": "Holds 4 concealed guns, infinite ammo", "loot_type": "Item"},
+      {"name": "Cookin' Spit", "description": "If camping, allies recover full HP in 1 hour", "loot_type": "Tool"}
+    ],
+    "milestone_abilities": [
+      {"name": "Red Rodeo", "description": "Sheet Music: Sing! Those who hear roll EASY this ROUND"},
+      {"name": "Silver Spurs", "description": "+1 CHA, ride anything with EASY rolls"},
+      {"name": "Gramophone Gadget", "description": "Record a song, play it at a location"},
+      {"name": "Songwriter's Book", "description": "Create Sheet Music with an INT roll"},
+      {"name": "Pistolero!", "description": "Sheet Music: Sing! Those who hear AIM FOR VITALS"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Gunslinger",
+    "description": "Anyone can carry a six-shooter, but a Gunslinger makes an art of the gun.",
+    "starting_abilities": [
+      {"name": "Masterwork Revolver", "description": "On a successful pistol shot, choose to roll 1D6. Fire that many bullets at up to that many targets. Your cylinder is empty"}
+    ],
+    "starting_loot": [
+      {"name": "Masterwork Revolver", "description": "On a successful pistol shot, roll 1D6 to fire that many bullets at that many targets", "loot_type": "Weapon"}
+    ],
+    "milestone_abilities": [
+      {"name": "Speed Loader", "description": "When you RELOAD, roll 1D4. On anything but a 1, use no time"},
+      {"name": "Silver Bullets", "description": "12 count. ULTIMATE EFFORT on a pistol hit, silver properties"},
+      {"name": "Hellfire Powder", "description": "3 count. Use a TURN to make 6 bullets EXPLOSIVE"},
+      {"name": "Phantom Duster", "description": "+2 Armor, +2 ULTIMATE EFFORT"},
+      {"name": "Deadeye Eyepatch", "description": "+2 WEAPON EFFORT"}
+    ],
+    "mastery_abilities": []
+  },
+  {
+    "world": "Ghost Mountain",
+    "name": "Old Timer",
+    "description": "It's no small thing to reach old age in Ghost Mountain. The Old Timers keep all the secrets.",
+    "starting_abilities": [
+      {"name": "Hallowed Book", "description": "Create and cast HOLY Spells. Choose TWO HOLY Spells"}
+    ],
+    "starting_loot": [
+      {"name": "Hallowed Book", "description": "Create and cast HOLY Spells", "loot_type": "Item"}
+    ],
+    "milestone_abilities": [
+      {"name": "God's Hand", "description": "HOLY Spell: Paralyze with a touch for 1 ROUND"},
+      {"name": "Locusts", "description": "HOLY Spell: FAR radius, 1D4 ROUNDS, ROLLS within HARD"},
+      {"name": "Destroy the Dead", "description": "HOLY Spell: Destroy 1 Undead per 1 HP burned"},
+      {"name": "Weird Crystal", "description": "+2 MAGIC EFFORT when casting Spells"},
+      {"name": "Lucky Horseshoe", "description": "When rolling ULTIMATE, re-roll anything below 6"}
+    ],
+    "mastery_abilities": []
+  }
+]

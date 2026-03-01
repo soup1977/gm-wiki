@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Path of Iron",
+    "description": "This is the mind of metal, the weapon master, the armorer, and the mechanic. Like iron, those who master this path become invulnerable to the forces that erode our world.",
+    "tiers": {
+      "1": [
+        {"name": "Mark of the Falcon", "description": "CARRIED, an iron symbol. CON rolls are EASY."},
+        {"name": "Duranium Signet", "description": "A curious, indestructible ring. When EQUIPPED, ignore 1D4 damage done to you once per ROUND in battle."},
+        {"name": "Kit of Spikes", "description": "CARRY this equipment to give your gear a painful, toothy surface. Even when you MISS in melee, inflict 1D4 damage on your target."},
+        {"name": "War Caller", "description": "EQUIP this metal-etched war horn, usually worn at the belt. When used, it will earn the attention of all enemies or hostiles within a FAR radius. They will be fixed on you for 1D4 ROUNDS."}
+      ],
+      "2": [
+        {"name": "Yog Whetstone", "description": "A crystalline sharpening tool. CARRIED. Your edged weapons are so sharp, anytime they do ULTIMATE damage, target bleeds, taking 1D4 damage for 3 ROUNDS. This sharpness lets you chop almost any object in two with a simple CHECK."},
+        {"name": "The Last Dagger", "description": "This blade is indestructible. It is a MAGIC weapon. If lost, you will find it again in 1D4 ROUNDS."},
+        {"name": "Shield Harness", "description": "Straps affixed to a shield. EQUIPPED, you never drop your shield. Failed RANGED attacks against you ricochet back to their origin."},
+        {"name": "War Chain", "description": "Attach to any weapon. That weapon can be thrown and return. Changing attachment takes 1 TURN."}
+      ],
+      "3": [
+        {"name": "Buckle Kit", "description": "First aid kit in a belt. Heal 3 HP with a touch and WIS CHECK."},
+        {"name": "Fighter's Gem", "description": "A black stone on a blocky necklace. Equip to add your STRENGTH to your WEAPON EFFORT."},
+        {"name": "World Breaker", "description": "A collapsible duranium javelin. It is a normal MAGIC weapon, except when used against stone. If attacking stone, roll of natural 15+ destroys the target entirely, up to FAR cubic volume."},
+        {"name": "Star Splinters", "description": "Tiny bits of an ultra-dense star. When CARRIED, you can't be moved against your will by any force except gravity."}
+      ],
+      "4": [
+        {"name": "Life Drinker", "description": "Take 2 HEARTS of INT EFFORT to create a supreme weapon of your own design. It always does ULTIMATE damage, and heals you for 1D4 HP with each hit."},
+        {"name": "Duranium Hand", "description": "With 2 HEARTS of STR EFFORT, you design and build a prosthetic hand. It can possess 3 INT SPELLS, adds 5 to your ARMOR, and 3 to your STR."},
+        {"name": "The Iron Will", "description": "A metal ingot worn on a chain. If you kill a foe, roll a CRITICAL HIT, or inflict 10 or more damage, ATTACK again."}
+      ]
+    }
+  },
+  {
+    "name": "Path of Smoke",
+    "description": "You are the hidden. You are there and not there, ever changing, gone in an instant, and elemental as night itself. Dark indeed is the soul who walks down this shadowy road, for it often leads to a place that terrifies most mortals.",
+    "tiers": {
+      "1": [
+        {"name": "Mark of the Serpent", "description": "EQUIP this bracelet. You cannot be poisoned by normal venom or toxins. Also, you can create poisons with an INT check. Types: Slow, Paralysis, or Blindness."},
+        {"name": "The Ebony Hood", "description": "This light-absorbing cloak and hood deflects attention. Even when seen, enemies choose you as a target only if they have no options."},
+        {"name": "INT SPELL: Shroud", "description": "Cast on a stationary person or object. Staying still, it cannot be seen by anyone but you for 1D4 ROUNDS."}
+      ],
+      "2": [
+        {"name": "Eye of the Beyonder", "description": "This glass eye can be installed with a physician's help. See heat, magical auras, and the truth in illusion magic. With a HARD INT roll, you can even get glimpses through a wall, door or gate."},
+        {"name": "Shadow Knives", "description": "EQUIP this magical sheath. When you draw the dagger, another identical one materializes into the sheath. The knives are CLOSE, THROWN, MAGICAL, and dissipate seconds after being drawn."},
+        {"name": "Masterwork Trap Kit", "description": "CARRY this set of tools. Any ATTEMPTS involving traps are EASY. Also, create elaborate traps with 1 HEART of INT EFFORT."}
+      ],
+      "3": [
+        {"name": "Swarmer Dart", "description": "THROWN WEAPON, splits into 1D6 darts, hits up to 6 targets, one ATTACK."},
+        {"name": "Clockwork Worm", "description": "A mechanical snake, made of duranium, that accepts basic commands."},
+        {"name": "Mark of Krono", "description": "CARRY this silver totem. You can stay the passage of time. Make a HARD INT CHECK to hold one GM TIMER at bay for 1 ROUND."},
+        {"name": "INT SPELL: Darkheart", "description": "Touch one living target. Divine its vulnerabilities."},
+        {"name": "WIS SPELL: Fog", "description": "Become a mass of dark mist or fog. Remain in this form up to 4 ROUNDS."}
+      ],
+      "4": [
+        {"name": "Crystal of Doors", "description": "With an INT CHECK, open a doorway to any location you can remember."},
+        {"name": "Mark of Death", "description": "EQUIP this amulet, a red skull. If you inflict 12 or more damage in a single attack, your target rolls CON or drops to zero HP instantly."},
+        {"name": "Demon Bond Ring", "description": "With this ring, you are guarded by a demon creature. It will appear either when you reach 1 HP or if summoned with a CHA roll. It has 2 HEARTS, and 1 magical claw attack."},
+        {"name": "INT SPELL: Window to the Void", "description": "Open a portal into the dimension of nothingness. An unlimited number of objects can be placed inside. When the portal is closed, no time will pass for anything within."}
+      ]
+    }
+  },
+  {
+    "name": "Path of Amber",
+    "description": "Amber is alive, eternal. At its highest levels, the Path of Amber allows its masters to bend time and space, break the cosmic laws, and even dare the boundaries between dimensions.",
+    "tiers": {
+      "1": [
+        {"name": "Librum Arcano", "description": "An ancient tome on all things MAGICAL. CARRY this book to heighten your magic power. A roll of 15+ when casting is now critical."},
+        {"name": "Elementite Eye", "description": "This metallic eye implanted with the help of a physician. Choose one element: Stone, wood, metal, air, ice, or fire. MAGICAL effects with that element are always DOUBLE."},
+        {"name": "INT SPELL: Spell Nova", "description": "Any SPELL cast on the TURN following this cast explodes in a NEAR radius area, and is CRITICAL. If your cast roll fails with this SPELL, you cannot use magic for 1 ROUND."}
+      ],
+      "2": [
+        {"name": "INT SPELL: Illusion", "description": "Conjure illusions of any description. They can either last 1D4 ROUNDS, or be sustained by your constant and total attention."},
+        {"name": "INT SPELL: Life", "description": "You can bring objects or dead things to a lifelike animated state, but only lasts 1D4 rounds. The nature of these puppets is a mystery, and can be very volatile."},
+        {"name": "INT SPELL: Death", "description": "With a HARD INT roll, you can kill a living thing in sight with 2 HEARTS or less. Their only chance for survival is to make a CON CHECK, which will leave them with 1 HP."},
+        {"name": "Mark of Lokus", "description": "A bracelet with interlacing horn motifs. The arm where this is worn slowly changes into a barbed, crab-like claw or twisting ridged weapon shape. It acts as a MAGICAL WEAPON, and is terrifying."}
+      ],
+      "3": [
+        {"name": "Amulet of the Infernals", "description": "EQUIP this item to gain dominion over demonic creatures and infernals. Command them with a CHA roll, or summon 1D4 of them with an INT roll."},
+        {"name": "INT SPELL: Raven", "description": "Assume the form of, or conjure, 1 to 10 ravens. The birds are living things, with your INT. In raven form, cast SPELLS with a HARD roll, but you can't speak or use gear."},
+        {"name": "INT SPELL: Warden", "description": "Choose a plant or wild animal and imbue it with the mystery of Amber. Double its HEARTS, double all its EFFORT, and it cannot be harmed by non-MAGICAL means."}
+      ],
+      "4": [
+        {"name": "Mage's Hand", "description": "A skeletal prosthesis. It acts as the one and only key to a Glyph of Iridess. This glyph is rumored to lock the chaotic Ogdru in their own distant dimension."},
+        {"name": "Formless Ring", "description": "When using formless magic, you can reroll your ATTEMPT."},
+        {"name": "INT SPELL: Foundation", "description": "Call forth 1 massive column of an element for each point in INT. They are colossal towers, rising upward up to 1 mile."}
+      ]
+    }
+  },
+  {
+    "name": "Path of Oak",
+    "description": "The cosmos is a great and ageless tree. Mastery of the Oaken path renders its practitioner indistinguishable from the cosmic life force, and in this unity, there is great power.",
+    "tiers": {
+      "1": [
+        {"name": "Green Bark", "description": "A leaf-pattern cloak, +3 ARMOR. The pattern adapts to any natural surroundings, making you nearly invisible when stationary."},
+        {"name": "Feather of Arak", "description": "Carried totem, take the shape of a bird for 1D4 ROUNDS."},
+        {"name": "Greenbow", "description": "A longbow made of living elm. The weapon is MAGICAL, grows a new arrow for each fired, and can never hit a friendly target. The arrows will grow into small trees wherever they stick."},
+        {"name": "WIS SPELL: Wild Call", "description": "Call upon an animal or small group of animals within 1 mile."}
+      ],
+      "2": [
+        {"name": "Razor Vine", "description": "EQUIP this bracer-wrapping item. With it, grappling or pulling STR rolls are always EASY, and it has a FAR reach. It can be severed, but will regrow in 1D4 ROUNDS."},
+        {"name": "Seeds of At'ar", "description": "CARRY these 5 little seeds. Each can only be used once. When planted with soil and water, they explode into a colossal growth of flowers, trees, thickets and vines."},
+        {"name": "WIS SPELL: Stick Man", "description": "Assemble a construct of sticks and pebbles. It is humanoid, up to 12 feet tall, and has 3 HEARTS. It has no attacks, but can obey commands. It crumbles away the instant you take any damage."}
+      ],
+      "3": [
+        {"name": "Greenkin Gloves", "description": "+3 ARMOR. These gloves grip living wood or uncut stone with profound strength. On these surfaces, climb in any direction with no roll, and no known force can pull you away against your will."},
+        {"name": "Skull of Ormo", "description": "EQUIP a one-of-a-kind glyphed elk skull for +2 ARMOR. Also, any EFFORT of 4 or less done with a WIS SPELL can be re-rolled, choose the better roll."},
+        {"name": "WIS SPELL: Ward", "description": "Forcefully separate two touching objects or creatures you can see. This effect holds as long as you give it total attention."}
+      ],
+      "4": [
+        {"name": "Greenheart", "description": "CARRY this amulet. If you drop to 0 HP, you will return to 1 HP in 1D4 ROUNDS. If you are killed utterly, regrow to live again in 1D4 days."},
+        {"name": "Quiver of a Thousand Arrows", "description": "With a WIS roll, describe a type of arrow. That arrow will grow into the quiver in 1 ROUND. If you want to make the same arrow again, no roll is needed."},
+        {"name": "Staff of Pines", "description": "This MAGICAL weapon can instantly grow up to 10 massive pines with a WIS roll, anywhere."},
+        {"name": "Staff of Storms", "description": "A MAGICAL weapon that lets you cast LIGHTNING BOLT at maximum damage every time."}
+      ]
+    }
+  },
+  {
+    "name": "Path of the Hawk",
+    "description": "You are the uncanny marksman. Be it guns, bow, or even darts, you specialize in incredible feats of accuracy. You are the tactician, the battlefield-controller. You select targets, focus fire, and leave the enemy no retreat.",
+    "tiers": {
+      "1": [
+        {"name": "Elemental Ammo", "description": "As you ready a shot, declare an element: fire, ice, stone or metal. Your shot becomes this element, releasing that effect on impact."},
+        {"name": "Marksman's Gloves", "description": "These high-grip gloves give you a hold on ranged weapons. No non-MAGICAL means can force you to drop that weapon."},
+        {"name": "Weapon Ruck", "description": "You can carry up to 20 ranged weapons in this harness. The harness only occupies 1 of your CARRY slots."},
+        {"name": "Crystal Flare", "description": "Attach to a shot. A target hit for 1 or more damage is now marked with a glaring bright pink magnesium spark for 1D6 ROUNDS."}
+      ],
+      "2": [
+        {"name": "Split Shot", "description": "Call a shot as split. Make the roll as HARD, and break your round in two. If you beat the TARGET, but miss the HARD roll, you hit a single shot."},
+        {"name": "Grav Ammo", "description": "With a HARD shot, hit a target with a grav round. All shots by you and allies afterward are EASY."},
+        {"name": "Ring of Ricochet", "description": "With this MAGICAL ring, you have an uncanny ability to bounce shots off of surfaces, up to 6 different rebounds. If you make a kill with such a shot, your enemies must make a CHA roll or be terrified."}
+      ],
+      "3": [
+        {"name": "Reaper Ammo", "description": "Spend 1 extra TURN holding a shot, making it a REAPER. This shot will penetrate its target and continue in a straight line for 1 mile, doing damage to any targets in that line."},
+        {"name": "Refractor Cloak", "description": "This master-crafted cloak deflects missiles of all kinds. If hit by a ranged attack, roll 1D6. On a 4, 5, or 6 the attack is deflected."},
+        {"name": "Blood Sights", "description": "This head piece can work with goggles or on its own. When you take a TURN to examine a target, you see its workings, determining a weak point at once."}
+      ],
+      "4": [
+        {"name": "Masterwork Weapon Kit", "description": "Choose a ranged weapon, add +4 EFFORT."},
+        {"name": "Chain Reactor", "description": "You have an ability to bounce shots on a target's inner parts such as bones. Your shots now chain react. For any DAMAGE rolled over 3, roll DAMAGE again."},
+        {"name": "Krell Weapon Module", "description": "This wonder can be reconfigured in an instant into ANY type of ranged weapon including: Energy weapons, bows, rifles, crossbows, machine guns, pistols, or grenade launchers. The weapon never requires ammo, adds 1D20 DAMAGE to every shot, and includes native properties like RAPID FIRE, EXPLOSIVE, LONG RANGE, VOLATILE, ENERGY. Compacts into a pod-like form occupying 1 EQUIPPED slot."}
+      ]
+    }
+  }
+]

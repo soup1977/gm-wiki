@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}ICRPG Character Creation — The War Table{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('pcs.list_pcs') }}">Player Characters</a></li>
+        <li class="breadcrumb-item active">ICRPG Character Wizard</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+<div class="col-lg-8 col-md-10">
+
+<h2 class="mb-1">ICRPG Character Creator</h2>
+<p class="text-muted small mb-3">Step <span id="step-num">1</span> of 8</p>
+
+<!-- Progress bar -->
+<div class="progress mb-4" style="height: 6px;">
+    <div class="progress-bar bg-warning progress-bar-animated progress-bar-striped"
+         id="wizard-progress" style="width: 12.5%;"></div>
+</div>
+
+<!-- Error display -->
+<div id="wizard-error" class="alert alert-danger d-none"></div>
+
+<!-- ═══ Step 1: Choose World ═══ -->
+<div class="wizard-step" id="step-1">
+    <h4 class="mb-3">Choose a World</h4>
+    <p class="text-muted small">Each ICRPG world has its own life forms and types.</p>
+    <div id="world-cards" class="row g-3 mb-4"></div>
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-warning" id="btn-next-1" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 2: Choose Life Form ═══ -->
+<div class="wizard-step d-none" id="step-2">
+    <h4 class="mb-3">Choose a Life Form</h4>
+    <p class="text-muted small">Your life form grants stat and ability bonuses.</p>
+    <div id="lifeform-cards" class="row g-3 mb-4"></div>
+    <div id="no-lifeforms" class="text-muted text-center py-4 d-none">
+        <p>No life forms available for this world.</p>
+    </div>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-2" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 3: Choose Type ═══ -->
+<div class="wizard-step d-none" id="step-3">
+    <h4 class="mb-3">Choose a Type</h4>
+    <p class="text-muted small">Your type determines starting abilities and loot.</p>
+    <div id="type-cards" class="row g-3 mb-4"></div>
+    <div id="no-types" class="text-muted text-center py-4 d-none">
+        <p>No types available for this world.</p>
+    </div>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-3" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 4: Allocate Stats ═══ -->
+<div class="wizard-step d-none" id="step-4">
+    <h4 class="mb-3">Allocate Stats</h4>
+    <p class="text-muted small">Distribute <strong>6 points</strong> across your core stats.</p>
+    <div id="lf-bonus-info" class="alert alert-info d-none small mb-3"></div>
+    <div class="card bg-dark border-secondary mb-3">
+        <div class="card-body p-0">
+            <table class="table table-dark table-sm mb-0 icrpg-allocator">
+                <thead><tr>
+                    <th>Stat</th><th class="text-center">Base</th>
+                    <th class="text-center">Race</th><th class="text-center">Total</th>
+                </tr></thead>
+                <tbody id="stat-rows"></tbody>
+            </table>
+        </div>
+    </div>
+    <p class="text-center">Points remaining: <strong id="stat-points-left" class="text-warning">6</strong> / 6</p>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-4" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 5: Allocate Effort ═══ -->
+<div class="wizard-step d-none" id="step-5">
+    <h4 class="mb-3">Allocate Effort</h4>
+    <p class="text-muted small">Distribute <strong>4 points</strong> across effort types.</p>
+    <div class="card bg-dark border-secondary mb-3">
+        <div class="card-body p-0">
+            <table class="table table-dark table-sm mb-0 icrpg-allocator">
+                <thead><tr>
+                    <th>Effort</th><th class="text-center">Die</th>
+                    <th class="text-center" style="width:160px;">Base</th>
+                    <th class="text-center">Bonus</th><th class="text-center">Total</th>
+                </tr></thead>
+                <tbody id="effort-rows"></tbody>
+            </table>
+        </div>
+    </div>
+    <p class="text-center">Points remaining: <strong id="effort-points-left" class="text-warning">4</strong> / 4</p>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-5" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 6: Starting Ability ═══ -->
+<div class="wizard-step d-none" id="step-6">
+    <h4 class="mb-3">Choose a Starting Ability</h4>
+    <p class="text-muted small">Select one starting ability from your type.</p>
+    <div id="ability-cards" class="row g-3 mb-4"></div>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-6" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 7: Starting Loot ═══ -->
+<div class="wizard-step d-none" id="step-7">
+    <h4 class="mb-3">Choose Starting Loot</h4>
+    <p class="text-muted small">Select one starting item from your type.</p>
+    <div id="loot-cards" class="row g-3 mb-4"></div>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-7" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 8: Review & Create ═══ -->
+<div class="wizard-step d-none" id="step-8">
+    <h4 class="mb-3">Name & Review</h4>
+    <div class="mb-3">
+        <label for="inp-charname" class="form-label">Character Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="inp-charname" maxlength="100"
+               placeholder="e.g., Thorin Ironforge">
+    </div>
+    <div class="mb-3">
+        <label for="inp-playername" class="form-label">Player Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="inp-playername" maxlength="100">
+    </div>
+    <div class="mb-3">
+        <label for="inp-story" class="form-label">Story / Concept <span class="text-muted small">(optional)</span></label>
+        <textarea class="form-control" id="inp-story" rows="2" maxlength="500"
+                  placeholder="A one-liner about your character..."></textarea>
+    </div>
+
+    <div class="card bg-dark border-secondary mb-4">
+        <div class="card-header"><i class="bi bi-clipboard-check me-1"></i>Character Summary</div>
+        <div class="card-body" id="review-summary">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-success btn-lg" id="btn-create" onclick="submitCharacter()">
+            <i class="bi bi-check-circle me-1"></i> Create Character
+        </button>
+    </div>
+</div>
+
+</div>
+</div>
+
+<script>
+const CATALOG = {{ catalog_json | tojson }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/icrpg_wizard.js') }}"></script>
+{% endblock %}
