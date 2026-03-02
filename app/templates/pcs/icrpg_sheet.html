@@ -301,6 +301,28 @@
                             {% if item.loot_def and item.loot_def.loot_type %}
                             <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
                             {% endif %}
+                            {% set sc = item.loot_def.slot_cost if item.loot_def else 1 %}
+                            {% if sc and sc != 1 %}
+                            <span class="badge bg-dark border border-secondary ms-1">{{ sc }} slots</span>
+                            {% endif %}
+                            {% if item.spell and item.spell.casting_stat %}
+                            <span class="badge bg-info text-dark ms-1">{{ item.spell.casting_stat }}</span>
+                            {% endif %}
+                            {% if item.loot_def and item.loot_def.effects %}
+                            <div class="mt-1">
+                                {% for ek, ev in item.loot_def.effects.items() %}
+                                {% if ek == 'DEFENSE' %}
+                                <span class="badge bg-primary me-1">{{ '%+d'|format(ev) }} DEF</span>
+                                {% elif ek == 'HEARTS' %}
+                                <span class="badge bg-danger me-1">{{ '%+d'|format(ev) }} HP</span>
+                                {% elif ek in ('STR','DEX','CON','INT','WIS','CHA') %}
+                                <span class="badge bg-success me-1">{{ '%+d'|format(ev) }} {{ ek }}</span>
+                                {% elif 'EFFORT' in ek %}
+                                <span class="badge bg-warning text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                             {% if item.display_description %}
                             <div class="icrpg-loot-desc">{{ item.display_description }}</div>
                             {% endif %}
@@ -324,6 +346,31 @@
                 </ul>
                 {% else %}
                 <p class="text-muted small px-3 py-2 mb-0">No equipped items.</p>
+                {% endif %}
+                {# ── Loot Bonuses Summary ── #}
+                {% set ns = namespace(bonuses={}) %}
+                {% for item in sheet.equipped_loot %}
+                    {% if item.loot_def and item.loot_def.effects %}
+                        {% for ek, ev in item.loot_def.effects.items() %}
+                            {% if ns.bonuses.update({ek: ns.bonuses.get(ek, 0) + ev}) %}{% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                {% if ns.bonuses %}
+                <div class="px-3 py-2 border-top border-secondary">
+                    <span class="text-muted small me-1">Loot bonuses:</span>
+                    {% for ek, ev in ns.bonuses.items() %}
+                    {% if ek == 'DEFENSE' %}
+                    <span class="badge bg-primary me-1">{{ '%+d'|format(ev) }} DEF</span>
+                    {% elif ek == 'HEARTS' %}
+                    <span class="badge bg-danger me-1">{{ '%+d'|format(ev) }} HP</span>
+                    {% elif ek in ('STR','DEX','CON','INT','WIS','CHA') %}
+                    <span class="badge bg-success me-1">{{ '%+d'|format(ev) }} {{ ek }}</span>
+                    {% elif 'EFFORT' in ek %}
+                    <span class="badge bg-warning text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
+                    {% endif %}
+                    {% endfor %}
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -350,6 +397,10 @@
                             <strong>{{ item.display_name }}</strong>
                             {% if item.loot_def and item.loot_def.loot_type %}
                             <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
+                            {% endif %}
+                            {% set sc = item.loot_def.slot_cost if item.loot_def else 1 %}
+                            {% if sc and sc != 1 %}
+                            <span class="badge bg-dark border border-secondary ms-1">{{ sc }} slots</span>
                             {% endif %}
                             {% if item.display_description %}
                             <div class="icrpg-loot-desc">{{ item.display_description }}</div>
@@ -564,6 +615,13 @@
                         <div id="loot-catalog-desc" class="text-muted small mt-2" style="min-height:2em;"></div>
                     </div>
                     <div class="tab-pane" id="loot-tab-spell">
+                        <div class="mb-2">
+                            <select id="spell-stat-filter" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">All casting stats</option>
+                                <option value="INT">INT Spells</option>
+                                <option value="WIS">WIS Spells</option>
+                            </select>
+                        </div>
                         <select id="spell-catalog-select" class="form-select bg-dark text-light border-secondary" size="8"></select>
                         <div id="spell-catalog-desc" class="text-muted small mt-2" style="min-height:2em;"></div>
                     </div>
@@ -611,13 +669,21 @@
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane active" id="ability-tab-catalog">
-                        <div class="mb-2">
+                        <div class="d-flex gap-2 mb-2">
                             <select id="ability-kind-filter" class="form-select form-select-sm bg-dark text-light border-secondary">
                                 <option value="">All kinds</option>
                                 <option value="starting">Starting</option>
                                 <option value="milestone">Milestone</option>
                                 <option value="mastery">Mastery</option>
                             </select>
+                            <select id="ability-type-filter" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">All types</option>
+                                {# Populated by JS from catalog #}
+                            </select>
+                        </div>
+                        <div class="form-check form-check-inline mb-2">
+                            <input class="form-check-input" type="checkbox" id="ability-my-type-only" checked>
+                            <label class="form-check-label small" for="ability-my-type-only">My type only</label>
                         </div>
                         <select id="ability-catalog-select" class="form-select bg-dark text-light border-secondary" size="8"></select>
                         <div id="ability-catalog-desc" class="text-muted small mt-2" style="min-height:2em;"></div>

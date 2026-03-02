@@ -72,17 +72,20 @@ def _build_sheet_catalog(campaign_id):
     return {
         'loot_defs': [
             {'id': ld.id, 'name': ld.name, 'loot_type': ld.loot_type or '',
-             'description': ld.description or '', 'slot_cost': ld.slot_cost}
+             'description': ld.description or '', 'slot_cost': ld.slot_cost,
+             'effects': ld.effects, 'world_id': ld.world_id}
             for ld in loot_defs
         ],
         'spells': [
             {'id': sp.id, 'name': sp.name, 'spell_type': sp.spell_type or '',
+             'casting_stat': sp.casting_stat or '',
              'description': sp.description or ''}
             for sp in spells
         ],
         'abilities': [
             {'id': ab.id, 'name': ab.name, 'description': ab.description or '',
              'ability_kind': ab.ability_kind,
+             'type_id': ab.type_id,
              'type_name': ab.type_ref.name if ab.type_ref else ''}
             for ab in abilities
         ],
@@ -217,6 +220,8 @@ def pc_detail(pc_id):
             sheet_catalog = None
             if _can_edit(pc):
                 sheet_catalog = _build_sheet_catalog(campaign_id)
+                sheet_catalog['char_type_id'] = sheet.type_id
+                sheet_catalog['char_world_id'] = sheet.world_id
             can_edit_stats = current_user.is_admin or (
                 sheet.allow_player_edit and _is_owner(pc)
             )
@@ -592,11 +597,16 @@ def icrpg_add_ability(pc_id):
     data = request.get_json(silent=True) or {}
     ability_id = data.get('ability_id')
     ability_kind = data.get('ability_kind', 'starting')
+    warning = None
     if ability_id:
         ab = ICRPGAbility.query.get(ability_id)
         if not ab:
             return jsonify({'error': 'Ability not found.'}), 404
         ability_kind = ab.ability_kind
+        # Soft warning for cross-type ability
+        if ab.type_id and sheet.type_id and ab.type_id != sheet.type_id:
+            type_name = ab.type_ref.name if ab.type_ref else 'another type'
+            warning = f'This ability belongs to {type_name}, not your type.'
     new_ab = ICRPGCharAbility(
         sheet_id=sheet.id,
         ability_id=ability_id,
@@ -607,7 +617,10 @@ def icrpg_add_ability(pc_id):
     )
     db.session.add(new_ab)
     db.session.commit()
-    return jsonify({'ok': True, 'id': new_ab.id})
+    resp = {'ok': True, 'id': new_ab.id}
+    if warning:
+        resp['warning'] = warning
+    return jsonify(resp)
 
 
 @pcs_bp.route('/<int:pc_id>/icrpg/remove-ability', methods=['POST'])

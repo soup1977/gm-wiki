@@ -170,7 +170,7 @@
             });
         });
 
-        // ── Remove Loot (GM only) ─────────────────────────────────
+        // ── Remove Loot ─────────────────────────────────────────
         document.querySelectorAll('.icrpg-remove-loot-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 if (!confirm('Remove this item?')) return;
@@ -181,7 +181,7 @@
             });
         });
 
-        // ── Remove Ability (GM only) ──────────────────────────────
+        // ── Remove Ability ──────────────────────────────────────
         document.querySelectorAll('.icrpg-remove-ability-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 if (!confirm('Remove this ability?')) return;
@@ -210,6 +210,7 @@
             var lootCatalogDesc = document.getElementById('loot-catalog-desc');
             var spellCatalogSelect = document.getElementById('spell-catalog-select');
             var spellCatalogDesc = document.getElementById('spell-catalog-desc');
+            var spellStatFilter = document.getElementById('spell-stat-filter');
             var lootSlotSelect = document.getElementById('loot-slot-select');
 
             // Populate loot type filter options
@@ -231,19 +232,27 @@
                     if (filter && ld.loot_type !== filter) return;
                     var opt = document.createElement('option');
                     opt.value = ld.id;
-                    opt.textContent = ld.name + (ld.loot_type ? ' (' + ld.loot_type + ')' : '');
+                    var label = ld.name;
+                    if (ld.loot_type) label += ' (' + ld.loot_type + ')';
+                    if (ld.slot_cost && ld.slot_cost !== 1) label += ' [' + ld.slot_cost + ' slots]';
+                    opt.textContent = label;
                     opt.dataset.desc = ld.description;
                     lootCatalogSelect.appendChild(opt);
                 });
             }
 
             function populateSpellSelect() {
+                var filter = spellStatFilter ? spellStatFilter.value : '';
                 spellCatalogSelect.innerHTML = '';
                 spellCatalogDesc.textContent = '';
                 SHEET_CATALOG.spells.forEach(function (sp) {
+                    if (filter && sp.casting_stat !== filter) return;
                     var opt = document.createElement('option');
                     opt.value = sp.id;
-                    opt.textContent = sp.name + (sp.spell_type ? ' (' + sp.spell_type + ')' : '');
+                    var label = sp.name;
+                    if (sp.spell_type) label += ' (' + sp.spell_type + ')';
+                    if (sp.casting_stat) label += ' [' + sp.casting_stat + ']';
+                    opt.textContent = label;
                     opt.dataset.desc = sp.description;
                     spellCatalogSelect.appendChild(opt);
                 });
@@ -253,6 +262,9 @@
             populateSpellSelect();
 
             lootTypeFilter.addEventListener('change', populateLootSelect);
+            if (spellStatFilter) {
+                spellStatFilter.addEventListener('change', populateSpellSelect);
+            }
 
             lootCatalogSelect.addEventListener('change', function () {
                 var sel = lootCatalogSelect.options[lootCatalogSelect.selectedIndex];
@@ -296,17 +308,41 @@
                 });
             });
 
-            // ── Add Ability Modal (GM only) ───────────────────────────
+            // ── Add Ability Modal ───────────────────────────────────
             var abilityKindFilter = document.getElementById('ability-kind-filter');
+            var abilityTypeFilter = document.getElementById('ability-type-filter');
+            var abilityMyTypeOnly = document.getElementById('ability-my-type-only');
             var abilityCatalogSelect = document.getElementById('ability-catalog-select');
             var abilityCatalogDesc = document.getElementById('ability-catalog-desc');
 
+            // Populate ability type filter from catalog
+            var abilityTypes = {};
+            SHEET_CATALOG.abilities.forEach(function (ab) {
+                if (ab.type_name) abilityTypes[ab.type_id] = ab.type_name;
+            });
+            Object.keys(abilityTypes).forEach(function (tid) {
+                var opt = document.createElement('option');
+                opt.value = tid;
+                opt.textContent = abilityTypes[tid];
+                abilityTypeFilter.appendChild(opt);
+            });
+
             function populateAbilitySelect() {
-                var filter = abilityKindFilter.value;
+                var kindFilter = abilityKindFilter.value;
+                var typeFilter = abilityTypeFilter.value;
+                var myTypeOnly = abilityMyTypeOnly && abilityMyTypeOnly.checked;
+                var charTypeId = SHEET_CATALOG.char_type_id;
+
                 abilityCatalogSelect.innerHTML = '';
                 abilityCatalogDesc.textContent = '';
                 SHEET_CATALOG.abilities.forEach(function (ab) {
-                    if (filter && ab.ability_kind !== filter) return;
+                    if (kindFilter && ab.ability_kind !== kindFilter) return;
+                    // Type filtering: explicit dropdown takes priority, then checkbox
+                    if (typeFilter) {
+                        if (String(ab.type_id) !== typeFilter) return;
+                    } else if (myTypeOnly && charTypeId) {
+                        if (ab.type_id && ab.type_id !== charTypeId) return;
+                    }
                     var opt = document.createElement('option');
                     opt.value = ab.id;
                     opt.textContent = ab.name + (ab.type_name ? ' (' + ab.type_name + ')' : '') + ' [' + ab.ability_kind + ']';
@@ -317,6 +353,22 @@
 
             populateAbilitySelect();
             abilityKindFilter.addEventListener('change', populateAbilitySelect);
+            abilityTypeFilter.addEventListener('change', function () {
+                // If a specific type is selected, uncheck "My type only"
+                if (abilityTypeFilter.value && abilityMyTypeOnly) {
+                    abilityMyTypeOnly.checked = false;
+                }
+                populateAbilitySelect();
+            });
+            if (abilityMyTypeOnly) {
+                abilityMyTypeOnly.addEventListener('change', function () {
+                    // If checkbox is checked, clear the type dropdown
+                    if (abilityMyTypeOnly.checked) {
+                        abilityTypeFilter.value = '';
+                    }
+                    populateAbilitySelect();
+                });
+            }
 
             abilityCatalogSelect.addEventListener('change', function () {
                 var sel = abilityCatalogSelect.options[abilityCatalogSelect.selectedIndex];
@@ -339,7 +391,10 @@
                     body.ability_kind = document.getElementById('custom-ability-kind').value;
                 }
 
-                postAction('add-ability', body, function () {
+                postAction('add-ability', body, function (data) {
+                    if (data.warning) {
+                        alert(data.warning);
+                    }
                     window.location.reload();
                 });
             });
