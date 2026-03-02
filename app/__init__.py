@@ -548,6 +548,41 @@ def create_app():
                     basic_loot_count += 1
         print(f"  Basic Loot Defs: {basic_loot_count} imported")
 
+        # ── 4b. D100 Loot (reward loot tables → catalog items) ────
+        d100_world_map = {
+            'Sci Fi Loot': 'Warp Shell',
+            'Ghost Mountain Loot': 'Ghost Mountain',
+        }
+        path = os.path.join(seed_dir, 'icrpg_loot.json')
+        d100_count = 0
+        if os.path.exists(path):
+            with open(path) as f:
+                d100_tables = _json.load(f)
+            for table in d100_tables:
+                table_name = table.get('table_name', '')
+                world_name = d100_world_map.get(table_name)
+                world = world_map.get(world_name) if world_name else None
+                for entry in table.get('entries', []):
+                    existing = ICRPGLootDef.query.filter_by(
+                        name=entry['name'], is_builtin=True).first()
+                    if existing:
+                        if 'effects' in entry:
+                            existing.effects = entry['effects']
+                        stats['skipped'] += 1
+                        continue
+                    obj = ICRPGLootDef(
+                        world_id=world.id if world else None,
+                        name=entry['name'],
+                        loot_type=entry.get('type', 'Item'),
+                        description=entry.get('description', ''),
+                        effects=entry.get('effects'),
+                        slot_cost=entry.get('slot_cost', 1),
+                        is_starter=False, is_builtin=True,
+                        source='ICRPG Master Edition')
+                    db.session.add(obj)
+                    d100_count += 1
+        print(f"  D100 Loot Defs: {d100_count} imported")
+
         # ── 5. Spells ──────────────────────────────────────────────
         path = os.path.join(seed_dir, 'icrpg_spells.json')
         spell_count = 0
