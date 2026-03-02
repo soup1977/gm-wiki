@@ -122,6 +122,7 @@
                         <div class="d-flex gap-1">
                             <button class="btn btn-sm btn-outline-light icrpg-hp-btn" data-delta="-1" title="Lose 1 HP">-</button>
                             <button class="btn btn-sm btn-outline-light icrpg-hp-btn" data-delta="1" title="Gain 1 HP">+</button>
+                            <button class="btn btn-sm btn-outline-success" id="icrpg-hp-reset" title="Reset to Max"><i class="bi bi-arrow-counterclockwise"></i></button>
                         </div>
                         {% endif %}
                     </div>
@@ -147,7 +148,13 @@
                     </div>
                     <div class="col-4">
                         <div class="text-muted small">Coin</div>
-                        <div class="fs-5 fw-bold">{{ sheet.coin }}</div>
+                        <div class="fs-5 fw-bold" id="icrpg-coin">{{ sheet.coin }}</div>
+                        {% if can_edit %}
+                        <div class="d-flex justify-content-center gap-1 mt-1">
+                            <button class="btn btn-sm btn-outline-light py-0 px-1 icrpg-coin-btn" data-delta="-1" title="Spend Coin">-</button>
+                            <button class="btn btn-sm btn-outline-light py-0 px-1 icrpg-coin-btn" data-delta="1" title="Gain Coin">+</button>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 

@@ -383,15 +383,32 @@ def _get_sheet_or_error(pc_id):
 @pcs_bp.route('/<int:pc_id>/icrpg/hp', methods=['POST'])
 @login_required
 def icrpg_adjust_hp(pc_id):
-    """Adjust HP by a delta (+1 or -1). Clamps to 0..hp_max."""
+    """Adjust HP by a delta, or reset to max."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    if data.get('reset'):
+        sheet.hp_current = sheet.hp_max
+    else:
+        delta = int(data.get('delta', 0))
+        sheet.hp_current = max(0, min(sheet.hp_current + delta, sheet.hp_max))
+    db.session.commit()
+    return jsonify({'hp_current': sheet.hp_current, 'hp_max': sheet.hp_max})
+
+
+@pcs_bp.route('/<int:pc_id>/icrpg/coin', methods=['POST'])
+@login_required
+def icrpg_adjust_coin(pc_id):
+    """Adjust coin by a delta."""
     sheet, err = _get_sheet_or_error(pc_id)
     if err:
         return err
     data = request.get_json(silent=True) or {}
     delta = int(data.get('delta', 0))
-    sheet.hp_current = max(0, min(sheet.hp_current + delta, sheet.hp_max))
+    sheet.coin = max(0, sheet.coin + delta)
     db.session.commit()
-    return jsonify({'hp_current': sheet.hp_current, 'hp_max': sheet.hp_max})
+    return jsonify({'coin': sheet.coin})
 
 
 @pcs_bp.route('/<int:pc_id>/icrpg/hero-coin', methods=['POST'])
