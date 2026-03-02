@@ -1000,9 +1000,14 @@ class ICRPGCharacterSheet(db.Model):
         return min(con + loot_def, 10)
 
     @property
+    def total_hearts(self):
+        """Hearts base + loot HEARTS bonus."""
+        return self.hearts_max + self._loot_bonus('HEARTS')
+
+    @property
     def hp_max(self):
-        """Maximum HP = (hearts + loot HEARTS bonus) * 10."""
-        return (self.hearts_max + self._loot_bonus('HEARTS')) * 10
+        """Maximum HP = total hearts * 10."""
+        return self.total_hearts * 10
 
     @property
     def equipped_loot(self):
