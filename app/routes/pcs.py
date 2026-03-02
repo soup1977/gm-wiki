@@ -390,6 +390,8 @@ def icrpg_adjust_hp(pc_id):
     data = request.get_json(silent=True) or {}
     if data.get('reset'):
         sheet.hp_current = sheet.hp_max
+    elif 'value' in data:
+        sheet.hp_current = max(0, min(int(data['value']), sheet.hp_max))
     else:
         delta = int(data.get('delta', 0))
         sheet.hp_current = max(0, min(sheet.hp_current + delta, sheet.hp_max))
@@ -405,8 +407,11 @@ def icrpg_adjust_coin(pc_id):
     if err:
         return err
     data = request.get_json(silent=True) or {}
-    delta = int(data.get('delta', 0))
-    sheet.coin = max(0, sheet.coin + delta)
+    if 'value' in data:
+        sheet.coin = max(0, int(data['value']))
+    else:
+        delta = int(data.get('delta', 0))
+        sheet.coin = max(0, sheet.coin + delta)
     db.session.commit()
     return jsonify({'coin': sheet.coin})
 
