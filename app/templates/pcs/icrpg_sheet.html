@@ -375,6 +375,47 @@
             </div>
         </div>
 
+        {# ── ACTIVE EFFECTS (text reminders from equipped items) ── #}
+        {% set active_effects = [] %}
+        {% for item in sheet.equipped_loot %}
+            {% if item.display_description %}
+                {% if active_effects.append({'name': item.display_name, 'desc': item.display_description, 'source': 'loot'}) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% for ab in sheet.char_abilities %}
+            {% if ab.display_description %}
+                {% if active_effects.append({'name': ab.display_name, 'desc': ab.display_description, 'source': 'ability'}) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% if active_effects %}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center"
+                 data-bs-toggle="collapse" data-bs-target="#activeEffectsBody" role="button"
+                 style="cursor:pointer;">
+                <div>
+                    <strong>Active Effects</strong>
+                    <span class="text-muted small ms-2">{{ active_effects|length }} effects</span>
+                </div>
+                <i class="bi bi-chevron-down text-muted"></i>
+            </div>
+            <div class="collapse show" id="activeEffectsBody">
+                <div class="card-body p-0">
+                    <ul class="list-unstyled mb-0">
+                        {% for fx in active_effects %}
+                        <li class="px-3 py-1{% if not loop.last %} border-bottom border-secondary{% endif %}">
+                            <span class="text-info small fw-bold">{{ fx.name }}</span>
+                            {% if fx.source == 'ability' %}
+                            <span class="badge bg-secondary ms-1" style="font-size:0.65em;">ability</span>
+                            {% endif %}
+                            <div class="text-light small" style="opacity:0.85;">{{ fx.desc }}</div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {# ── CARRIED LOOT ─────────────────────────────────────── #}
         <div class="card bg-dark border-secondary mb-3">
             <div class="card-header py-2 d-flex justify-content-between align-items-center">
