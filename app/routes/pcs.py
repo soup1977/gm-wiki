@@ -416,6 +416,19 @@ def icrpg_adjust_coin(pc_id):
     return jsonify({'coin': sheet.coin})
 
 
+@pcs_bp.route('/<int:pc_id>/icrpg/notes', methods=['POST'])
+@login_required
+def icrpg_save_notes(pc_id):
+    """Save player notes."""
+    sheet, err = _get_sheet_or_error(pc_id)
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    sheet.pc.notes = data.get('notes', '')
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 @pcs_bp.route('/<int:pc_id>/icrpg/hero-coin', methods=['POST'])
 @login_required
 def icrpg_toggle_hero_coin(pc_id):

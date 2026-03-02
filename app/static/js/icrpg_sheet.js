@@ -262,6 +262,27 @@
             });
         }
 
+        // ── Notes tab (auto-save on change) ──────────────────────
+        var notesEditor = document.getElementById('icrpg-notes-editor');
+        var saveNotesBtn = document.getElementById('icrpg-save-notes-btn');
+        if (notesEditor && saveNotesBtn) {
+            var notesSaveTimer = null;
+            function saveNotes() {
+                postAction('notes', { notes: notesEditor.value }, function () {
+                    saveNotesBtn.classList.add('d-none');
+                });
+            }
+            notesEditor.addEventListener('input', function () {
+                saveNotesBtn.classList.remove('d-none');
+                clearTimeout(notesSaveTimer);
+                notesSaveTimer = setTimeout(saveNotes, 1500);
+            });
+            saveNotesBtn.addEventListener('click', function () {
+                clearTimeout(notesSaveTimer);
+                saveNotes();
+            });
+        }
+
         // ── Add Loot Modal ──────────────────────────────────────
         if (typeof SHEET_CATALOG !== 'undefined') {
             var addLootModal = document.getElementById('addLootModal');
