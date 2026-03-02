@@ -285,108 +285,7 @@
     {# ── RIGHT COLUMN ────────────────────────────────────────── #}
     <div class="col-lg-8">
 
-        {# ── EQUIPPED LOOT ────────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #198754 !important;">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <strong><i class="bi bi-shield-shaded text-success me-2"></i>Equipped Loot</strong>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted small" id="icrpg-equipped-slots">{{ sheet.equipped_slots_used }} / {{ sheet.equipped_slots_max }} slots</span>
-                    {% if can_edit %}
-                    <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="equipped" title="Add Loot">
-                        <i class="bi bi-plus-circle"></i>
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="card-body p-0">
-                {% if sheet.equipped_loot %}
-                <ul class="list-unstyled mb-0">
-                    {% for item in sheet.equipped_loot %}
-                    <li class="px-3 py-2 icrpg-loot-item d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>{{ item.display_name }}</strong>
-                            {% if item.loot_def and item.loot_def.loot_type %}
-                            <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
-                            {% endif %}
-                            {% set sc = item.loot_def.slot_cost if item.loot_def else 1 %}
-                            {% if sc and sc != 1 %}
-                            <span class="badge bg-dark border border-secondary ms-1">{{ sc }} slots</span>
-                            {% endif %}
-                            {% if item.spell and item.spell.casting_stat %}
-                            <span class="badge bg-info text-dark ms-1">{{ item.spell.casting_stat }}</span>
-                            {% endif %}
-                            {% if item.loot_def and item.loot_def.effects %}
-                            <div class="mt-1">
-                                {% for ek, ev in item.loot_def.effects.items() %}
-                                {% if ek == 'DEFENSE' %}
-                                <span class="badge bg-primary me-1">{{ '%+d'|format(ev) }} DEF</span>
-                                {% elif ek == 'HEARTS' %}
-                                <span class="badge bg-danger me-1">{{ '%+d'|format(ev) }} HP</span>
-                                {% elif ek in ('STR','DEX','CON','INT','WIS','CHA') %}
-                                <span class="badge bg-success me-1">{{ '%+d'|format(ev) }} {{ ek }}</span>
-                                {% elif 'EFFORT' in ek %}
-                                <span class="badge bg-warning text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
-                                {% elif ek in ('EQUIPPED_SLOTS', 'CARRIED_SLOTS') %}
-                                <span class="badge bg-info text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if item.display_description %}
-                            <div class="icrpg-loot-desc">{{ item.display_description }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="d-flex gap-1 ms-2 flex-shrink-0">
-                            {% if can_edit %}
-                            <button class="btn btn-sm btn-outline-secondary icrpg-equip-btn"
-                                    data-loot-id="{{ item.id }}" data-new-slot="carried" title="Move to Carried">
-                                <i class="bi bi-box-arrow-down"></i>
-                            </button>
-                            {% endif %}
-                            {% if can_edit %}
-                            <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
-                                    data-loot-id="{{ item.id }}" title="Remove">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted small px-3 py-2 mb-0">No equipped items.</p>
-                {% endif %}
-                {# ── Loot Bonuses Summary ── #}
-                {% set ns = namespace(bonuses={}) %}
-                {% for item in sheet.equipped_loot %}
-                    {% if item.loot_def and item.loot_def.effects %}
-                        {% for ek, ev in item.loot_def.effects.items() %}
-                            {% if ns.bonuses.update({ek: ns.bonuses.get(ek, 0) + ev}) %}{% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
-                {% if ns.bonuses %}
-                <div class="px-3 py-2 border-top border-secondary">
-                    <span class="text-muted small me-1">Loot bonuses:</span>
-                    {% for ek, ev in ns.bonuses.items() %}
-                    {% if ek == 'DEFENSE' %}
-                    <span class="badge bg-primary me-1">{{ '%+d'|format(ev) }} DEF</span>
-                    {% elif ek == 'HEARTS' %}
-                    <span class="badge bg-danger me-1">{{ '%+d'|format(ev) }} HP</span>
-                    {% elif ek in ('STR','DEX','CON','INT','WIS','CHA') %}
-                    <span class="badge bg-success me-1">{{ '%+d'|format(ev) }} {{ ek }}</span>
-                    {% elif 'EFFORT' in ek %}
-                    <span class="badge bg-warning text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
-                    {% elif ek in ('EQUIPPED_SLOTS', 'CARRIED_SLOTS') %}
-                    <span class="badge bg-info text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
-                    {% endif %}
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        {# ── ACTIVE EFFECTS (text reminders from equipped items) ── #}
+        {# ── Precompute active effects for badge count ── #}
         {% set active_effects = [] %}
         {% for item in sheet.equipped_loot %}
             {% if item.display_description %}
@@ -398,18 +297,204 @@
                 {% if active_effects.append({'name': ab.display_name, 'desc': ab.display_description, 'source': 'ability'}) %}{% endif %}
             {% endif %}
         {% endfor %}
-        {% if active_effects %}
-        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #0dcaf0 !important;">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center"
-                 data-bs-toggle="collapse" data-bs-target="#activeEffectsBody" role="button"
-                 style="cursor:pointer;">
-                <div>
+
+        {% set starting = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'starting') | list %}
+        {% set milestone = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'milestone') | list %}
+        {% set mastery_abs = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'mastery') | list %}
+
+        {# ── TAB NAV ─────────────────────────────────────────── #}
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#sheet-tab-loot" role="tab">
+                    <i class="bi bi-shield-shaded text-success me-1"></i>Loot
+                    <span class="badge bg-secondary ms-1">{{ sheet.equipped_loot|length + sheet.carried_loot|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#sheet-tab-effects" role="tab">
+                    <i class="bi bi-lightning-charge text-info me-1"></i>Effects
+                    {% if active_effects %}<span class="badge bg-info text-dark ms-1">{{ active_effects|length }}</span>{% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#sheet-tab-abilities" role="tab">
+                    <i class="bi bi-stars me-1" style="color: #6f42c1;"></i>Abilities
+                    <span class="badge bg-secondary ms-1">{{ starting|length + milestone|length + mastery_abs|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#sheet-tab-notes" role="tab">
+                    <i class="bi bi-journal-text text-warning me-1"></i>Notes
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+        {# ════════════════ LOOT TAB ════════════════════════════ #}
+        <div class="tab-pane active" id="sheet-tab-loot" role="tabpanel">
+
+            {# ── EQUIPPED LOOT ── #}
+            <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #198754 !important;">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <strong><i class="bi bi-shield-shaded text-success me-2"></i>Equipped</strong>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small" id="icrpg-equipped-slots">{{ sheet.equipped_slots_used }} / {{ sheet.equipped_slots_max }} slots</span>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="equipped" title="Add Loot">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if sheet.equipped_loot %}
+                    <ul class="list-unstyled mb-0">
+                        {% for item in sheet.equipped_loot %}
+                        <li class="px-3 py-2 icrpg-loot-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ item.display_name }}</strong>
+                                {% if item.loot_def and item.loot_def.loot_type %}
+                                <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
+                                {% endif %}
+                                {% set sc = item.loot_def.slot_cost if item.loot_def else 1 %}
+                                {% if sc and sc != 1 %}
+                                <span class="badge bg-dark border border-secondary ms-1">{{ sc }} slots</span>
+                                {% endif %}
+                                {% if item.spell and item.spell.casting_stat %}
+                                <span class="badge bg-info text-dark ms-1">{{ item.spell.casting_stat }}</span>
+                                {% endif %}
+                                {% if item.loot_def and item.loot_def.effects %}
+                                <div class="mt-1">
+                                    {% for ek, ev in item.loot_def.effects.items() %}
+                                    {% if ek == 'DEFENSE' %}
+                                    <span class="badge bg-primary me-1">{{ '%+d'|format(ev) }} DEF</span>
+                                    {% elif ek == 'HEARTS' %}
+                                    <span class="badge bg-danger me-1">{{ '%+d'|format(ev) }} HP</span>
+                                    {% elif ek in ('STR','DEX','CON','INT','WIS','CHA') %}
+                                    <span class="badge bg-success me-1">{{ '%+d'|format(ev) }} {{ ek }}</span>
+                                    {% elif 'EFFORT' in ek %}
+                                    <span class="badge bg-warning text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
+                                    {% elif ek in ('EQUIPPED_SLOTS', 'CARRIED_SLOTS') %}
+                                    <span class="badge bg-info text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if item.display_description %}
+                                <div class="icrpg-loot-desc">{{ item.display_description }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-1 ms-2 flex-shrink-0">
+                                {% if can_edit %}
+                                <button class="btn btn-sm btn-outline-secondary icrpg-equip-btn"
+                                        data-loot-id="{{ item.id }}" data-new-slot="carried" title="Move to Carried">
+                                    <i class="bi bi-box-arrow-down"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
+                                        data-loot-id="{{ item.id }}" title="Remove">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small px-3 py-2 mb-0">No equipped items.</p>
+                    {% endif %}
+                    {# ── Loot Bonuses Summary ── #}
+                    {% set ns = namespace(bonuses={}) %}
+                    {% for item in sheet.equipped_loot %}
+                        {% if item.loot_def and item.loot_def.effects %}
+                            {% for ek, ev in item.loot_def.effects.items() %}
+                                {% if ns.bonuses.update({ek: ns.bonuses.get(ek, 0) + ev}) %}{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if ns.bonuses %}
+                    <div class="px-3 py-2 border-top border-secondary">
+                        <span class="text-muted small me-1">Loot bonuses:</span>
+                        {% for ek, ev in ns.bonuses.items() %}
+                        {% if ek == 'DEFENSE' %}
+                        <span class="badge bg-primary me-1">{{ '%+d'|format(ev) }} DEF</span>
+                        {% elif ek == 'HEARTS' %}
+                        <span class="badge bg-danger me-1">{{ '%+d'|format(ev) }} HP</span>
+                        {% elif ek in ('STR','DEX','CON','INT','WIS','CHA') %}
+                        <span class="badge bg-success me-1">{{ '%+d'|format(ev) }} {{ ek }}</span>
+                        {% elif 'EFFORT' in ek %}
+                        <span class="badge bg-warning text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
+                        {% elif ek in ('EQUIPPED_SLOTS', 'CARRIED_SLOTS') %}
+                        <span class="badge bg-info text-dark me-1">{{ '%+d'|format(ev) }} {{ ek|replace('_',' ')|title }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── CARRIED LOOT ── #}
+            <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #0d6efd !important;">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <strong><i class="bi bi-backpack text-primary me-2"></i>Carried</strong>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small" id="icrpg-carried-slots">{{ sheet.carried_slots_used }} / {{ sheet.carried_slots_max }} slots</span>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="carried" title="Add Loot">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if sheet.carried_loot %}
+                    <ul class="list-unstyled mb-0">
+                        {% for item in sheet.carried_loot %}
+                        <li class="px-3 py-2 icrpg-loot-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ item.display_name }}</strong>
+                                {% if item.loot_def and item.loot_def.loot_type %}
+                                <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
+                                {% endif %}
+                                {% set sc = item.loot_def.slot_cost if item.loot_def else 1 %}
+                                {% if sc and sc != 1 %}
+                                <span class="badge bg-dark border border-secondary ms-1">{{ sc }} slots</span>
+                                {% endif %}
+                                {% if item.display_description %}
+                                <div class="icrpg-loot-desc">{{ item.display_description }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-1 ms-2 flex-shrink-0">
+                                {% if can_edit %}
+                                <button class="btn btn-sm btn-outline-info icrpg-equip-btn"
+                                        data-loot-id="{{ item.id }}" data-new-slot="equipped" title="Equip">
+                                    <i class="bi bi-box-arrow-up"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
+                                        data-loot-id="{{ item.id }}" title="Remove">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small px-3 py-2 mb-0">No carried items.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>{# /loot tab #}
+
+        {# ════════════════ EFFECTS TAB ═════════════════════════ #}
+        <div class="tab-pane" id="sheet-tab-effects" role="tabpanel">
+            {% if active_effects %}
+            <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #0dcaf0 !important;">
+                <div class="card-header py-2">
                     <strong><i class="bi bi-lightning-charge text-info me-2"></i>Active Effects</strong>
                     <span class="text-muted small ms-2">{{ active_effects|length }} effects</span>
                 </div>
-                <i class="bi bi-chevron-down text-muted"></i>
-            </div>
-            <div class="collapse show" id="activeEffectsBody">
                 <div class="card-body p-0">
                     <ul class="list-unstyled mb-0">
                         {% for fx in active_effects %}
@@ -424,138 +509,112 @@
                     </ul>
                 </div>
             </div>
-        </div>
-        {% endif %}
+            {% else %}
+            <p class="text-muted">No active effects. Equip loot or gain abilities to see effects here.</p>
+            {% endif %}
+        </div>{# /effects tab #}
 
-        {# ── CARRIED LOOT ─────────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #0d6efd !important;">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <strong><i class="bi bi-backpack text-primary me-2"></i>Carried Loot</strong>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted small" id="icrpg-carried-slots">{{ sheet.carried_slots_used }} / {{ sheet.carried_slots_max }} slots</span>
+        {# ════════════════ ABILITIES TAB ═══════════════════════ #}
+        <div class="tab-pane" id="sheet-tab-abilities" role="tabpanel">
+            <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #6f42c1 !important;">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <strong><i class="bi bi-stars me-2" style="color: #6f42c1 !important;"></i>Abilities</strong>
                     {% if can_edit %}
-                    <button class="btn btn-sm btn-outline-success py-0 px-1 icrpg-open-add-loot" data-default-slot="carried" title="Add Loot">
+                    <button class="btn btn-sm btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#addAbilityModal" title="Add Ability">
                         <i class="bi bi-plus-circle"></i>
                     </button>
                     {% endif %}
                 </div>
-            </div>
-            <div class="card-body p-0">
-                {% if sheet.carried_loot %}
-                <ul class="list-unstyled mb-0">
-                    {% for item in sheet.carried_loot %}
-                    <li class="px-3 py-2 icrpg-loot-item d-flex justify-content-between align-items-start">
+                <div class="card-body">
+                    {% if starting %}
+                    <h6 class="text-info mb-2">Starting</h6>
+                    {% for ab in starting %}
+                    <div class="mb-2 d-flex justify-content-between align-items-start">
                         <div>
-                            <strong>{{ item.display_name }}</strong>
-                            {% if item.loot_def and item.loot_def.loot_type %}
-                            <span class="badge bg-secondary ms-1">{{ item.loot_def.loot_type }}</span>
-                            {% endif %}
-                            {% set sc = item.loot_def.slot_cost if item.loot_def else 1 %}
-                            {% if sc and sc != 1 %}
-                            <span class="badge bg-dark border border-secondary ms-1">{{ sc }} slots</span>
-                            {% endif %}
-                            {% if item.display_description %}
-                            <div class="icrpg-loot-desc">{{ item.display_description }}</div>
+                            <strong>{{ ab.display_name }}</strong>
+                            {% if ab.display_description %}
+                            <div class="text-muted small">{{ ab.display_description }}</div>
                             {% endif %}
                         </div>
-                        <div class="d-flex gap-1 ms-2 flex-shrink-0">
-                            {% if can_edit %}
-                            <button class="btn btn-sm btn-outline-info icrpg-equip-btn"
-                                    data-loot-id="{{ item.id }}" data-new-slot="equipped" title="Equip">
-                                <i class="bi bi-box-arrow-up"></i>
-                            </button>
-                            {% endif %}
-                            {% if can_edit %}
-                            <button class="btn btn-sm btn-outline-danger icrpg-remove-loot-btn"
-                                    data-loot-id="{{ item.id }}" title="Remove">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </li>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
+                                data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
+                        {% endif %}
+                    </div>
                     {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted small px-3 py-2 mb-0">No carried items.</p>
-                {% endif %}
-            </div>
-        </div>
+                    {% endif %}
 
-        {# ── ABILITIES ────────────────────────────────────────── #}
-        {% set starting = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'starting') | list %}
-        {% set milestone = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'milestone') | list %}
-        {% set mastery = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'mastery') | list %}
-
-        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #6f42c1 !important;">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <strong><i class="bi bi-stars text-purple me-2" style="color: #6f42c1 !important;"></i>Abilities</strong>
-                {% if can_edit %}
-                <button class="btn btn-sm btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#addAbilityModal" title="Add Ability">
-                    <i class="bi bi-plus-circle"></i>
-                </button>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                {% if starting %}
-                <h6 class="text-info mb-2">Starting</h6>
-                {% for ab in starting %}
-                <div class="mb-2 d-flex justify-content-between align-items-start">
-                    <div>
-                        <strong>{{ ab.display_name }}</strong>
-                        {% if ab.display_description %}
-                        <div class="text-muted small">{{ ab.display_description }}</div>
+                    {% if milestone %}
+                    <h6 class="text-warning mb-2 {% if starting %}mt-3{% endif %}">Milestone</h6>
+                    {% for ab in milestone %}
+                    <div class="mb-2 d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ ab.display_name }}</strong>
+                            {% if ab.display_description %}
+                            <div class="text-muted small">{{ ab.display_description }}</div>
+                            {% endif %}
+                        </div>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
+                                data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                         {% endif %}
                     </div>
-                    {% if can_edit %}
-                    <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
-                            data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
+                    {% endfor %}
                     {% endif %}
-                </div>
-                {% endfor %}
-                {% endif %}
 
-                {% if milestone %}
-                <h6 class="text-warning mb-2 {% if starting %}mt-3{% endif %}">Milestone</h6>
-                {% for ab in milestone %}
-                <div class="mb-2 d-flex justify-content-between align-items-start">
-                    <div>
-                        <strong>{{ ab.display_name }}</strong>
-                        {% if ab.display_description %}
-                        <div class="text-muted small">{{ ab.display_description }}</div>
+                    {% if mastery_abs %}
+                    <h6 class="text-danger mb-2 {% if starting or milestone %}mt-3{% endif %}">Mastery</h6>
+                    {% for ab in mastery_abs %}
+                    <div class="mb-2 d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ ab.display_name }}</strong>
+                            {% if ab.display_description %}
+                            <div class="text-muted small">{{ ab.display_description }}</div>
+                            {% endif %}
+                        </div>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
+                                data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
                         {% endif %}
                     </div>
-                    {% if can_edit %}
-                    <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
-                            data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
+                    {% endfor %}
+                    {% endif %}
+                    {% if not starting and not milestone and not mastery_abs %}
+                    <p class="text-muted small mb-0">No abilities yet.</p>
                     {% endif %}
                 </div>
-                {% endfor %}
-                {% endif %}
-
-                {% if mastery %}
-                <h6 class="text-danger mb-2 {% if starting or milestone %}mt-3{% endif %}">Mastery</h6>
-                {% for ab in mastery %}
-                <div class="mb-2 d-flex justify-content-between align-items-start">
-                    <div>
-                        <strong>{{ ab.display_name }}</strong>
-                        {% if ab.display_description %}
-                        <div class="text-muted small">{{ ab.display_description }}</div>
-                        {% endif %}
-                    </div>
-                    {% if can_edit %}
-                    <button class="btn btn-sm btn-outline-danger icrpg-remove-ability-btn ms-2 flex-shrink-0"
-                            data-ability-id="{{ ab.id }}" title="Remove"><i class="bi bi-x-lg"></i></button>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                {% endif %}
-                {% if not starting and not milestone and not mastery %}
-                <p class="text-muted small mb-0">No abilities yet.</p>
-                {% endif %}
             </div>
-        </div>
+        </div>{# /abilities tab #}
 
-        {# ── MASTERY PROGRESS ─────────────────────────────────── #}
+        {# ════════════════ NOTES TAB ══════════════════════════ #}
+        <div class="tab-pane" id="sheet-tab-notes" role="tabpanel">
+            <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #ffc107 !important;">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <strong><i class="bi bi-journal-text text-warning me-2"></i>Player Notes</strong>
+                    {% if can_edit %}
+                    <button class="btn btn-sm btn-outline-success d-none" id="icrpg-save-notes-btn" title="Save Notes">
+                        <i class="bi bi-check-lg"></i> Save
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if can_edit %}
+                    <textarea id="icrpg-notes-editor" class="form-control bg-dark text-light border-secondary"
+                              rows="10" placeholder="Write your notes here...">{{ pc.notes or '' }}</textarea>
+                    {% else %}
+                    {% if pc.notes %}
+                    <div>{{ pc.notes | md | safe }}</div>
+                    {% else %}
+                    <p class="text-muted small mb-0">No notes yet.</p>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>{# /notes tab #}
+
+        </div>{# /tab-content #}
+
+        {# ════════════════ MASTERY PROGRESS (always visible) ═══ #}
         <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #dc3545 !important;">
             <div class="card-header py-2"><strong><i class="bi bi-trophy text-danger me-2"></i>Mastery Progress</strong></div>
             <div class="card-body">
@@ -579,7 +638,7 @@
             </div>
         </div>
 
-        {# ── DESCRIPTION / BACKSTORY / GM HOOKS / NOTES ──────── #}
+        {# ── DESCRIPTION / BACKSTORY / GM HOOKS ─────────────── #}
         {% if pc.description %}
         <div class="mb-4">
             <h5><i class="bi bi-body-text me-1"></i>Description</h5>
@@ -601,12 +660,6 @@
         </div>
         {% endif %}
 
-        {% if pc.notes and not is_owner %}
-        <div class="mb-4">
-            <h5>Ongoing Notes</h5>
-            <div>{{ pc.notes | md | safe }}</div>
-        </div>
-        {% endif %}
 
         {# Sessions attended #}
         {% set attended = pc.session_attendances | map(attribute='session') | list
