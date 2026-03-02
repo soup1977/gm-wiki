@@ -647,6 +647,18 @@ def icrpg_remove_ability(pc_id):
 def _serialize_catalog(worlds, life_forms, types, basic_loot=None):
     """Build catalog dict for JSON embedding in the wizard template."""
     basic_loot = basic_loot or []
+    # Map world names to IDs for cross-world loot resolution
+    world_name_to_id = {w.name: w.id for w in worlds}
+
+    def _loot_world_ids(w):
+        """Get set of world IDs whose basic loot should appear for this world."""
+        ids = {w.id}
+        for wname in (w.include_world_loot or []):
+            wid = world_name_to_id.get(wname)
+            if wid:
+                ids.add(wid)
+        return ids
+
     return {
         'worlds': [
             {'id': w.id, 'name': w.name, 'description': w.description or '',
@@ -655,7 +667,7 @@ def _serialize_catalog(worlds, life_forms, types, basic_loot=None):
                  {'id': ld.id, 'name': ld.name, 'description': ld.description or '',
                   'loot_type': ld.loot_type or '', 'effects': ld.effects or {},
                   'slot_cost': ld.slot_cost or 1}
-                 for ld in basic_loot if ld.world_id == w.id
+                 for ld in basic_loot if ld.world_id in _loot_world_ids(w)
              ]}
             for w in worlds
         ],
@@ -821,13 +833,19 @@ def icrpg_create_character():
     basic_loot_picks = data.get('basic_loot_picks', [])
     blc = world.basic_loot_count or 0
     if blc > 0 and basic_loot_picks:
+        # Build valid world IDs (own + referenced worlds)
+        valid_world_ids = [world.id]
+        for wname in (world.include_world_loot or []):
+            ref = ICRPGWorld.query.filter_by(name=wname).first()
+            if ref:
+                valid_world_ids.append(ref.id)
         # Basic loot = starter loot NOT linked via ICRPGStartingLoot
         type_loot_ids = db.session.query(ICRPGStartingLoot.loot_def_id).filter(
             ICRPGStartingLoot.loot_def_id.isnot(None)
         ).distinct()
         valid_basic = ICRPGLootDef.query.filter(
             ICRPGLootDef.is_starter == True,
-            ICRPGLootDef.world_id == world.id,
+            ICRPGLootDef.world_id.in_(valid_world_ids),
             ~ICRPGLootDef.id.in_(type_loot_ids)
         ).all()
         valid_basic_ids = {ld.id for ld in valid_basic}

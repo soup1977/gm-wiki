@@ -42,7 +42,7 @@
             <td class="text-muted small">{{ w.description[:80] if w.description else '' }}{% if w.description and w.description|length > 80 %}...{% endif %}</td>
             <td class="text-muted small text-center">{{ w.basic_loot_count or 4 }}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('world', 'edit', {{ w.id }}, {{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4} | tojson }})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('world', 'edit', {{ w.id }}, {{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4,'include_world_loot':w.include_world_loot or []} | tojson }})"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, '{{ w.name }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>

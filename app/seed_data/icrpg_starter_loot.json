@@ -309,5 +309,407 @@
         "description": "A miniaturized ion thruster worn as a small backpack. Move twice on your TURN, even when taking an action or making an attack."
       }
     ]
+  },
+  {
+    "table_name": "Ghost Mountain Starting Equipment",
+    "setting": "Ghost Mountain",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Fire Water",
+        "type": "Item",
+        "description": "Nasty stuff. Viper venom mixed with monkey juice. 8 sips, pass out for 1D4 ROUNDS."
+      },
+      {
+        "name": "Ammo Pouch",
+        "type": "Item",
+        "description": "Without one of these, you'll be lucky to keep 6 shots dry and in your pocket. 24 capacity."
+      },
+      {
+        "name": "Cold Weather Gear",
+        "type": "Armor",
+        "description": "Up above Buckskin it's terrible cold. Without this gear, you'll be dead in hours. +1 DEFENSE.",
+        "effects": {
+          "DEFENSE": 1
+        }
+      },
+      {
+        "name": "Bull Whip",
+        "type": "Weapon",
+        "description": "Hard as hell to master, but makes for a nasty, useful tool in uncertain times. Can be used as WEAPON or grappler."
+      },
+      {
+        "name": "Saddle & Tack",
+        "type": "Item",
+        "description": "A must for any riding. Includes lariat. Can be sold for 30 COIN, requires wagon or cart to transport."
+      },
+      {
+        "name": "Manacles & Leg Irons",
+        "type": "Tool",
+        "description": "Crucial gear for a Law man. Can also be forged with silver properties to restrain Infernals, Wraiths and the like."
+      },
+      {
+        "name": "Coffee Outfit",
+        "type": "Item",
+        "description": "Conserve 1 SUPPLY when camping, grant all cohorts a HERO COIN at breakfast."
+      },
+      {
+        "name": "Canuska Blanket",
+        "type": "Item",
+        "description": "A near-indestructible wool blanket with geometric patterns. Also shows friendship with Canuska tribes."
+      },
+      {
+        "name": "Hepawa Hide Tent & Tack",
+        "type": "Item",
+        "description": "A compact, portable shelter for five. Can be used in cold, conserve 2 SUPPLIES per day. Requires wagon or cart to transport. Includes rope, iron spikes, and cooking gear."
+      }
+    ]
+  },
+  {
+    "table_name": "Ghost Mountain Weapons",
+    "setting": "Ghost Mountain",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Six Shooter",
+        "type": "Weapon",
+        "description": "The standard sidearm of the West. Simple, reliable, uses 1 TURN to reload."
+      },
+      {
+        "name": "Carbine Rifle",
+        "type": "Weapon",
+        "description": "Lever action, 8 capacity."
+      },
+      {
+        "name": "Shotgun",
+        "type": "Weapon",
+        "description": "A nasty, clumsy weapon for close-quarters. 2 capacity, 1 TURN reload."
+      },
+      {
+        "name": "Snub Shotgun",
+        "type": "Weapon",
+        "description": "Brutal scatter shots, 2 capacity. Hit any/all CLOSE targets in front of you when firing."
+      },
+      {
+        "name": "Compound Bow",
+        "type": "Weapon",
+        "description": "Add STR to damage."
+      },
+      {
+        "name": "Bowie Knife",
+        "type": "Weapon",
+        "description": "Here you have the most reliable thing on the mountain."
+      },
+      {
+        "name": "Sabre",
+        "type": "Weapon",
+        "description": "Cavalry sword. Expensive, silver."
+      },
+      {
+        "name": "Gatling Gun",
+        "type": "Weapon",
+        "description": "Godless death machine of the East. 4 shots per roll.",
+        "slot_cost": 3
+      },
+      {
+        "name": "Demonspine",
+        "type": "Weapon",
+        "description": "Fencing blade used by Infernals."
+      },
+      {
+        "name": "Smoke Blade",
+        "type": "Weapon",
+        "description": "Caught 'tween worlds. Can only be touched by Infernals."
+      },
+      {
+        "name": "Relic Pistol",
+        "type": "Weapon",
+        "description": "A haunted gun. 4 capacity."
+      },
+      {
+        "name": "Elephant Rifle",
+        "type": "Weapon",
+        "description": "Biggest damn gun I ever saw. 1 capacity, always does ULTIMATE.",
+        "slot_cost": 2
+      },
+      {
+        "name": "Screamer",
+        "type": "Weapon",
+        "description": "Like a grenade, but it's a skull."
+      },
+      {
+        "name": "Iron Cross",
+        "type": "Weapon",
+        "description": "Oak and cold iron, one huge spike. Simple, deadly, always does DOUBLE to Infernals."
+      },
+      {
+        "name": "Nitro Bottle",
+        "type": "Weapon",
+        "description": "Careful with that, kid. Explosive on impact."
+      }
+    ]
+  },
+  {
+    "table_name": "Vigilante City Starting Equipment",
+    "setting": "Vigilante City",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Thumper Pistol",
+        "type": "Weapon",
+        "description": "Conceal easily. Does 3 SP (Stun Points) even when resisted."
+      },
+      {
+        "name": "X-Tech Assault Rifle",
+        "type": "Weapon",
+        "description": "Weapon of future wars. Mod to take custom ammo or attached weapons."
+      },
+      {
+        "name": "Plasteel Riot Armor",
+        "type": "Armor",
+        "description": "Clunky but effective protection. +3 ARMOR, reduce any STUN damage done to you in any attack by 1.",
+        "effects": {
+          "DEFENSE": 3
+        }
+      },
+      {
+        "name": "Ion Pack",
+        "type": "Item",
+        "description": "1 use of FLIGHT POWER, recharge 1D4 ROUNDS."
+      },
+      {
+        "name": "Micro Comms",
+        "type": "Tool",
+        "description": "Keep in touch with teammates at any range, concealed and hands free."
+      },
+      {
+        "name": "Utility Belt",
+        "type": "Pack",
+        "description": "3 med kits, 3 smoke grenades, rope, and one remote-triggered explosive brick."
+      },
+      {
+        "name": "Adrenaline Pack",
+        "type": "Item",
+        "description": "On a successful RECOVERY, add +3 to your result."
+      },
+      {
+        "name": "Team Suit",
+        "type": "Armor",
+        "description": "Fireproof, tear-proof, protects against cold."
+      },
+      {
+        "name": "Street Pack",
+        "type": "Pack",
+        "description": "3 pipe bombs, crow bar, folding ladder, crime scene kit, lock-picks and a signal flare."
+      },
+      {
+        "name": "All The Knives",
+        "type": "Weapon",
+        "description": "Knives. So many knives. Even when throwing or breaking knives and swords, you always have more."
+      }
+    ]
+  },
+  {
+    "table_name": "Blood and Snow Starter Loot",
+    "setting": "Blood and Snow",
+    "category": "Starter Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Lapis Amulet",
+        "type": "Item",
+        "description": "A prized symbol of sacred power and tribal status. You've worn it long enough to command attention, and leadership suits you. +2 CHA.",
+        "effects": {
+          "CHA": 2
+        }
+      },
+      {
+        "name": "Delver's Pack",
+        "type": "Pack",
+        "description": "6 SLAGG spikes, 100 feet rope, flame pot, chalk, 10 SUPPLY, signal horn."
+      },
+      {
+        "name": "Pommel Stone",
+        "type": "Item",
+        "description": "Attach to any weapon to improve its impact. +2 WEAPON EFFORT.",
+        "effects": {
+          "WEAPON_EFFORT": 2
+        }
+      },
+      {
+        "name": "Spear Tooth Pelts",
+        "type": "Armor",
+        "description": "Ignore negative effects from extreme cold, even if pelts reduced to 0 ARMOR. +2 DEFENSE.",
+        "effects": {
+          "DEFENSE": 2
+        }
+      },
+      {
+        "name": "Bracelets of Ord",
+        "type": "Armor",
+        "description": "An age-old craft using antler and leather. REPAIR rolls are always EASY on these bracers, and the MENDER ABILITY is not needed. +3 DEFENSE.",
+        "effects": {
+          "DEFENSE": 3
+        }
+      },
+      {
+        "name": "Codex Staff",
+        "type": "Item",
+        "description": "A wooden staff carved with truisms. These lessons can be used to decode mysteries. Possession of the codex staff also gives you literacy. +2 INT.",
+        "effects": {
+          "INT": 2
+        }
+      },
+      {
+        "name": "Tusk Axe",
+        "type": "Weapon",
+        "description": "A vicious weapon made with ivory. On a critical fail, this weapon is NOT broken. +3 WEAPON EFFORT.",
+        "effects": {
+          "WEAPON_EFFORT": 3
+        }
+      },
+      {
+        "name": "Scale Shield",
+        "type": "Shield",
+        "description": "A bulwark crafted from armadillo hide, and extremely tough. +8 DEFENSE.",
+        "effects": {
+          "DEFENSE": 8
+        }
+      },
+      {
+        "name": "Birdman Cloak",
+        "type": "Armor",
+        "description": "A suit of buzzard feathers and hide. Reduce any damage from falling by half. +3 DEFENSE.",
+        "effects": {
+          "DEFENSE": 3
+        }
+      },
+      {
+        "name": "Potioner's Gourds",
+        "type": "Tool",
+        "description": "Hollow shells used to hold odd tinctures and healing oils. Use with a HARD roll to heal 1 HP on yourself or an ally. +2 CON.",
+        "effects": {
+          "CON": 2
+        }
+      }
+    ]
+  },
+  {
+    "table_name": "Mage Starting Loot",
+    "setting": null,
+    "category": "Magic Starting Loot",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Eye of Azatoth",
+        "type": "Magic Starting Loot",
+        "description": "A red crystal 'eye' gem set in a silver amulet, crowned with tentacle and crab-like motifs. Cast INFERNAL SPELLS at half COST."
+      },
+      {
+        "name": "Melman's Guide",
+        "type": "Magic Starting Loot",
+        "description": "An exhaustive guide to dimensions, planes, portals and ley lines throughout the multiverse. Make an INT roll to locate a portal, ley line, or dimension gate within 1 mile."
+      },
+      {
+        "name": "Exploding Ring",
+        "type": "Magic Starting Loot",
+        "description": "This ring allows its wearer, with a verbal command, to explode a single object. Double the effects of any explosive SPELLS by destroying a target object up to 100 pounds."
+      },
+      {
+        "name": "Iron Heart Shard",
+        "type": "Magic Starting Loot",
+        "description": "A jagged piece of magical ore. Use your INT STAT to roll RECOVERY, then recover CON +1 HP as normal."
+      },
+      {
+        "name": "Starfarer's Key",
+        "type": "Magic Starting Loot",
+        "description": "Xenosian doorways can only be opened with this key-like device from deep space. Open ANY door instantly with a WIS roll."
+      },
+      {
+        "name": "Gryphon Scarf",
+        "type": "Magic Starting Loot",
+        "description": "A long, cable-knit scarf of red, gold and black with powerful, hidden magic. SPELLS are critical hits on an 18, 19 or 20."
+      },
+      {
+        "name": "Dragon's Tooth",
+        "type": "Magic Starting Loot",
+        "description": "The fang of a youngling dragon, one of Durathrax's offspring. Pray she does not see it on your person. Add a POISON effect to any attack. Targets take 1D4 damage for 1D4 ROUNDS."
+      },
+      {
+        "name": "Wand of Wonders",
+        "type": "Magic Starting Loot",
+        "description": "A small wooden staff, only three hands long, etched with spiral and antler motifs. Cast all SPELLS 1 LEVEL below actual COST."
+      }
+    ]
+  },
+  {
+    "table_name": "Mage Equipment",
+    "setting": null,
+    "category": "Magic Equipment",
+    "source": "ICRPG Master Edition",
+    "system": "ICRPG",
+    "entries": [
+      {
+        "name": "Odds 'N Ends",
+        "type": "Magic Equipment",
+        "description": "Contains 6 rare ingredients. Convert 1 SPELL you know into a single use POTION with a single use."
+      },
+      {
+        "name": "Spell Book",
+        "type": "Magic Equipment",
+        "description": "This book teaches you the art of unlimited power. When casting a SPELL, and rolling MAGIC EFFORT on a D8, if you roll a natural 8, roll MAGIC EFFORT again. No limit."
+      },
+      {
+        "name": "Roadman's Cloak",
+        "type": "Magic Equipment",
+        "description": "These robes are extra durable, with pockets and padded reinforcement. The hood is deep and dark, concealing your identity to any passing glance. +2 ARMOR.",
+        "effects": {
+          "DEFENSE": 2
+        }
+      },
+      {
+        "name": "Scrivener's Kit",
+        "type": "Magic Equipment",
+        "description": "With an INT roll, learn any SPELL you see cast by doing 1 HEART of BASIC EFFORT in research. Bypasses any listed SPELL acquisition requirements."
+      },
+      {
+        "name": "Power Crystal",
+        "type": "Magic Equipment",
+        "description": "A glowing crystal. Destroy to cause an explosion big enough to destroy a town."
+      },
+      {
+        "name": "Diminutive Servant",
+        "type": "Magic Equipment",
+        "description": "As large as a bird, mouse or snake. Conjure and command this creature without a roll. If separated by more than 5 miles, it vanishes. The familiar has 1 HP."
+      },
+      {
+        "name": "Zeke's Codex of Monsters and Men",
+        "type": "Magic Equipment",
+        "description": "With an INT roll, discern a key fact or weakness in any enemy you have experienced. These details are also accessible later from the book with no roll."
+      },
+      {
+        "name": "Gem of Changes",
+        "type": "Magic Equipment",
+        "description": "With an INT roll, change the natural element of a SPELL, such as ice to fire."
+      },
+      {
+        "name": "Nomad's Bundle",
+        "type": "Magic Equipment",
+        "description": "This rolled up pack contains: 3 small Healing Potions (1D8 each), 5 SUPPLY, Arrows, 3 torches, a small tent and a 50' length of rope."
+      },
+      {
+        "name": "A Wizard's Blade",
+        "type": "Magic Equipment",
+        "description": "This elegant short sword, rapier, dagger or kris knife is balanced for fast, lightweight attacks. Use your INT to roll ATTACK. If lost, make an INT roll on a common WEAPON to enchant it."
+      }
+    ]
   }
 ]
