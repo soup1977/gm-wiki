@@ -101,6 +101,13 @@ a:hover {
 .status-badge[data-status="Planned"]    { background-color: var(--status-on-hold); color: #212529; }
 .status-badge[data-status="unknown"]    { background-color: var(--status-unknown); }
 
+/* ── Placeholder text on dark inputs ──────────────────────── */
+.form-control.bg-dark::placeholder,
+.form-control.bg-dark::-webkit-input-placeholder {
+    color: #6c757d;
+    opacity: 1;
+}
+
 /* ── ICRPG Character Sheet ──────────────────────────────── */
 .icrpg-stat-table td { vertical-align: middle; }
 .icrpg-stat-table .stat-total { font-weight: 700; font-size: 1.1em; }
