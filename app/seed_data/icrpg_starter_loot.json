@@ -44,27 +44,43 @@
       {
         "name": "Mixed Armor Garb",
         "type": "Armor",
-        "description": "Common garb for adventurers, a mix of padded gambeson, leather belts, and armor odds & ends. +2 DEFENSE"
+        "description": "Common garb for adventurers, a mix of padded gambeson, leather belts, and armor odds & ends. +2 DEFENSE",
+        "effects": {
+          "DEFENSE": 2
+        }
       },
       {
         "name": "Heavy Plate and Chain Armor",
         "type": "Armor",
-        "description": "A cumbersome set of steel plates, chainmail, and steel boots for heavy combat. +4 DEFENSE, DEX rolls always HARD"
+        "description": "A cumbersome set of steel plates, chainmail, and steel boots for heavy combat. +4 DEFENSE, DEX rolls always HARD",
+        "effects": {
+          "DEFENSE": 4
+        }
       },
       {
         "name": "Common Shield",
         "type": "Shield",
-        "description": "A round wooden shield and strap suited for travel on foot. +2 DEFENSE. If hit, sacrifice the shield to absorb all of any 1 attack."
+        "description": "A round wooden shield and strap suited for travel on foot. +2 DEFENSE. If hit, sacrifice the shield to absorb all of any 1 attack.",
+        "effects": {
+          "DEFENSE": 2
+        }
       },
       {
         "name": "Iron Shield",
         "type": "Shield",
-        "description": "This heavy shield is steel with iron bands. +3 DEFENSE. While using this shield, you cannot use one hand, occupies 2 inventory spaces."
+        "description": "This heavy shield is steel with iron bands. +3 DEFENSE. While using this shield, you cannot use one hand, occupies 2 inventory spaces.",
+        "effects": {
+          "DEFENSE": 3
+        },
+        "slot_cost": 2
       },
       {
         "name": "Traveler's Garb",
         "type": "Armor",
-        "description": "A lighter, more comfortable set of clothes for travelers. Only +1 DEFENSE, but includes 2 extra spaces for inventory."
+        "description": "A lighter, more comfortable set of clothes for travelers. Only +1 DEFENSE, but includes 2 extra spaces for inventory.",
+        "effects": {
+          "DEFENSE": 1
+        }
       }
     ]
   },
@@ -108,7 +124,8 @@
       {
         "name": "Great Sword",
         "type": "Weapon",
-        "description": "A tremendous two-handed blade 5 feet long. This weapon occupies 3 inventory spaces, but always inflicts ULTIMATE damage."
+        "description": "A tremendous two-handed blade 5 feet long. This weapon occupies 3 inventory spaces, but always inflicts ULTIMATE damage.",
+        "slot_cost": 3
       },
       {
         "name": "Knife Belt",
@@ -172,27 +189,42 @@
       {
         "name": "Vac Suit",
         "type": "Armor",
-        "description": "+1 DEFENSE. Nanotechnology integrates into any clothing for deep space operation, including energy helmet, gloves, and x-wave radio unit."
+        "description": "+1 DEFENSE. Nanotechnology integrates into any clothing for deep space operation, including energy helmet, gloves, and x-wave radio unit.",
+        "effects": {
+          "DEFENSE": 1
+        }
       },
       {
         "name": "Hard Suit",
         "type": "Armor",
-        "description": "+3 DEFENSE. A vac suit with an armored exterior for dangerous space work. DEX rolls are never EASY, stealth rolls only succeed on natural 20."
+        "description": "+3 DEFENSE. A vac suit with an armored exterior for dangerous space work. DEX rolls are never EASY, stealth rolls only succeed on natural 20.",
+        "effects": {
+          "DEFENSE": 3
+        }
       },
       {
         "name": "Link Armor",
         "type": "Armor",
-        "description": "+1 DEFENSE. A light reinforcement to any clothing made from tiny links of nonmetallic ceramic material."
+        "description": "+1 DEFENSE. A light reinforcement to any clothing made from tiny links of nonmetallic ceramic material.",
+        "effects": {
+          "DEFENSE": 1
+        }
       },
       {
         "name": "Plasteel Armor",
         "type": "Armor",
-        "description": "+3 DEFENSE. Heavy armor plating ignores any attack of 2 or less damage, but the bulk of it makes DEX rolls always HARD."
+        "description": "+3 DEFENSE. Heavy armor plating ignores any attack of 2 or less damage, but the bulk of it makes DEX rolls always HARD.",
+        "effects": {
+          "DEFENSE": 3
+        }
       },
       {
         "name": "Energy Shield",
         "type": "Shield",
-        "description": "A small wrist unit that is activated to emit a glowing round force shield. +2 DEFENSE. DEFENSE rolls against energy weapons are EASY."
+        "description": "A small wrist unit that is activated to emit a glowing round force shield. +2 DEFENSE. DEFENSE rolls against energy weapons are EASY.",
+        "effects": {
+          "DEFENSE": 2
+        }
       },
       {
         "name": "Vibro Blade",
@@ -221,7 +253,8 @@
       {
         "name": "Particle Cannon",
         "type": "Weapon",
-        "description": "A heavy military weapon. Occupies 3 inventory slots. Sprays of fire hit 1D4 enemy targets on a successful attack, each taking the damage rolled."
+        "description": "A heavy military weapon. Occupies 3 inventory slots. Sprays of fire hit 1D4 enemy targets on a successful attack, each taking the damage rolled.",
+        "slot_cost": 3
       },
       {
         "name": "Blast Rifle",
@@ -231,7 +264,8 @@
       {
         "name": "Blaster",
         "type": "Weapon",
-        "description": "The sturdy, basic sidearm of space. Easily concealed under any armor or clothes. Occupies NO inventory space. 'Spacer's best friend.'"
+        "description": "The sturdy, basic sidearm of space. Easily concealed under any armor or clothes. Occupies NO inventory space. 'Spacer's best friend.'",
+        "slot_cost": 0
       },
       {
         "name": "Chem Rail",
@@ -251,7 +285,8 @@
       {
         "name": "Karambit Blades",
         "type": "Weapon",
-        "description": "Small talon knives designed for killing. Occupies no inventory space. Easily concealed. Natural 20 inflicts maximum + ULTIMATE."
+        "description": "Small talon knives designed for killing. Occupies no inventory space. Easily concealed. Natural 20 inflicts maximum + ULTIMATE.",
+        "slot_cost": 0
       },
       {
         "name": "Blip Module",

@@ -1012,11 +1012,11 @@ class ICRPGCharacterSheet(db.Model):
 
     @property
     def equipped_slots_used(self):
-        return sum((cl.loot_def.slot_cost if cl.loot_def else 1) for cl in self.equipped_loot)
+        return sum((cl.loot_def.slot_cost or 1) if cl.loot_def else 1 for cl in self.equipped_loot)
 
     @property
     def carried_slots_used(self):
-        return sum((cl.loot_def.slot_cost if cl.loot_def else 1) for cl in self.carried_loot)
+        return sum((cl.loot_def.slot_cost or 1) if cl.loot_def else 1 for cl in self.carried_loot)
 
     def __repr__(self):
         return f'<ICRPGCharacterSheet pc={self.pc_id}>'

@@ -515,6 +515,11 @@ def create_app():
                     existing = ICRPGLootDef.query.filter_by(
                         name=entry['name'], is_builtin=True).first()
                     if existing:
+                        # Update effects/slot_cost on re-seed
+                        if 'effects' in entry:
+                            existing.effects = entry['effects']
+                        if 'slot_cost' in entry:
+                            existing.slot_cost = entry['slot_cost']
                         stats['skipped'] += 1
                         continue
                     obj = ICRPGLootDef(
@@ -522,6 +527,8 @@ def create_app():
                         name=entry['name'],
                         loot_type=entry.get('type', 'Item'),
                         description=entry.get('description', ''),
+                        effects=entry.get('effects'),
+                        slot_cost=entry.get('slot_cost', 1),
                         is_starter=True, is_builtin=True,
                         source='ICRPG Master Edition')
                     db.session.add(obj)
@@ -535,15 +542,22 @@ def create_app():
             with open(path) as f:
                 spells_data = _json.load(f)
             for sp in spells_data:
+                # Derive casting_stat from spell type
+                stype = (sp.get('type') or '').lower()
+                casting_stat = 'INT' if stype == 'arcane' else ('WIS' if stype in ('holy', 'infernal') else None)
+
                 existing = ICRPGSpell.query.filter_by(
                     name=sp['name'], is_builtin=True).first()
                 if existing:
+                    # Update casting_stat on re-seed
+                    if casting_stat and not existing.casting_stat:
+                        existing.casting_stat = casting_stat
                     stats['skipped'] += 1
                     continue
                 obj = ICRPGSpell(
                     name=sp['name'],
                     spell_type=sp.get('type'),
-                    casting_stat=None,  # could parse from type later
+                    casting_stat=casting_stat,
                     level=sp.get('level', 1),
                     target=sp.get('target'),
                     duration=sp.get('duration'),
