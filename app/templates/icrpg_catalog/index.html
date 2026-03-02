@@ -187,6 +187,25 @@
     {% else %}
     <p class="text-muted">No homebrew abilities yet.</p>
     {% endif %}
+
+    {% if bab %}
+    <details class="mt-3">
+        <summary class="text-muted small">Show built-in abilities ({{ bab|length }})</summary>
+        <table class="table table-dark table-sm mt-2">
+            <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th></tr></thead>
+            <tbody>
+            {% for ab in bab %}
+            <tr>
+                <td>{{ ab.name }}</td>
+                <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
+                <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
+                <td class="text-muted small">{{ ab.description[:60] }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% endif %}
 </div>
 
 {# ═══════════════════════════════════════════════════════════════ #}
@@ -219,6 +238,25 @@
     </table>
     {% else %}
     <p class="text-muted">No homebrew loot yet.</p>
+    {% endif %}
+
+    {% if bld %}
+    <details class="mt-3">
+        <summary class="text-muted small">Show built-in loot ({{ bld|length }})</summary>
+        <table class="table table-dark table-sm mt-2">
+            <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th></tr></thead>
+            <tbody>
+            {% for ld in bld %}
+            <tr>
+                <td>{{ ld.name }}</td>
+                <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
+                <td class="text-muted small">{{ ld.slot_cost }}</td>
+                <td class="text-muted small">{{ ld.description[:60] }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
     {% endif %}
 </div>
 
@@ -254,6 +292,26 @@
     {% else %}
     <p class="text-muted">No homebrew spells yet.</p>
     {% endif %}
+
+    {% if bsp %}
+    <details class="mt-3">
+        <summary class="text-muted small">Show built-in spells ({{ bsp|length }})</summary>
+        <table class="table table-dark table-sm mt-2">
+            <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th></tr></thead>
+            <tbody>
+            {% for sp in bsp %}
+            <tr>
+                <td>{{ sp.name }}</td>
+                <td class="text-muted small">{{ sp.spell_type or '—' }}</td>
+                <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
+                <td class="text-muted small">{{ sp.level }}</td>
+                <td class="text-muted small">{{ sp.description[:50] }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% endif %}
 </div>
 
 {# ═══════════════════════════════════════════════════════════════ #}
@@ -285,6 +343,24 @@
     </table>
     {% else %}
     <p class="text-muted">No homebrew milestone paths yet.</p>
+    {% endif %}
+
+    {% if bmp %}
+    <details class="mt-3">
+        <summary class="text-muted small">Show built-in milestone paths ({{ bmp|length }})</summary>
+        <table class="table table-dark table-sm mt-2">
+            <thead><tr><th>Name</th><th>Description</th><th>Tiers</th></tr></thead>
+            <tbody>
+            {% for mp in bmp %}
+            <tr>
+                <td>{{ mp.name }}</td>
+                <td class="text-muted small">{{ mp.description[:60] }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
+                <td class="text-muted small">{{ mp.tiers | length if mp.tiers else 0 }} tiers</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
     {% endif %}
 </div>
 

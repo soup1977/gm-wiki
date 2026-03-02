@@ -76,6 +76,10 @@ def index():
     bw = ICRPGWorld.query.filter_by(is_builtin=True).order_by(ICRPGWorld.name).all()
     blf = ICRPGLifeForm.query.filter_by(is_builtin=True).order_by(ICRPGLifeForm.name).all()
     bt = ICRPGType.query.filter_by(is_builtin=True).order_by(ICRPGType.name).all()
+    bab = ICRPGAbility.query.filter_by(is_builtin=True).order_by(ICRPGAbility.name).all()
+    bld = ICRPGLootDef.query.filter_by(is_builtin=True).order_by(ICRPGLootDef.name).all()
+    bsp = ICRPGSpell.query.filter_by(is_builtin=True).order_by(ICRPGSpell.name).all()
+    bmp = ICRPGMilestonePath.query.filter_by(is_builtin=True).order_by(ICRPGMilestonePath.name).all()
 
     # All worlds + types visible to this campaign (for dropdown parents)
     all_worlds = ICRPGWorld.query.filter(
@@ -88,7 +92,7 @@ def index():
     return render_template('icrpg_catalog/index.html',
                            campaign=campaign,
                            hw=hw, hlf=hlf, ht=ht, hab=hab, hld=hld, hsp=hsp, hmp=hmp,
-                           bw=bw, blf=blf, bt=bt,
+                           bw=bw, blf=blf, bt=bt, bab=bab, bld=bld, bsp=bsp, bmp=bmp,
                            all_worlds=all_worlds, all_types=all_types,
                            tab=request.args.get('tab', 'worlds'))
 
