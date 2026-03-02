@@ -104,7 +104,8 @@ gm-wiki/
 | 19c | ICRPG Character Creation Wizard (8-step multi-step form) | Complete — PR #20 |
 | 19d | ICRPG Homebrew Catalog CRUD, Add Loot/Ability UI, wiki/combat integration | Complete — PR #21 |
 | 19e | Player Sheet Permissions (loot/ability for owners, per-PC stat toggle) | Complete — PR #22 |
-| 19f | ICRPG Loot & Ability Mechanics (effects parser, smart filtering, slot costs, effect badges) | In Progress — see docs/phase-19f-plan.md |
+| 19f | ICRPG Loot & Ability Mechanics (effects parser, smart filtering, slot costs, effect badges) | Complete — PR #23 |
+| 19g | Active Effects Display (collapsible text effects from equipped loot & abilities) | In Progress — see docs/phase-19g-plan.md |
 
 ---
 
