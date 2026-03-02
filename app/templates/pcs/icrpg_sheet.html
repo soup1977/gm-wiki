@@ -94,92 +94,9 @@
         </div>
         {% endif %}
 
-        {# ── CORE STATS ──────────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2"><strong>Core Stats</strong></div>
-            <div class="card-body p-0">
-                <table class="table table-dark table-sm mb-0 icrpg-stat-table">
-                    <thead>
-                        <tr class="text-muted small">
-                            <th>Stat</th><th class="text-center">Base</th>
-                            <th class="text-center">Race</th><th class="text-center">Loot</th>
-                            <th class="text-end">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for key in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] %}
-                        {% set base = (sheet | attr('stat_' + key.lower()) or 0) %}
-                        {% set race_val = sheet._lf_bonus(key) %}
-                        {% set race = race_val if race_val is number else 0 %}
-                        {% set loot = sheet._loot_bonus(key) %}
-                        {% set total = sheet.total_stat(key) %}
-                        <tr>
-                            <td>{{ key }}</td>
-                            <td class="text-center" id="icrpg-stat-base-{{ key.lower() }}">
-                                {% if can_edit_stats %}
-                                <div class="d-inline-flex align-items-center gap-1">
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="-1">-</button>
-                                    <span class="icrpg-stat-base-val">{{ base }}</span>
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="1">+</button>
-                                </div>
-                                {% else %}
-                                {{ base }}
-                                {% endif %}
-                            </td>
-                            <td class="text-center stat-bonus">{% if race %}+{{ race }}{% else %}&mdash;{% endif %}</td>
-                            <td class="text-center stat-bonus">{% if loot %}+{{ loot }}{% else %}&mdash;{% endif %}</td>
-                            <td class="text-end stat-total" id="icrpg-stat-{{ key }}">{{ total }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        {# ── EFFORT ───────────────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2"><strong>Effort</strong></div>
-            <div class="card-body p-0">
-                <table class="table table-dark table-sm mb-0 icrpg-stat-table">
-                    <thead>
-                        <tr class="text-muted small">
-                            <th>Type</th><th class="text-center">Die</th>
-                            <th class="text-center">Base</th><th class="text-center">Bonus</th>
-                            <th class="text-end">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for key in sheet.EFFORT_KEYS %}
-                        {% set base = (sheet | attr('effort_' + key) or 0) %}
-                        {% set effort_key = key.upper() + '_EFFORT' %}
-                        {% set bonus = sheet._lf_bonus(effort_key) + sheet._loot_bonus(effort_key) %}
-                        {% set total = sheet.total_effort(key) %}
-                        <tr>
-                            <td>{{ key | capitalize }}</td>
-                            <td class="text-center text-muted">{{ sheet.EFFORT_DICE[key] }}</td>
-                            <td class="text-center" id="icrpg-effort-base-{{ key }}">
-                                {% if can_edit_stats %}
-                                <div class="d-inline-flex align-items-center gap-1">
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="-1">-</button>
-                                    <span class="icrpg-effort-base-val">{{ base }}</span>
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="1">+</button>
-                                </div>
-                                {% else %}
-                                {{ base }}
-                                {% endif %}
-                            </td>
-                            <td class="text-center stat-bonus">{% if bonus %}+{{ bonus }}{% else %}&mdash;{% endif %}</td>
-                            <td class="text-end stat-total" id="icrpg-effort-{{ key }}">{{ total }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
         {# ── STATUS ───────────────────────────────────────────── #}
         <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2"><strong>Status</strong></div>
+            <div class="card-header py-2"><strong><i class="bi bi-heart-pulse text-danger me-2"></i>Status</strong></div>
             <div class="card-body">
 
                 {# GM toggle for player stat editing #}
@@ -273,15 +190,98 @@
             </div>
         </div>
 
+        {# ── CORE STATS ──────────────────────────────────────── #}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Core Stats</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-sm mb-0 icrpg-stat-table">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Stat</th><th class="text-center">Base</th>
+                            <th class="text-center">Race</th><th class="text-center">Loot</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] %}
+                        {% set base = (sheet | attr('stat_' + key.lower()) or 0) %}
+                        {% set race_val = sheet._lf_bonus(key) %}
+                        {% set race = race_val if race_val is number else 0 %}
+                        {% set loot = sheet._loot_bonus(key) %}
+                        {% set total = sheet.total_stat(key) %}
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td class="text-center" id="icrpg-stat-base-{{ key.lower() }}">
+                                {% if can_edit_stats %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="-1">-</button>
+                                    <span class="icrpg-stat-base-val">{{ base }}</span>
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-stat-adj" data-key="{{ key }}" data-delta="1">+</button>
+                                </div>
+                                {% else %}
+                                {{ base }}
+                                {% endif %}
+                            </td>
+                            <td class="text-center stat-bonus">{% if race %}+{{ race }}{% else %}&mdash;{% endif %}</td>
+                            <td class="text-center stat-bonus">{% if loot %}+{{ loot }}{% else %}&mdash;{% endif %}</td>
+                            <td class="text-end stat-total" id="icrpg-stat-{{ key }}">{{ total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ── EFFORT ───────────────────────────────────────────── #}
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-header py-2"><strong>Effort</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-sm mb-0 icrpg-stat-table">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Type</th><th class="text-center">Die</th>
+                            <th class="text-center">Base</th><th class="text-center">Bonus</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key in sheet.EFFORT_KEYS %}
+                        {% set base = (sheet | attr('effort_' + key) or 0) %}
+                        {% set effort_key = key.upper() + '_EFFORT' %}
+                        {% set bonus = sheet._lf_bonus(effort_key) + sheet._loot_bonus(effort_key) %}
+                        {% set total = sheet.total_effort(key) %}
+                        <tr>
+                            <td>{{ key | capitalize }}</td>
+                            <td class="text-center text-muted">{{ sheet.EFFORT_DICE[key] }}</td>
+                            <td class="text-center" id="icrpg-effort-base-{{ key }}">
+                                {% if can_edit_stats %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="-1">-</button>
+                                    <span class="icrpg-effort-base-val">{{ base }}</span>
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 icrpg-effort-adj" data-key="{{ key }}" data-delta="1">+</button>
+                                </div>
+                                {% else %}
+                                {{ base }}
+                                {% endif %}
+                            </td>
+                            <td class="text-center stat-bonus">{% if bonus %}+{{ bonus }}{% else %}&mdash;{% endif %}</td>
+                            <td class="text-end stat-total" id="icrpg-effort-{{ key }}">{{ total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     {# ── RIGHT COLUMN ────────────────────────────────────────── #}
     <div class="col-lg-8">
 
         {# ── EQUIPPED LOOT ────────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3">
+        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #198754 !important;">
             <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <strong>Equipped Loot</strong>
+                <strong><i class="bi bi-shield-shaded text-success me-2"></i>Equipped Loot</strong>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small" id="icrpg-equipped-slots">{{ sheet.equipped_slots_used }} / 10 slots</span>
                     {% if can_edit %}
@@ -388,12 +388,12 @@
             {% endif %}
         {% endfor %}
         {% if active_effects %}
-        <div class="card bg-dark border-secondary mb-3">
+        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #0dcaf0 !important;">
             <div class="card-header py-2 d-flex justify-content-between align-items-center"
                  data-bs-toggle="collapse" data-bs-target="#activeEffectsBody" role="button"
                  style="cursor:pointer;">
                 <div>
-                    <strong>Active Effects</strong>
+                    <strong><i class="bi bi-lightning-charge text-info me-2"></i>Active Effects</strong>
                     <span class="text-muted small ms-2">{{ active_effects|length }} effects</span>
                 </div>
                 <i class="bi bi-chevron-down text-muted"></i>
@@ -417,9 +417,9 @@
         {% endif %}
 
         {# ── CARRIED LOOT ─────────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3">
+        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #0d6efd !important;">
             <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <strong>Carried Loot</strong>
+                <strong><i class="bi bi-backpack text-primary me-2"></i>Carried Loot</strong>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small" id="icrpg-carried-slots">{{ sheet.carried_slots_used }} / 10 slots</span>
                     {% if can_edit %}
@@ -475,9 +475,9 @@
         {% set milestone = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'milestone') | list %}
         {% set mastery = sheet.char_abilities | selectattr('ability_kind', 'equalto', 'mastery') | list %}
 
-        <div class="card bg-dark border-secondary mb-3">
+        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #6f42c1 !important;">
             <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                <strong>Abilities</strong>
+                <strong><i class="bi bi-stars text-purple me-2" style="color: #6f42c1 !important;"></i>Abilities</strong>
                 {% if can_edit %}
                 <button class="btn btn-sm btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#addAbilityModal" title="Add Ability">
                     <i class="bi bi-plus-circle"></i>
@@ -545,8 +545,8 @@
         </div>
 
         {# ── MASTERY PROGRESS ─────────────────────────────────── #}
-        <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header py-2"><strong>Mastery Progress</strong></div>
+        <div class="card bg-dark border-secondary mb-3" style="border-top: 3px solid #dc3545 !important;">
+            <div class="card-header py-2"><strong><i class="bi bi-trophy text-danger me-2"></i>Mastery Progress</strong></div>
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span>Natural 20s: <strong id="icrpg-nat20-count">{{ sheet.nat20_count }}</strong> / 20</span>
