@@ -206,11 +206,13 @@
         if (typeof SHEET_CATALOG !== 'undefined') {
             var addLootModal = document.getElementById('addLootModal');
             var lootTypeFilter = document.getElementById('loot-type-filter');
+            var lootSearch = document.getElementById('loot-search');
             var lootCatalogSelect = document.getElementById('loot-catalog-select');
             var lootCatalogDesc = document.getElementById('loot-catalog-desc');
             var spellCatalogSelect = document.getElementById('spell-catalog-select');
             var spellCatalogDesc = document.getElementById('spell-catalog-desc');
             var spellStatFilter = document.getElementById('spell-stat-filter');
+            var spellSearch = document.getElementById('spell-search');
             var lootSlotSelect = document.getElementById('loot-slot-select');
 
             // Populate loot type filter options
@@ -226,10 +228,13 @@
 
             function populateLootSelect() {
                 var filter = lootTypeFilter.value;
+                var search = (lootSearch.value || '').toLowerCase();
                 lootCatalogSelect.innerHTML = '';
                 lootCatalogDesc.textContent = '';
                 SHEET_CATALOG.loot_defs.forEach(function (ld) {
                     if (filter && ld.loot_type !== filter) return;
+                    if (search && ld.name.toLowerCase().indexOf(search) === -1 &&
+                        (ld.description || '').toLowerCase().indexOf(search) === -1) return;
                     var opt = document.createElement('option');
                     opt.value = ld.id;
                     var label = ld.name;
@@ -243,10 +248,13 @@
 
             function populateSpellSelect() {
                 var filter = spellStatFilter ? spellStatFilter.value : '';
+                var search = (spellSearch.value || '').toLowerCase();
                 spellCatalogSelect.innerHTML = '';
                 spellCatalogDesc.textContent = '';
                 SHEET_CATALOG.spells.forEach(function (sp) {
                     if (filter && sp.casting_stat !== filter) return;
+                    if (search && sp.name.toLowerCase().indexOf(search) === -1 &&
+                        (sp.description || '').toLowerCase().indexOf(search) === -1) return;
                     var opt = document.createElement('option');
                     opt.value = sp.id;
                     var label = sp.name;
@@ -262,9 +270,11 @@
             populateSpellSelect();
 
             lootTypeFilter.addEventListener('change', populateLootSelect);
+            lootSearch.addEventListener('input', populateLootSelect);
             if (spellStatFilter) {
                 spellStatFilter.addEventListener('change', populateSpellSelect);
             }
+            spellSearch.addEventListener('input', populateSpellSelect);
 
             lootCatalogSelect.addEventListener('change', function () {
                 var sel = lootCatalogSelect.options[lootCatalogSelect.selectedIndex];
