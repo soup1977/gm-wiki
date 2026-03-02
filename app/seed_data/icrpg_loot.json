@@ -1175,7 +1175,8 @@
         "type": "Armor",
         "description": "+1 DEFENSE, Extend carry capacity to 12 LOOT",
         "effects": {
-          "DEFENSE": 1
+          "DEFENSE": 1,
+          "CARRIED_SLOTS": 2
         }
       },
       {
@@ -2469,7 +2470,8 @@
         "type": "Armor",
         "description": "+2 DEFENSE, A compact hydraulic arm, STR checks EASY, EQUIP 12 slots",
         "effects": {
-          "DEFENSE": 2
+          "DEFENSE": 2,
+          "EQUIPPED_SLOTS": 2
         },
         "slot_cost": 12
       },
@@ -2959,14 +2961,18 @@
         "type": "Armor",
         "description": "+1 DEFENSE, Gain 3 more slots in EQUIPPED gear",
         "effects": {
-          "DEFENSE": 1
+          "DEFENSE": 1,
+          "EQUIPPED_SLOTS": 3
         }
       },
       {
         "roll": 41,
         "name": "Ronaldo's Backwagon",
         "type": "Item",
-        "description": "Gain 10 more slots in CARRIED gear"
+        "description": "Gain 10 more slots in CARRIED gear",
+        "effects": {
+          "CARRIED_SLOTS": 10
+        }
       },
       {
         "roll": 42,
@@ -3035,7 +3041,10 @@
         "roll": 51,
         "name": "Lemninkainen's Wondrous Sack",
         "type": "Item",
-        "description": "Increase your CARRIED gear slots to 20"
+        "description": "Increase your CARRIED gear slots to 20",
+        "effects": {
+          "CARRIED_SLOTS": 10
+        }
       },
       {
         "roll": 52,
@@ -4142,7 +4151,10 @@
         "roll": 22,
         "name": "Gambler's Vest",
         "type": "Item",
-        "description": "A vest with hidden pockets, EQUIP 15 pieces of GEAR, 5 secretly"
+        "description": "A vest with hidden pockets, EQUIP 15 pieces of GEAR, 5 secretly",
+        "effects": {
+          "EQUIPPED_SLOTS": 5
+        }
       },
       {
         "roll": 23,
