@@ -731,6 +731,7 @@ class ICRPGWorld(db.Model):
     description = db.Column(db.Text)
     is_builtin  = db.Column(db.Boolean, default=False)
     campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+    basic_loot_count = db.Column(db.Integer, default=4)
 
     campaign    = db.relationship('Campaign', backref='icrpg_homebrew_worlds')
     life_forms  = db.relationship('ICRPGLifeForm', backref='world', lazy=True)

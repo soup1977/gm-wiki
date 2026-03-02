@@ -34,14 +34,15 @@
     </div>
     {% if hw %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Description</th><th class="text-center">Loot Picks</th><th style="width:100px"></th></tr></thead>
         <tbody>
         {% for w in hw %}
         <tr>
             <td>{{ w.name }}</td>
-            <td class="text-muted small">{{ w.description[:80] }}{% if w.description|length > 80 %}...{% endif %}</td>
+            <td class="text-muted small">{{ w.description[:80] if w.description else '' }}{% if w.description and w.description|length > 80 %}...{% endif %}</td>
+            <td class="text-muted small text-center">{{ w.basic_loot_count or 4 }}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('world', 'edit', {{ w.id }}, {{ w | tojson }})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('world', 'edit', {{ w.id }}, {{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4} | tojson }})"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, '{{ w.name }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
@@ -224,12 +225,12 @@
         <tbody>
         {% for ld in hld %}
         <tr>
-            <td>{{ ld.name }}</td>
+            <td>{{ ld.name }}{% if ld.is_starter %} <span class="badge bg-info small">Starter</span>{% endif %}</td>
             <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
             <td class="text-muted small">{{ ld.slot_cost }}</td>
             <td class="text-muted small">{{ ld.effects | tojson if ld.effects else '—' }}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('loot', 'edit', {{ ld.id }}, {{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','world_id':ld.world_id,'effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost or 0} | tojson }})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('loot', 'edit', {{ ld.id }}, {{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','world_id':ld.world_id,'effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost or 0,'is_starter':ld.is_starter} | tojson }})"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, '{{ ld.name }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>

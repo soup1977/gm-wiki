@@ -71,7 +71,9 @@
         switch (entity) {
             case 'world':
                 html = field('name', 'Name', data.name) +
-                    field('description', 'Description', data.description, 'textarea');
+                    field('description', 'Description', data.description, 'textarea') +
+                    field('basic-loot-count', 'Basic Loot Picks', data.basic_loot_count || 4, 'number',
+                        'How many basic loot items characters choose (0 to skip)');
                 break;
             case 'lifeform':
                 html = field('name', 'Name', data.name) +
@@ -105,7 +107,12 @@
                         typeof data.effects === 'object' ? JSON.stringify(data.effects) : (data.effects || ''),
                         'text', '{"DEFENSE": 2, "STR": 1, "WEAPON_EFFORT": 1}') +
                     field('slot-cost', 'Slot Cost', data.slot_cost || 1, 'number') +
-                    field('coin-cost', 'Coin Cost', data.coin_cost || 0, 'number');
+                    field('coin-cost', 'Coin Cost', data.coin_cost || 0, 'number') +
+                    '<div class="mb-2 form-check">' +
+                    '<input type="checkbox" class="form-check-input" id="cf-is-starter"' +
+                    (data.is_starter ? ' checked' : '') + '>' +
+                    '<label class="form-check-label small" for="cf-is-starter">' +
+                    'Basic/Starter Loot (available during character creation)</label></div>';
                 break;
             case 'spell':
                 html = field('name', 'Name', data.name) +
@@ -132,7 +139,8 @@
         var v = function (id) { var el = document.getElementById('cf-' + id); return el ? el.value.trim() : ''; };
         switch (entity) {
             case 'world':
-                data = { name: v('name'), description: v('description') };
+                data = { name: v('name'), description: v('description'),
+                    basic_loot_count: parseInt(v('basic-loot-count')) || 4 };
                 break;
             case 'lifeform':
                 var bonuses = v('bonuses');
@@ -160,10 +168,12 @@
                 var effects = v('effects');
                 try { effects = effects ? JSON.parse(effects) : {}; }
                 catch (e) { alert('Invalid effects JSON.'); return null; }
+                var isStarter = document.getElementById('cf-is-starter');
                 data = { name: v('name'), description: v('description'),
                     loot_type: v('loot-type'), effects: effects,
                     slot_cost: parseInt(v('slot-cost')) || 1,
-                    coin_cost: parseInt(v('coin-cost')) || 0 };
+                    coin_cost: parseInt(v('coin-cost')) || 0,
+                    is_starter: isStarter ? isStarter.checked : false };
                 var ws3 = document.getElementById('cf-world-id');
                 data.world_id = ws3 && ws3.value ? parseInt(ws3.value) : null;
                 break;

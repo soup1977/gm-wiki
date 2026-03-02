@@ -13,7 +13,7 @@
 <div class="col-lg-8 col-md-10">
 
 <h2 class="mb-1">ICRPG Character Creator</h2>
-<p class="text-muted small mb-3">Step <span id="step-num">1</span> of 8</p>
+<p class="text-muted small mb-3">Step <span id="step-num">1</span> of 9</p>
 
 <!-- Progress bar -->
 <div class="progress mb-4" style="height: 6px;">
@@ -156,8 +156,29 @@
     </div>
 </div>
 
-<!-- ═══ Step 8: Review & Create ═══ -->
+<!-- ═══ Step 8: Basic World Loot ═══ -->
 <div class="wizard-step d-none" id="step-8">
+    <h4 class="mb-3">Choose Basic Loot</h4>
+    <p class="text-muted small" id="basic-loot-instructions">
+        Select items from your world's basic loot pool.
+    </p>
+    <p class="text-center">Selected: <strong id="basic-loot-count">0</strong> / <strong id="basic-loot-max">4</strong></p>
+    <div id="basic-loot-cards" class="row g-3 mb-4"></div>
+    <div id="no-basic-loot" class="text-muted text-center py-4 d-none">
+        <p>No basic loot available for this world.</p>
+    </div>
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-warning" id="btn-next-8" disabled onclick="goNext()">
+            Next <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ═══ Step 9: Review & Create ═══ -->
+<div class="wizard-step d-none" id="step-9">
     <h4 class="mb-3">Name & Review</h4>
     <div class="mb-3">
         <label for="inp-charname" class="form-label">Character Name <span class="text-danger">*</span></label>

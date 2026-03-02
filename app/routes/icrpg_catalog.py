@@ -113,8 +113,11 @@ def create_world():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Name is required.'}), 400
+    blc = int(data.get('basic_loot_count', 4))
+    if blc < 0:
+        blc = 0
     w = ICRPGWorld(name=name, description=(data.get('description') or '').strip(),
-                   is_builtin=False, campaign_id=cid)
+                   is_builtin=False, campaign_id=cid, basic_loot_count=blc)
     db.session.add(w)
     db.session.commit()
     return jsonify({'ok': True, 'id': w.id})
@@ -136,6 +139,10 @@ def edit_world(item_id):
         return jsonify({'error': 'Name is required.'}), 400
     item.name = name
     item.description = (data.get('description') or '').strip()
+    blc = int(data.get('basic_loot_count', item.basic_loot_count or 4))
+    if blc < 0:
+        blc = 0
+    item.basic_loot_count = blc
     db.session.commit()
     return jsonify({'ok': True})
 
@@ -389,6 +396,7 @@ def create_loot():
         effects=effects,
         slot_cost=int(data.get('slot_cost', 1)),
         coin_cost=int(data.get('coin_cost', 0)) if data.get('coin_cost') else 0,
+        is_starter=bool(data.get('is_starter', False)),
         is_builtin=False, campaign_id=cid)
     db.session.add(ld)
     db.session.commit()
@@ -423,6 +431,7 @@ def edit_loot(item_id):
     item.effects = effects
     item.slot_cost = int(data.get('slot_cost', item.slot_cost))
     item.coin_cost = int(data.get('coin_cost', 0)) if data.get('coin_cost') else 0
+    item.is_starter = bool(data.get('is_starter', item.is_starter))
     db.session.commit()
     return jsonify({'ok': True})
 
