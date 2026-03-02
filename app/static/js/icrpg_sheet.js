@@ -83,6 +83,47 @@
             });
         });
 
+        // ── Inline edit for HP and Coin ─────────────────────────
+        function makeEditable(el, action, bodyKey, onSave) {
+            if (!el || !el.classList.contains('icrpg-editable')) return;
+            el.style.cursor = 'pointer';
+            el.style.borderBottom = '1px dashed rgba(255,255,255,0.3)';
+            el.addEventListener('click', function () {
+                if (el.querySelector('input')) return;
+                var current = el.textContent.trim();
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.value = current;
+                input.className = 'form-control form-control-sm bg-dark text-light border-secondary text-center';
+                input.style.width = '4em';
+                input.style.display = 'inline-block';
+                el.textContent = '';
+                el.appendChild(input);
+                input.focus();
+                input.select();
+                function save() {
+                    var val = parseInt(input.value) || 0;
+                    var body = {};
+                    body[bodyKey] = val;
+                    postAction(action, body, function (data) {
+                        onSave(data);
+                    });
+                }
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') { e.preventDefault(); save(); }
+                    if (e.key === 'Escape') { el.textContent = current; }
+                });
+                input.addEventListener('blur', save);
+            });
+        }
+
+        makeEditable(document.getElementById('icrpg-hp-current'), 'hp', 'value', function (data) {
+            updateHpDisplay(data);
+        });
+        makeEditable(document.getElementById('icrpg-coin'), 'coin', 'value', function (data) {
+            document.getElementById('icrpg-coin').textContent = data.coin;
+        });
+
         // ── Hero Coin toggle ────────────────────────────────────
         var coinBtn = document.getElementById('icrpg-hero-coin-btn');
         if (coinBtn) {

@@ -116,7 +116,7 @@
                 <div class="mb-3">
                     <div class="d-flex align-items-center justify-content-between mb-1">
                         <span class="small fw-bold">
-                            <span id="icrpg-hp-current">{{ sheet.hp_current }}</span> / <span id="icrpg-hp-max">{{ sheet.hp_max }}</span> HP
+                            <span id="icrpg-hp-current"{% if can_edit %} class="icrpg-editable" role="button" title="Click to edit"{% endif %}>{{ sheet.hp_current }}</span> / <span id="icrpg-hp-max">{{ sheet.hp_max }}</span> HP
                         </span>
                         {% if can_edit %}
                         <div class="d-flex gap-1">
@@ -148,7 +148,7 @@
                     </div>
                     <div class="col-4">
                         <div class="text-muted small">Coin</div>
-                        <div class="fs-5 fw-bold" id="icrpg-coin">{{ sheet.coin }}</div>
+                        <div class="fs-5 fw-bold" id="icrpg-coin"{% if can_edit %} class="icrpg-editable" role="button" title="Click to edit"{% endif %}>{{ sheet.coin }}</div>
                         {% if can_edit %}
                         <div class="d-flex justify-content-center gap-1 mt-1">
                             <button class="btn btn-sm btn-outline-light py-0 px-1 icrpg-coin-btn" data-delta="-1" title="Spend Coin">-</button>
