@@ -407,16 +407,22 @@ def create_app():
             'Alfheim': 4, 'Warp Shell': 4, 'Ghost Mountain': 3,
             'Vigilante City': 3, 'Blood and Snow': 2,
         }
+        include_world_loot_map = {
+            'Ghost Mountain': ['Alfheim'],
+        }
         for w in worlds_data:
             blc = basic_loot_counts.get(w['name'], 4)
+            iwl = include_world_loot_map.get(w['name'])
             existing = ICRPGWorld.query.filter_by(name=w['name'], is_builtin=True).first()
             if existing:
                 existing.basic_loot_count = blc
+                existing.include_world_loot = iwl
                 world_map[w['name']] = existing
                 stats['skipped'] += 1
                 continue
             obj = ICRPGWorld(name=w['name'], description=w.get('description', ''),
-                            is_builtin=True, basic_loot_count=blc)
+                            is_builtin=True, basic_loot_count=blc,
+                            include_world_loot=iwl)
             db.session.add(obj)
             db.session.flush()  # get the id
             world_map[w['name']] = obj
@@ -549,9 +555,10 @@ def create_app():
             with open(path) as f:
                 spells_data = _json.load(f)
             for sp in spells_data:
-                # Derive casting_stat from spell type
+                # Use explicit casting_stat if provided, else derive from type
                 stype = (sp.get('type') or '').lower()
-                casting_stat = 'INT' if stype == 'arcane' else ('WIS' if stype in ('holy', 'infernal') else None)
+                casting_stat = sp.get('casting_stat') or (
+                    'INT' if stype == 'arcane' else ('WIS' if stype in ('holy', 'infernal') else None))
 
                 existing = ICRPGSpell.query.filter_by(
                     name=sp['name'], is_builtin=True).first()

@@ -116,8 +116,10 @@ def create_world():
     blc = int(data.get('basic_loot_count', 4))
     if blc < 0:
         blc = 0
+    incl = data.get('include_world_loot') or None
     w = ICRPGWorld(name=name, description=(data.get('description') or '').strip(),
-                   is_builtin=False, campaign_id=cid, basic_loot_count=blc)
+                   is_builtin=False, campaign_id=cid, basic_loot_count=blc,
+                   include_world_loot=incl)
     db.session.add(w)
     db.session.commit()
     return jsonify({'ok': True, 'id': w.id})
@@ -143,6 +145,7 @@ def edit_world(item_id):
     if blc < 0:
         blc = 0
     item.basic_loot_count = blc
+    item.include_world_loot = data.get('include_world_loot') or None
     db.session.commit()
     return jsonify({'ok': True})
 

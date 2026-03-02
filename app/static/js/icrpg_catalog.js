@@ -73,7 +73,10 @@
                 html = field('name', 'Name', data.name) +
                     field('description', 'Description', data.description, 'textarea') +
                     field('basic-loot-count', 'Basic Loot Picks', data.basic_loot_count || 4, 'number',
-                        'How many basic loot items characters choose (0 to skip)');
+                        'How many basic loot items characters choose (0 to skip)') +
+                    field('include-world-loot', 'Also Include Loot From',
+                        (data.include_world_loot || []).join(', '), 'text',
+                        'Comma-separated world names, e.g. Alfheim, Warp Shell');
                 break;
             case 'lifeform':
                 html = field('name', 'Name', data.name) +
@@ -139,8 +142,11 @@
         var v = function (id) { var el = document.getElementById('cf-' + id); return el ? el.value.trim() : ''; };
         switch (entity) {
             case 'world':
+                var inclRaw = v('include-world-loot');
+                var inclArr = inclRaw ? inclRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
                 data = { name: v('name'), description: v('description'),
-                    basic_loot_count: parseInt(v('basic-loot-count')) || 4 };
+                    basic_loot_count: parseInt(v('basic-loot-count')) || 4,
+                    include_world_loot: inclArr.length > 0 ? inclArr : null };
                 break;
             case 'lifeform':
                 var bonuses = v('bonuses');

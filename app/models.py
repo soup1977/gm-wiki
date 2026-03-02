@@ -732,6 +732,7 @@ class ICRPGWorld(db.Model):
     is_builtin  = db.Column(db.Boolean, default=False)
     campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
     basic_loot_count = db.Column(db.Integer, default=4)
+    include_world_loot = db.Column(db.JSON, nullable=True)  # e.g. ["Alfheim"]
 
     campaign    = db.relationship('Campaign', backref='icrpg_homebrew_worlds')
     life_forms  = db.relationship('ICRPGLifeForm', backref='world', lazy=True)
