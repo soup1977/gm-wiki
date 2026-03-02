@@ -644,11 +644,19 @@ def icrpg_remove_ability(pc_id):
 # ICRPG CHARACTER CREATION WIZARD
 # ═══════════════════════════════════════════════════════════════════════════
 
-def _serialize_catalog(worlds, life_forms, types):
+def _serialize_catalog(worlds, life_forms, types, basic_loot=None):
     """Build catalog dict for JSON embedding in the wizard template."""
+    basic_loot = basic_loot or []
     return {
         'worlds': [
-            {'id': w.id, 'name': w.name, 'description': w.description or ''}
+            {'id': w.id, 'name': w.name, 'description': w.description or '',
+             'basic_loot_count': w.basic_loot_count or 4,
+             'basic_loot': [
+                 {'id': ld.id, 'name': ld.name, 'description': ld.description or '',
+                  'loot_type': ld.loot_type or '', 'effects': ld.effects or {},
+                  'slot_cost': ld.slot_cost or 1}
+                 for ld in basic_loot if ld.world_id == w.id
+             ]}
             for w in worlds
         ],
         'life_forms': [
@@ -712,7 +720,17 @@ def icrpg_wizard():
         ICRPGType.world_id.in_(world_ids)
     ).order_by(ICRPGType.name).all()
 
-    catalog_json = _serialize_catalog(worlds, life_forms, types)
+    # Basic world loot: starter loot NOT linked via ICRPGStartingLoot (type-specific)
+    type_loot_ids = db.session.query(ICRPGStartingLoot.loot_def_id).filter(
+        ICRPGStartingLoot.loot_def_id.isnot(None)
+    ).distinct()
+    basic_loot = ICRPGLootDef.query.filter(
+        ICRPGLootDef.is_starter == True,
+        ICRPGLootDef.world_id.in_(world_ids),
+        ~ICRPGLootDef.id.in_(type_loot_ids)
+    ).order_by(ICRPGLootDef.name).all()
+
+    catalog_json = _serialize_catalog(worlds, life_forms, types, basic_loot)
 
     return render_template('pcs/icrpg_wizard.html', catalog_json=catalog_json)
 
@@ -799,6 +817,27 @@ def icrpg_create_character():
         if key not in valid_loot_keys:
             return jsonify({'error': 'Invalid loot selection.'}), 400
 
+    # ── Validate basic loot picks ────────────────────────────
+    basic_loot_picks = data.get('basic_loot_picks', [])
+    blc = world.basic_loot_count or 0
+    if blc > 0 and basic_loot_picks:
+        # Basic loot = starter loot NOT linked via ICRPGStartingLoot
+        type_loot_ids = db.session.query(ICRPGStartingLoot.loot_def_id).filter(
+            ICRPGStartingLoot.loot_def_id.isnot(None)
+        ).distinct()
+        valid_basic = ICRPGLootDef.query.filter(
+            ICRPGLootDef.is_starter == True,
+            ICRPGLootDef.world_id == world.id,
+            ~ICRPGLootDef.id.in_(type_loot_ids)
+        ).all()
+        valid_basic_ids = {ld.id for ld in valid_basic}
+
+        if len(basic_loot_picks) != blc:
+            return jsonify({'error': f'Select exactly {blc} basic loot items.'}), 400
+        for pick_id in basic_loot_picks:
+            if pick_id not in valid_basic_ids:
+                return jsonify({'error': 'Invalid basic loot selection.'}), 400
+
     # ── Create records ────────────────────────────────────────
     pc = PlayerCharacter(
         campaign_id=campaign_id,
@@ -853,6 +892,13 @@ def icrpg_create_character():
             loot_def_id=pick.get('loot_def_id'),
             spell_id=pick.get('spell_id'),
             slot='equipped', display_order=i
+        ))
+
+    for i, ld_id in enumerate(basic_loot_picks):
+        db.session.add(ICRPGCharLoot(
+            sheet_id=sheet.id,
+            loot_def_id=ld_id,
+            slot='equipped', display_order=len(loot_picks) + i
         ))
 
     db.session.commit()

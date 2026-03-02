@@ -402,14 +402,21 @@ def create_app():
         with open(path) as f:
             worlds_data = _json.load(f)
         world_map = {}  # name → ICRPGWorld instance
+        # Per-world basic loot pick counts (from ICRPG Master Edition rules)
+        basic_loot_counts = {
+            'Alfheim': 4, 'Warp Shell': 4, 'Ghost Mountain': 3,
+            'Vigilante City': 3, 'Blood and Snow': 2,
+        }
         for w in worlds_data:
+            blc = basic_loot_counts.get(w['name'], 4)
             existing = ICRPGWorld.query.filter_by(name=w['name'], is_builtin=True).first()
             if existing:
+                existing.basic_loot_count = blc
                 world_map[w['name']] = existing
                 stats['skipped'] += 1
                 continue
             obj = ICRPGWorld(name=w['name'], description=w.get('description', ''),
-                            is_builtin=True)
+                            is_builtin=True, basic_loot_count=blc)
             db.session.add(obj)
             db.session.flush()  # get the id
             world_map[w['name']] = obj

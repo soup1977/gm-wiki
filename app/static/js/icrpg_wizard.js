@@ -1,11 +1,11 @@
 /**
  * ICRPG Character Creation Wizard
- * 8-step client-side wizard with embedded catalog data.
+ * 9-step client-side wizard with embedded catalog data.
  */
 (function () {
     'use strict';
 
-    const TOTAL_STEPS = 8;
+    const TOTAL_STEPS = 9;
     const STAT_KEYS   = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
     const STAT_LABELS = {str:'STR', dex:'DEX', con:'CON', int:'INT', wis:'WIS', cha:'CHA'};
     const EFFORT_KEYS = ['basic', 'weapons', 'guns', 'magic', 'ultimate'];
@@ -27,6 +27,7 @@
         effort: {basic:0, weapons:0, guns:0, magic:0, ultimate:0},
         abilityIds: [],
         lootPicks:  [],
+        basicLootPicks: [],
     };
 
     /* ── Helpers ──────────────────────────────────────────── */
@@ -55,8 +56,24 @@
         return Object.values(obj).reduce((a, b) => a + b, 0);
     }
 
+    function getWorldObj() {
+        return CATALOG.worlds.find(w => w.id === wiz.worldId);
+    }
+
     /* ── Step Navigation ──────────────────────────────────── */
     window.showStep = function (n) {
+        // Auto-skip basic loot step if world has none
+        if (n === 8) {
+            const world = getWorldObj();
+            const hasBasicLoot = world && world.basic_loot && world.basic_loot.length > 0;
+            const maxPicks = world ? (world.basic_loot_count || 0) : 0;
+            if (!hasBasicLoot || maxPicks === 0) {
+                // Skip forward or backward depending on direction
+                if (wiz.currentStep < 8) { n = 9; }
+                else { n = 7; }
+            }
+        }
+
         document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('d-none'));
         document.getElementById('step-' + n).classList.remove('d-none');
         document.getElementById('step-num').textContent = n;
@@ -74,7 +91,8 @@
         if (n === 5) renderEffortAllocator();
         if (n === 6) renderAbilityPicker();
         if (n === 7) renderLootPicker();
-        if (n === 8) renderReview();
+        if (n === 8) renderBasicLootPicker();
+        if (n === 9) renderReview();
     };
 
     window.goNext = function () {
@@ -93,6 +111,13 @@
         }
         if (s === 7 && wiz.lootPicks.length === 0) {
             showError('Please select a starting loot item.'); return;
+        }
+        if (s === 8) {
+            const world = getWorldObj();
+            const maxPicks = world ? (world.basic_loot_count || 0) : 0;
+            if (wiz.basicLootPicks.length !== maxPicks) {
+                showError('Please select exactly ' + maxPicks + ' basic loot items.'); return;
+            }
         }
         showStep(s + 1);
     };
@@ -178,6 +203,7 @@
                 wiz.typeId = null;
                 wiz.abilityIds = [];
                 wiz.lootPicks = [];
+                wiz.basicLootPicks = [];
             }
             document.getElementById('btn-next-1').disabled = false;
         });
@@ -450,7 +476,65 @@
         return match ? match.id : null;
     }
 
-    /* ── Step 8: Review ───────────────────────────────────── */
+    /* ── Step 8: Basic World Loot (multi-select) ──────────── */
+    function renderBasicLootPicker() {
+        const world = getWorldObj();
+        const loot = world ? (world.basic_loot || []) : [];
+        const maxPicks = world ? (world.basic_loot_count || 4) : 4;
+        const container = document.getElementById('basic-loot-cards');
+        const btn = document.getElementById('btn-next-8');
+        const noMsg = document.getElementById('no-basic-loot');
+        const countEl = document.getElementById('basic-loot-count');
+        const maxEl = document.getElementById('basic-loot-max');
+
+        maxEl.textContent = maxPicks;
+
+        if (loot.length === 0) {
+            container.innerHTML = '';
+            noMsg.classList.remove('d-none');
+            btn.disabled = true;
+            return;
+        }
+        noMsg.classList.add('d-none');
+
+        // Build multi-select cards
+        container.innerHTML = '';
+        loot.forEach(function (item) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6';
+            const selected = wiz.basicLootPicks.indexOf(item.id) !== -1;
+            col.innerHTML =
+                '<div class="card bg-dark border-secondary icrpg-wizard-card' +
+                (selected ? ' border-warning' : '') + '"' +
+                ' data-id="' + item.id + '" style="cursor:pointer;">' +
+                '<div class="card-body">' +
+                '<h6 class="card-title mb-1">' + esc(item.name) + '</h6>' +
+                (item.description ? '<p class="card-text text-muted small mb-1">' + esc(item.description) + '</p>' : '') +
+                (item.loot_type ? '<span class="badge bg-secondary small">' + esc(item.loot_type) + '</span>' : '') +
+                '</div></div>';
+
+            col.querySelector('.card').addEventListener('click', function () {
+                var idx = wiz.basicLootPicks.indexOf(item.id);
+                if (idx !== -1) {
+                    // Deselect
+                    wiz.basicLootPicks.splice(idx, 1);
+                    this.classList.remove('border-warning');
+                } else if (wiz.basicLootPicks.length < maxPicks) {
+                    // Select
+                    wiz.basicLootPicks.push(item.id);
+                    this.classList.add('border-warning');
+                }
+                countEl.textContent = wiz.basicLootPicks.length;
+                btn.disabled = (wiz.basicLootPicks.length !== maxPicks);
+            });
+            container.appendChild(col);
+        });
+
+        countEl.textContent = wiz.basicLootPicks.length;
+        btn.disabled = (wiz.basicLootPicks.length !== maxPicks);
+    }
+
+    /* ── Step 9: Review ───────────────────────────────────── */
     function renderReview() {
         const world = CATALOG.worlds.find(w => w.id === wiz.worldId);
         const lf = CATALOG.life_forms.find(l => l.id === wiz.lifeFormId);
@@ -498,7 +582,7 @@
         });
         html += '</tbody></table>';
 
-        // Ability & Loot
+        // Ability & Type Loot
         html += '<div class="row g-3">';
         html += '<div class="col-sm-6"><h6>Starting Ability</h6>';
         if (ability) {
@@ -506,7 +590,7 @@
             if (ability.description) html += `<p class="text-muted small">${esc(ability.description)}</p>`;
         }
         html += '</div>';
-        html += '<div class="col-sm-6"><h6>Starting Loot</h6>';
+        html += '<div class="col-sm-6"><h6>Type Loot</h6>';
         if (lootItem) {
             html += `<p class="mb-0"><strong>${esc(lootItem.name)}</strong>`;
             if (lootItem.loot_type) html += ` <span class="badge bg-secondary small">${esc(lootItem.loot_type)}</span>`;
@@ -514,6 +598,21 @@
             if (lootItem.description) html += `<p class="text-muted small">${esc(lootItem.description)}</p>`;
         }
         html += '</div></div>';
+
+        // Basic Loot
+        if (wiz.basicLootPicks.length > 0 && world && world.basic_loot) {
+            html += '<h6 class="mt-3">Basic Loot</h6>';
+            html += '<ul class="list-unstyled">';
+            wiz.basicLootPicks.forEach(function (pickId) {
+                var item = world.basic_loot.find(function (l) { return l.id === pickId; });
+                if (item) {
+                    html += '<li><strong>' + esc(item.name) + '</strong>';
+                    if (item.loot_type) html += ' <span class="badge bg-secondary small">' + esc(item.loot_type) + '</span>';
+                    html += '</li>';
+                }
+            });
+            html += '</ul>';
+        }
 
         document.getElementById('review-summary').innerHTML = html;
     }
@@ -545,6 +644,7 @@
             effort: wiz.effort,
             ability_ids: wiz.abilityIds,
             loot_picks: wiz.lootPicks,
+            basic_loot_picks: wiz.basicLootPicks,
         };
 
         fetch('/pcs/icrpg/create', {
