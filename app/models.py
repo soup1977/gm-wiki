@@ -1013,6 +1013,14 @@ class ICRPGCharacterSheet(db.Model):
         return [cl for cl in self.loot_items if cl.slot == 'carried']
 
     @property
+    def equipped_slots_max(self):
+        return 10 + self._loot_bonus('EQUIPPED_SLOTS')
+
+    @property
+    def carried_slots_max(self):
+        return 10 + self._loot_bonus('CARRIED_SLOTS')
+
+    @property
     def equipped_slots_used(self):
         return sum((cl.loot_def.slot_cost or 1) if cl.loot_def else 1 for cl in self.equipped_loot)
 
