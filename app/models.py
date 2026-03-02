@@ -1001,8 +1001,8 @@ class ICRPGCharacterSheet(db.Model):
 
     @property
     def hp_max(self):
-        """Maximum HP = hearts * 10."""
-        return self.hearts_max * 10
+        """Maximum HP = (hearts + loot HEARTS bonus) * 10."""
+        return (self.hearts_max + self._loot_bonus('HEARTS')) * 10
 
     @property
     def equipped_loot(self):
