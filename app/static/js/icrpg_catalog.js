@@ -76,7 +76,10 @@
                 html = field('name', 'Name', data.name) +
                     '<div class="mb-2"><label class="form-label small">World</label>' + worldSelect(data.world_id) + '</div>' +
                     field('description', 'Description', data.description, 'textarea') +
-                    field('bonuses', 'Bonuses (JSON)', typeof data.bonuses === 'object' ? JSON.stringify(data.bonuses) : (data.bonuses || ''));
+                    field('bonuses', 'Bonuses (JSON)', typeof data.bonuses === 'object' ? JSON.stringify(data.bonuses) : (data.bonuses || '')) +
+                    '<div class="text-muted small mb-2" style="margin-top:-0.4rem">' +
+                    'Stat bonuses applied at character creation. ' +
+                    'Example: <code>{"STR": 1, "CON": 1, "CHA": -1}</code></div>';
                 break;
             case 'type':
                 html = field('name', 'Name', data.name) +
@@ -100,13 +103,22 @@
                     field('loot-type', 'Loot Type', data.loot_type) +
                     field('description', 'Description', data.description, 'textarea') +
                     field('effects', 'Effects (JSON)', typeof data.effects === 'object' ? JSON.stringify(data.effects) : (data.effects || '')) +
+                    '<div class="text-muted small mb-2" style="margin-top:-0.4rem">' +
+                    'Stat keys: <code>STR</code> <code>DEX</code> <code>CON</code> <code>INT</code> <code>WIS</code> <code>CHA</code> · ' +
+                    'Other: <code>DEFENSE</code> <code>HEARTS</code> · ' +
+                    'Effort: <code>WEAPON_EFFORT</code> <code>MAGIC_EFFORT</code> <code>GUN_EFFORT</code> <code>BASIC_EFFORT</code> <code>ULTIMATE_EFFORT</code><br>' +
+                    'Example: <code>{"DEFENSE": 2, "STR": 1}</code></div>' +
                     field('slot-cost', 'Slot Cost', data.slot_cost || 1, 'number') +
                     field('coin-cost', 'Coin Cost', data.coin_cost || 0, 'number');
                 break;
             case 'spell':
                 html = field('name', 'Name', data.name) +
                     field('spell-type', 'Spell Type', data.spell_type) +
+                    '<div class="text-muted small mb-2" style="margin-top:-0.4rem">' +
+                    'E.g. <code>Arcane</code>, <code>Holy</code>, <code>Infernal</code></div>' +
                     field('casting-stat', 'Casting Stat', data.casting_stat) +
+                    '<div class="text-muted small mb-2" style="margin-top:-0.4rem">' +
+                    '<code>INT</code> (Arcane) or <code>WIS</code> (Holy/Infernal)</div>' +
                     field('level', 'Level', data.level || 1, 'number') +
                     field('target', 'Target', data.target) +
                     field('duration', 'Duration', data.duration) +
@@ -115,7 +127,9 @@
             case 'path':
                 html = field('name', 'Name', data.name) +
                     field('description', 'Description', data.description, 'textarea') +
-                    field('tiers', 'Tiers (JSON array)', typeof data.tiers === 'object' ? JSON.stringify(data.tiers) : (data.tiers || '[]'), 'textarea');
+                    field('tiers', 'Tiers (JSON array)', typeof data.tiers === 'object' ? JSON.stringify(data.tiers) : (data.tiers || '[]'), 'textarea') +
+                    '<div class="text-muted small mb-2" style="margin-top:-0.4rem">' +
+                    'Array of tier objects. Example: <code>[{"name": "Tier 1", "description": "Learn basics"}]</code></div>';
                 break;
         }
         return html;
