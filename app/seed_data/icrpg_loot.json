@@ -547,7 +547,10 @@
         "roll": 80,
         "name": "Berserk Ring",
         "type": "Item",
-        "description": "+3 on ULTIMATE effort"
+        "description": "+3 on ULTIMATE effort",
+        "effects": {
+          "ULTIMATE_EFFORT": 3
+        }
       },
       {
         "roll": 81,
