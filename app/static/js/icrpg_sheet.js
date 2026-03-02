@@ -45,21 +45,40 @@
             });
         }
 
+        // ── HP helpers ─────────────────────────────────────────
+        function updateHpDisplay(data) {
+            document.getElementById('icrpg-hp-current').textContent = data.hp_current;
+            document.getElementById('icrpg-hp-max').textContent = data.hp_max;
+            var pct = data.hp_max > 0 ? Math.round((data.hp_current / data.hp_max) * 100) : 0;
+            var bar = document.getElementById('icrpg-hp-bar');
+            bar.style.width = pct + '%';
+            bar.setAttribute('aria-valuenow', data.hp_current);
+            bar.className = 'progress-bar';
+            if (pct > 50) bar.classList.add('bg-success');
+            else if (pct > 25) bar.classList.add('bg-warning');
+            else bar.classList.add('bg-danger');
+        }
+
         // ── HP adjustment ───────────────────────────────────────
         document.querySelectorAll('.icrpg-hp-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var delta = parseInt(btn.dataset.delta);
-                postAction('hp', { delta: delta }, function (data) {
-                    document.getElementById('icrpg-hp-current').textContent = data.hp_current;
-                    document.getElementById('icrpg-hp-max').textContent = data.hp_max;
-                    var pct = data.hp_max > 0 ? Math.round((data.hp_current / data.hp_max) * 100) : 0;
-                    var bar = document.getElementById('icrpg-hp-bar');
-                    bar.style.width = pct + '%';
-                    bar.setAttribute('aria-valuenow', data.hp_current);
-                    bar.className = 'progress-bar';
-                    if (pct > 50) bar.classList.add('bg-success');
-                    else if (pct > 25) bar.classList.add('bg-warning');
-                    else bar.classList.add('bg-danger');
+                postAction('hp', { delta: parseInt(btn.dataset.delta) }, updateHpDisplay);
+            });
+        });
+
+        // ── HP reset to max ─────────────────────────────────────
+        var hpResetBtn = document.getElementById('icrpg-hp-reset');
+        if (hpResetBtn) {
+            hpResetBtn.addEventListener('click', function () {
+                postAction('hp', { reset: true }, updateHpDisplay);
+            });
+        }
+
+        // ── Coin adjustment ─────────────────────────────────────
+        document.querySelectorAll('.icrpg-coin-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                postAction('coin', { delta: parseInt(btn.dataset.delta) }, function (data) {
+                    document.getElementById('icrpg-coin').textContent = data.coin;
                 });
             });
         });
