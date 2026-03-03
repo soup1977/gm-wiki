@@ -246,6 +246,41 @@
 
         <div class="card bg-dark border-secondary mb-4">
             <div class="card-header">
+                <i class="bi bi-sliders2"></i> AI Token Limits
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Control how many tokens the AI can generate per request. Higher = more detailed output but slower/costlier.
+                </p>
+                <div class="mb-3">
+                    <label for="ai_max_tokens_standard" class="form-label small">Standard AI Tasks</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           id="ai_max_tokens_standard" name="ai_max_tokens_standard"
+                           min="256" max="8192" step="256"
+                           value="{{ ai_max_tokens_standard }}">
+                    <div class="form-text">Used by Smart Fill (0.5x), Brainstorm, Site Ideas, Session Prep, Draft Summary, Arc Structure, and Propose Entities (1.5x). Default: 2048.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="ai_max_tokens_generate" class="form-label small">Generate Entry</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           id="ai_max_tokens_generate" name="ai_max_tokens_generate"
+                           min="256" max="8192" step="256"
+                           value="{{ ai_max_tokens_generate }}">
+                    <div class="form-text">Used by Generate Entry and Genesis Wizard. Adventure Sites use 4x, Bestiary uses 2x, NPCs/Locations use 2x. Default: 2048.</div>
+                </div>
+                <div class="mb-2">
+                    <label for="ai_max_tokens_assistant" class="form-label small">Campaign Assistant</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           id="ai_max_tokens_assistant" name="ai_max_tokens_assistant"
+                           min="256" max="8192" step="256"
+                           value="{{ ai_max_tokens_assistant }}">
+                    <div class="form-text">Used by the Campaign Assistant chat. Default: 4096.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
                 <i class="bi bi-journal-text"></i> Activity Log
             </div>
             <div class="card-body">

@@ -216,16 +216,23 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
 
+        // Include story_arc_id if an arc is selected
+        const arcSelect = document.getElementById('assistant-arc-select');
+        const arcId = arcSelect ? arcSelect.value : '';
+
+        const payload = {
+            entity_type: entity.type,
+            fields: entity.fields,
+        };
+        if (arcId) payload.story_arc_id = parseInt(arcId, 10);
+
         fetch(cfg.saveUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': cfg.csrfToken,
             },
-            body: JSON.stringify({
-                entity_type: entity.type,
-                fields: entity.fields,
-            }),
+            body: JSON.stringify(payload),
         })
             .then(r => r.json())
             .then(data => {
