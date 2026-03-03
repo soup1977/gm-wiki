@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags
+from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 items_bp = Blueprint('items', __name__)
@@ -104,6 +104,7 @@ def create_item():
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'item', item.name, entity_id=item.id, campaign_id=campaign_id)
         flash(f'Item "{item.name}" created.', 'success')
         return redirect(url_for('items.item_detail', item_id=item.id))
 
@@ -174,6 +175,7 @@ def edit_item(item_id):
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'item', item.name, entity_id=item.id, campaign_id=campaign_id)
         flash(f'Item "{item.name}" updated.', 'success')
         return redirect(url_for('items.item_detail', item_id=item.id))
 
@@ -190,5 +192,6 @@ def delete_item(item_id):
     name = item.name
     db.session.delete(item)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'item', name, entity_id=item_id, campaign_id=campaign_id)
     flash(f'Item "{name}" deleted.', 'success')
     return redirect(url_for('items.list_items'))

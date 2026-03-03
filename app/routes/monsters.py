@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import MonsterInstance, BestiaryEntry, NPC, Session, Campaign, Location
+from app.models import MonsterInstance, BestiaryEntry, NPC, Session, Campaign, Location, ActivityLog
 
 monsters_bp = Blueprint('monsters', __name__,
                         url_prefix='/campaigns/<int:campaign_id>/monsters')
@@ -97,6 +97,7 @@ def edit_instance(campaign_id, instance_id):
         instance.sessions = Session.query.filter(Session.id.in_(session_ids)).all()
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'bestiary', instance.instance_name, entity_id=instance.id, campaign_id=campaign_id)
         flash(f'"{instance.instance_name}" updated.', 'success')
         return redirect(url_for('monsters.instance_detail',
                                 campaign_id=campaign_id, instance_id=instance.id))
@@ -123,6 +124,7 @@ def delete_instance(campaign_id, instance_id):
     name = instance.instance_name
     db.session.delete(instance)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'bestiary', name, entity_id=instance_id, campaign_id=campaign_id)
 
     flash(f'"{name}" deleted.', 'warning')
     return redirect(url_for('monsters.list_instances', campaign_id=campaign_id))
@@ -216,6 +218,8 @@ def promote_to_npc(campaign_id, instance_id):
         instance.promoted_to_npc_id = npc.id
 
         db.session.commit()
+        ActivityLog.log_event('created', 'npc', npc.name, entity_id=npc.id, campaign_id=campaign_id,
+                              details=f'promoted from {instance.instance_name}')
         flash(f'"{instance.instance_name}" promoted to NPC "{npc.name}"!', 'success')
         return redirect(url_for('npcs.npc_detail', npc_id=npc.id))
 

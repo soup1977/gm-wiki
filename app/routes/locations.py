@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags, Faction
+from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags, Faction, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 locations_bp = Blueprint('locations', __name__, url_prefix='/locations')
@@ -109,6 +109,7 @@ def create_location():
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'location', location.name, entity_id=location.id, campaign_id=campaign_id)
 
         flash(f'Location "{location.name}" created!', 'success')
         return redirect(url_for('locations.location_detail', location_id=location.id))
@@ -209,6 +210,7 @@ def edit_location(location_id):
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'location', location.name, entity_id=location.id, campaign_id=campaign_id)
 
         flash(f'Location "{location.name}" updated!', 'success')
         return redirect(url_for('locations.location_detail', location_id=location.id))
@@ -256,6 +258,7 @@ def delete_location(location_id):
     # quest_location_link, session_location_link) automatically.
     db.session.delete(location)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'location', name, entity_id=location_id, campaign_id=campaign_id)
 
     flash(f'Location "{name}" deleted.', 'warning')
     return redirect(url_for('locations.list_locations'))

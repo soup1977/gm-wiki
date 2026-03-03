@@ -6,7 +6,7 @@ import requests
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from app import db
-from app.models import CompendiumEntry
+from app.models import CompendiumEntry, ActivityLog
 
 srd_import_bp = Blueprint('srd_import', __name__, url_prefix='/srd-import')
 
@@ -42,8 +42,10 @@ def srd_index():
             resp = requests.get(API_BASE + endpoint, timeout=10)
             data = resp.json()
             count = data.get('count', len(data.get('results', [])))
-        except Exception:
+        except Exception as e:
             count = '?'
+            ActivityLog.log_event('error', 'srd_import', f'SRD API failed: {key}',
+                                  details=str(e)[:200], immediate=True)
 
         # How many already imported in this campaign?
         imported = CompendiumEntry.query.filter_by(
@@ -79,7 +81,9 @@ def browse(category):
         resp = requests.get(API_BASE + endpoint, timeout=10)
         data = resp.json()
         items = data.get('results', [])
-    except Exception:
+    except Exception as e:
+        ActivityLog.log_event('error', 'srd_import', f'SRD browse failed: {category}',
+                              details=str(e)[:200], immediate=True)
         flash('Could not reach dnd5eapi.co. Try again later.', 'danger')
         return redirect(url_for('srd_import.srd_index'))
 

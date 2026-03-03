@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Activity Log — The War Table{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-journal-text me-2"></i>Activity Log</h2>
+    <form method="POST" action="{{ url_for('admin.purge_activity_log') }}"
+          onsubmit="return confirm('Purge old log entries? This cannot be undone.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash me-1"></i>Purge Old Entries
+        </button>
+    </form>
+</div>
+
+{# ── Filters ──────────────────────────────────────────────── #}
+<form method="GET" action="{{ url_for('admin.activity_log') }}" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="campaign_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+            <option value="">All Campaigns</option>
+            {% for c in campaigns %}
+            <option value="{{ c.id }}" {% if filter_campaign_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="entity_type" class="form-select form-select-sm bg-dark text-light border-secondary">
+            <option value="">All Types</option>
+            {% for et in entity_types %}
+            <option value="{{ et }}" {% if filter_entity_type == et %}selected{% endif %}>{{ et }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="user_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+            <option value="">All Users</option>
+            {% for u in users %}
+            <option value="{{ u.id }}" {% if filter_user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="action" class="form-select form-select-sm bg-dark text-light border-secondary">
+            <option value="">All Actions</option>
+            {% for a in actions %}
+            <option value="{{ a }}" {% if filter_action == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="{{ url_for('admin.activity_log') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+{# ── Log Table ────────────────────────────────────────────── #}
+<div class="table-responsive">
+    <table class="table table-dark table-hover table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Campaign</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td class="text-muted small text-nowrap">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M') if entry.timestamp else '—' }}</td>
+                <td>{{ entry.user.username if entry.user else '—' }}</td>
+                <td>
+                    {% if entry.action == 'created' %}
+                    <span class="badge bg-success">created</span>
+                    {% elif entry.action == 'edited' %}
+                    <span class="badge bg-info text-dark">edited</span>
+                    {% elif entry.action == 'deleted' %}
+                    <span class="badge bg-danger">deleted</span>
+                    {% elif entry.action == 'status_changed' %}
+                    <span class="badge bg-warning text-dark">status</span>
+                    {% elif entry.action == 'error' %}
+                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>error</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ entry.action }}</span>
+                    {% endif %}
+                </td>
+                <td><span class="text-muted small">{{ entry.entity_type }}</span></td>
+                <td>
+                    {% if entry._url %}
+                    <a href="{{ entry._url }}">{{ entry.entity_name }}</a>
+                    {% else %}
+                    {{ entry.entity_name }}
+                    {% endif %}
+                </td>
+                <td class="text-muted small">{{ entry.campaign.name if entry.campaign else '—' }}</td>
+                <td class="text-muted small">{{ entry.details or '' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-muted text-center py-3">No log entries{% if filter_campaign_id or filter_entity_type or filter_user_id or filter_action %} matching filters{% endif %}.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Pagination ───────────────────────────────────────────── #}
+{% if pagination.pages > 1 %}
+<nav>
+    <ul class="pagination pagination-sm justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link bg-dark text-light border-secondary"
+               href="{{ url_for('admin.activity_log', page=pagination.prev_num, campaign_id=filter_campaign_id or '', entity_type=filter_entity_type or '', user_id=filter_user_id or '', action=filter_action or '') }}">Prev</a>
+        </li>
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link bg-dark text-light border-secondary"
+                   href="{{ url_for('admin.activity_log', page=p, campaign_id=filter_campaign_id or '', entity_type=filter_entity_type or '', user_id=filter_user_id or '', action=filter_action or '') }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link bg-dark text-light border-secondary">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link bg-dark text-light border-secondary"
+               href="{{ url_for('admin.activity_log', page=pagination.next_num, campaign_id=filter_campaign_id or '', entity_type=filter_entity_type or '', user_id=filter_user_id or '', action=filter_action or '') }}">Next</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<p class="text-muted small text-center">{{ pagination.total }} total entries</p>
+{% endblock %}

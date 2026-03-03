@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import (Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location,
                         CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat,
-                        AdventureSite)
+                        AdventureSite, ActivityLog)
 
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/campaigns')
 
@@ -95,6 +95,7 @@ def create_campaign():
             db.session.add(field)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'campaign', campaign.name, entity_id=campaign.id)
 
         # Auto-switch to the newly created campaign
         session['active_campaign_id'] = campaign.id
@@ -151,6 +152,7 @@ def edit_campaign(campaign_id):
         campaign.image_style_prompt = request.form.get('image_style_prompt', '').strip() or None
         campaign.ai_world_context = request.form.get('ai_world_context', '').strip() or None
         db.session.commit()
+        ActivityLog.log_event('edited', 'campaign', campaign.name, entity_id=campaign.id)
         flash(f'Campaign "{campaign.name}" updated.', 'success')
         return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign.id))
 
@@ -319,8 +321,12 @@ def delete_campaign(campaign_id):
     for field in list(campaign.stat_template_fields):
         db.session.delete(field)
 
+    # Clean up activity log entries for this campaign
+    ActivityLog.query.filter_by(campaign_id=campaign_id).delete()
+
     db.session.delete(campaign)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'campaign', name, entity_id=campaign_id)
 
     flash(f'Campaign "{name}" and all its content deleted.', 'warning')
     return redirect(url_for('campaigns.list_campaigns'))

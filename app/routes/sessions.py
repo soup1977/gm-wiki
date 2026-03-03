@@ -4,7 +4,7 @@ from flask_login import login_required
 from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
                         get_or_create_tags, PlayerCharacter, SessionAttendance,
-                        MonsterInstance, AdventureSite, Encounter)
+                        MonsterInstance, AdventureSite, Encounter, ActivityLog)
 from app.shortcode import process_shortcodes, clear_mentions
 
 sessions_bp = Blueprint('sessions', __name__)
@@ -152,6 +152,7 @@ def create_session():
 
         db.session.commit()
         label = f'Session {sess.number}' if sess.number else 'Session'
+        ActivityLog.log_event('created', 'session', sess.title or label, entity_id=sess.id, campaign_id=campaign_id)
         flash(f'{label} created.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))
 
@@ -353,6 +354,7 @@ def edit_session(session_id):
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'session', sess.title or f'Session {sess.number}', entity_id=sess.id, campaign_id=campaign_id)
         flash('Session updated.', 'success')
         return redirect(url_for('sessions.session_detail', session_id=sess.id))
 
@@ -374,5 +376,6 @@ def delete_session(session_id):
     label = f'Session {sess.number}' if sess.number else 'Session'
     db.session.delete(sess)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'session', sess.title or label, entity_id=session_id, campaign_id=campaign_id)
     flash(f'{label} deleted.', 'success')
     return redirect(url_for('sessions.list_sessions'))

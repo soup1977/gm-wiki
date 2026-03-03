@@ -713,6 +713,68 @@ class AppSetting(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ACTIVITY LOG
+# ═══════════════════════════════════════════════════════════════════════════
+
+class ActivityLog(db.Model):
+    """Lightweight event log for tracking entity CRUD, status changes, and errors.
+
+    Designed for fire-and-forget writes — log failures must never break a save.
+    campaign_id is nullable because some actions (bestiary, admin) are global.
+    """
+    __tablename__ = 'activity_log'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=True)
+    action      = db.Column(db.String(50), nullable=False)
+    entity_type = db.Column(db.String(50), nullable=False)
+    entity_id   = db.Column(db.Integer, nullable=True)
+    entity_name = db.Column(db.String(200), nullable=False)
+    details     = db.Column(db.String(200), nullable=True)
+    timestamp   = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user     = db.relationship('User', backref='activity_logs')
+    campaign = db.relationship('Campaign', backref='activity_logs')
+
+    @staticmethod
+    def log_event(action, entity_type, entity_name, entity_id=None,
+                  campaign_id=None, details=None, immediate=False):
+        """Fire-and-forget activity logging. Never raises.
+
+        Args:
+            action: 'created', 'edited', 'deleted', 'status_changed', 'error'
+            entity_type: 'npc', 'location', 'quest', 'ai_smart_fill', 'auth', etc.
+            entity_name: Display name or description (snapshot)
+            entity_id: PK of the entity (nullable)
+            campaign_id: Campaign scope (nullable for global entities)
+            details: Optional extra context (max 200 chars)
+            immediate: If True, commits in its own transaction (for error logging
+                       outside normal save flows)
+        """
+        try:
+            from flask_login import current_user
+            uid = current_user.id if current_user and current_user.is_authenticated else None
+            entry = ActivityLog(
+                user_id=uid,
+                campaign_id=campaign_id,
+                action=action,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                entity_name=str(entity_name)[:200],
+                details=str(details)[:200] if details else None,
+            )
+            db.session.add(entry)
+            if immediate:
+                db.session.commit()
+        except Exception:
+            pass
+
+    def __repr__(self):
+        return f'<ActivityLog {self.action} {self.entity_type} "{self.entity_name}">'
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ICRPG CATALOG MODELS (Global base + Campaign-scoped homebrew)
 #
 # All catalog models use the same scope pattern:

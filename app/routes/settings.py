@@ -38,6 +38,11 @@ def index():
         for key in ('ai_prompt_smart_fill', 'ai_prompt_generate', 'ai_prompt_brainstorm_arcs',
                     'ai_prompt_site_ideas', 'ai_prompt_session_prep', 'ai_prompt_draft_summary'):
             AppSetting.set(key, request.form.get(key, '').strip())
+        # Activity log settings
+        AppSetting.set('activity_log_retention_days',
+                       request.form.get('activity_log_retention_days', '90').strip() or '90')
+        AppSetting.set('activity_log_max_rows',
+                       request.form.get('activity_log_max_rows', '10000').strip() or '10000')
         flash('Settings saved.', 'success')
         return redirect(url_for('settings.index'))
 
@@ -61,6 +66,10 @@ def index():
 
     allow_signup = AppSetting.get('allow_signup', 'true') == 'true'
 
+    # Activity log settings
+    activity_log_retention_days = AppSetting.get('activity_log_retention_days', '90')
+    activity_log_max_rows = AppSetting.get('activity_log_max_rows', '10000')
+
     # Load editable AI prompts — show stored override, or built-in default if none saved
     from app.routes.ai import DEFAULT_PROMPTS
     ai_prompts = {
@@ -73,7 +82,9 @@ def index():
                            allow_signup=allow_signup,
                            available_providers=available_providers,
                            feature_providers=feature_providers,
-                           ai_prompts=ai_prompts)
+                           ai_prompts=ai_prompts,
+                           activity_log_retention_days=activity_log_retention_days,
+                           activity_log_max_rows=activity_log_max_rows)
 
 
 @settings_bp.route('/test-ollama')

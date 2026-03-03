@@ -4,7 +4,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_required
 from app import db
-from app.models import CompendiumEntry
+from app.models import CompendiumEntry, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 compendium_bp = Blueprint('compendium', __name__)
@@ -87,6 +87,7 @@ def create_entry():
                 db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'compendium', entry.title, entity_id=entry.id, campaign_id=campaign_id)
         flash(f'Entry "{entry.title}" created.', 'success')
         return redirect(url_for('compendium.entry_detail', entry_id=entry.id))
 
@@ -133,6 +134,7 @@ def edit_entry(entry_id):
                 db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'compendium', entry.title, entity_id=entry.id, campaign_id=campaign_id)
         flash(f'Entry "{entry.title}" updated.', 'success')
         return redirect(url_for('compendium.entry_detail', entry_id=entry.id))
 
@@ -148,6 +150,7 @@ def delete_entry(entry_id):
     title = entry.title
     db.session.delete(entry)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'compendium', title, entity_id=entry_id, campaign_id=campaign_id)
     flash(f'Entry "{title}" deleted.', 'success')
     return redirect(url_for('compendium.list_compendium'))
 

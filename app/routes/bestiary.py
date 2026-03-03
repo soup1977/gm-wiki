@@ -3,7 +3,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import BestiaryEntry, MonsterInstance, Campaign
+from app.models import BestiaryEntry, MonsterInstance, Campaign, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions
 
 bestiary_bp = Blueprint('bestiary', __name__, url_prefix='/bestiary')
@@ -124,6 +124,7 @@ def create_entry():
                 db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'bestiary', entry.name, entity_id=entry.id)
         flash(f'"{entry.name}" added to the Bestiary!', 'success')
         return redirect(url_for('bestiary.entry_detail', entry_id=entry.id))
 
@@ -190,6 +191,7 @@ def edit_entry(entry_id):
                 db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'bestiary', entry.name, entity_id=entry.id)
         flash(f'"{entry.name}" updated.', 'success')
         return redirect(url_for('bestiary.entry_detail', entry_id=entry.id))
 
@@ -206,6 +208,7 @@ def delete_entry(entry_id):
     # cascade='all, delete-orphan' on the relationship handles instances automatically
     db.session.delete(entry)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'bestiary', name, entity_id=entry_id)
 
     msg = f'"{name}" deleted from Bestiary.'
     if instance_count:
@@ -238,6 +241,8 @@ def spawn_instance(entry_id):
     )
     db.session.add(instance)
     db.session.commit()
+    ActivityLog.log_event('created', 'bestiary', f'{entry.name} → {instance.instance_name}',
+                          entity_id=instance.id, campaign_id=campaign_id, details='spawned instance')
 
     flash(f'Spawned "{instance.instance_name}"!', 'success')
     return redirect(url_for('monsters.instance_detail',

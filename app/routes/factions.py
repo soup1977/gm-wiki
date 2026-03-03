@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from app import db
-from app.models import Faction, NPC, Location, Quest
+from app.models import Faction, NPC, Location, Quest, ActivityLog
 
 factions_bp = Blueprint('factions', __name__, url_prefix='/factions')
 
@@ -65,6 +65,7 @@ def create_faction():
         )
         db.session.add(faction)
         db.session.commit()
+        ActivityLog.log_event('created', 'faction', faction.name, entity_id=faction.id, campaign_id=campaign_id)
         flash(f'Faction "{faction.name}" created.', 'success')
         return redirect(url_for('factions.faction_detail', faction_id=faction.id))
 
@@ -99,6 +100,7 @@ def edit_faction(faction_id):
         faction.gm_notes = request.form.get('gm_notes', '').strip() or None
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'faction', faction.name, entity_id=faction.id, campaign_id=campaign_id)
         flash(f'Faction "{faction.name}" updated.', 'success')
         return redirect(url_for('factions.faction_detail', faction_id=faction.id))
 
@@ -126,6 +128,7 @@ def delete_faction(faction_id):
 
     db.session.delete(faction)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'faction', name, entity_id=faction_id, campaign_id=campaign_id)
 
     msg = f'Faction "{name}" deleted.'
     unlinked = []

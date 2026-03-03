@@ -6,7 +6,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    request, flash, session, jsonify, current_app)
 from flask_login import login_required
 from app import db
-from app.models import RandomTable, TableRow
+from app.models import RandomTable, TableRow, ActivityLog
 
 tables_bp = Blueprint('tables', __name__, url_prefix='/random-tables')
 
@@ -85,6 +85,7 @@ def create_table():
         )
         db.session.add(table)
         db.session.commit()
+        ActivityLog.log_event('created', 'random_table', table.name, entity_id=table.id, campaign_id=campaign_id)
         flash(f'Table "{table.name}" created.', 'success')
         return redirect(url_for('tables.table_detail', table_id=table.id))
 
@@ -132,6 +133,7 @@ def edit_table(table_id):
         table.category = request.form.get('category', '').strip() or None
         table.description = request.form.get('description', '').strip() or None
         db.session.commit()
+        ActivityLog.log_event('edited', 'random_table', table.name, entity_id=table.id, campaign_id=campaign_id)
         flash('Table updated.', 'success')
         return redirect(url_for('tables.table_detail', table_id=table.id))
 
@@ -153,6 +155,7 @@ def delete_table(table_id):
     name = table.name
     db.session.delete(table)    # cascade deletes rows
     db.session.commit()
+    ActivityLog.log_event('deleted', 'random_table', name, entity_id=table_id, campaign_id=campaign_id)
     flash(f'Table "{name}" deleted.', 'warning')
     return redirect(url_for('tables.list_tables'))
 

@@ -244,6 +244,30 @@
             </div>
         </div>
 
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
+                <i class="bi bi-journal-text"></i> Activity Log
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="activity_log_retention_days" class="form-label small">Retention Period (days)</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           id="activity_log_retention_days" name="activity_log_retention_days"
+                           min="1" max="3650"
+                           value="{{ activity_log_retention_days }}">
+                    <div class="form-text">Entries older than this are purged. Default: 90 days.</div>
+                </div>
+                <div class="mb-2">
+                    <label for="activity_log_max_rows" class="form-label small">Maximum Rows</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           id="activity_log_max_rows" name="activity_log_max_rows"
+                           min="100" max="100000"
+                           value="{{ activity_log_max_rows }}">
+                    <div class="form-text">Oldest entries are auto-trimmed when this limit is exceeded. Default: 10,000.</div>
+                </div>
+            </div>
+        </div>
+
         <div class="card bg-dark border-secondary">
             <div class="card-header">
                 <i class="bi bi-bar-chart"></i> Database Stats
