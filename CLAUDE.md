@@ -119,6 +119,7 @@ gm-wiki/
 
 ### Phase planning:
 - **Always save phase plans to `docs/phase-N-plan.md`** when a new phase is discussed or its feature list is provided — never rely on conversation context alone
+- **The plan file MUST be saved to `docs/` as the FIRST step after plan approval, BEFORE any code implementation begins.** This is non-negotiable — the plan doc is the source of truth.
 - Each plan file must include a feature table (Feature | Status | Notes) and any split/dependency notes
 - Update the Build Phases table in this file when a phase is completed or a new one is defined
 
