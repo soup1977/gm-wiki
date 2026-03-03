@@ -4,47 +4,15 @@ Ideas that are intentionally deferred. Not forgotten — just waiting for the ri
 
 ---
 
-## Configurable AI Token Limits (Settings Page)
+## Configurable AI Token Limits (Settings Page) — PLANNED
 
-**Why deferred:** Token limits are currently hardcoded in `app/routes/ai.py`. They've been tuned per entity type (e.g. 4096 for adventure sites, 2048 for NPCs), but a power user with a fast/expensive model may want to push limits higher, and a user on a budget may want to cap them lower.
-
-**The right approach:**
-- Add per-feature token limit fields to the Settings page under the AI section
-- Store them in `AppSetting`: `ai_max_tokens_generate`, `ai_max_tokens_smart_fill`, `ai_max_tokens_assistant`
-- `ai_chat()` (or the individual routes) reads the setting and falls back to the hardcoded default if not set
-- Input type `number`, min 256, max 8192, step 256 — with a note on what each feature uses them for
-
-**Nice to have:** A "large entity types" override — a separate token cap specifically for `adventure_site` and `bestiary` Generate Entry calls, since those produce much more content than NPC/location/quest entries.
-
-**Notes:**
-- No migration needed if `AppSetting` model already supports arbitrary key/value pairs (it does)
-- Anthropic Claude Haiku supports up to 8192 output tokens; Ollama depends on the loaded model's context window
-- Current hardcoded values: Smart Fill = 1024, Generate Entry = 2048 (8000 for adventure_site, 4096 for bestiary)
+Full implementation plan saved to `docs/ai-token-limits-plan.md`. Three grouped settings (standard, generate, assistant) with multipliers for large entity types. Helper function `_get_max_tokens()` in ai.py. No migration needed — uses AppSetting.
 
 ---
 
-## Theme Engine
+## Theme Engine — PLANNED
 
-**Why deferred:** A single high-contrast CSS toggle is not the right approach. Adding one-off overrides creates maintenance debt and doesn't scale.
-
-**The right approach:** A proper theme engine where:
-- Each theme is a named CSS variable set (or a separate CSS file)
-- Themes are stored in `AppSetting` as `ui_theme = 'dark' | 'high_contrast' | 'light' | ...`
-- The active theme is applied via a `data-theme` attribute on `<html>` (or a CSS class)
-- `base.html` reads the theme from a context processor injected in `app/__init__.py`
-- Settings page lets the user pick a theme from a dropdown or visual swatch
-- New themes can be added by dropping a new CSS file into `app/static/css/themes/`
-
-**Supported themes to build toward:**
-- `dark` — current default
-- `high_contrast` — brighter text, sharper borders, for use at dim game tables
-- `light` — for daytime use or accessibility preference
-- `parchment` — sepia/fantasy aesthetic (stretch goal)
-
-**Notes:**
-- Bootstrap 5.3 `data-bs-theme` only supports `light` and `dark` natively; custom themes need CSS custom property overrides
-- Consider using CSS `@layer` to keep theme overrides isolated from component styles
-- No migrations needed — `AppSetting` model already exists
+Full implementation plan saved to `docs/theme-engine-plan.md`. Dark (current), Light, High Contrast, and Parchment (stretch). Uses dual-attribute approach (`data-bs-theme` + `data-wt-theme`), CSS custom properties, localStorage per-browser, no migration needed. ~11 files, ~3 new files.
 
 ---
 
@@ -77,56 +45,20 @@ Ideas that are intentionally deferred. Not forgotten — just waiting for the ri
 
 ---
 
-## Activity Log / Event Viewer
+## ~~Activity Log / Event Viewer~~ — DONE (PR #37)
 
-**Why deferred:** Useful for debugging and for GMs who want to review what changed and when. Not essential for core gameplay.
-
-**The right approach:**
-- A lightweight `ActivityLog` model: `id`, `user_id`, `campaign_id`, `action` (string), `entity_type`, `entity_id`, `entity_name`, `timestamp`
-- Log writes on key events: entity created, entity edited, entity deleted, session started/ended, status changed (NPC died, quest completed), AI generation triggered
-- Log writes happen in route handlers — a small `log_event(action, entity_type, entity_id, entity_name)` helper keeps it DRY
-- Admin-only viewer page at `/admin/activity-log` — filterable by campaign, entity type, date range, and user
-- Optional: per-campaign GM log at `/campaigns/<id>/activity` showing recent changes to that campaign's entities
-- Entries auto-purge after a configurable number of days (stored in `AppSetting`)
-
-**What it helps with:**
-- "Who changed this NPC's status and when?"
-- "What entities were touched in the last session?"
-- "Did the AI generation run successfully?"
-- Debugging unexpected data changes on the Unraid server
-
-**Notes:**
-- Write operations should be fire-and-forget (catch exceptions silently so a log failure never breaks a save)
-- Keep log entries lightweight — no storing full diffs, just the action and entity reference
-- Migration needed: new `activity_log` table
-- Consider a max-rows limit per campaign to prevent unbounded growth on SQLite
+Implemented in `feature/activity-log`. See `docs/activity-log-plan.md` for full details.
 
 ---
 
-## Campaign Assistant → "Link to Story Arc" Quick-Action
+## Campaign Assistant → "Link to Story Arc" Quick-Action — PLANNED
 
-**Why deferred:** The Campaign Assistant creates entities with no `story_arc_id`, so arc-aware AI (Smart Fill / Generate Entry) won't kick in for them later. The Genesis Wizard handles this automatically, but ad-hoc entities from the assistant are always orphaned.
-
-**The idea:**
-- After saving an entity from the Campaign Assistant (via the "Save" button on an entity card), show a small follow-up prompt: "Link to a Story Arc?" with a dropdown of existing arcs
-- If the GM selects one, patch the entity's `story_arc_id` via a lightweight AJAX call
-- This closes the gap between the two AI creation workflows — anything created ad-hoc can be retroactively pulled into an arc's context
-
-**Notes:**
-- Alternatively, expose the "Story Arc" field directly on the Campaign Assistant's save dialog (a simple `<select>` populated with arcs for the active campaign)
-- The patch endpoint would be trivial: one route per entity type updating `story_arc_id` and returning success
-- No migration needed — `story_arc_id` already exists on all four entity tables
+Full implementation plan saved to `docs/assistant-arc-link-plan.md`. Persistent Story Arc dropdown at top of chat page; `story_arc_id` set on save. Optional arc context injection into AI prompt. No migration needed — FK already exists.
 
 ---
 
-## Pinned Entities with Inline Edit (Session Mode)
+## Pinned Entities with Inline Edit (Session Mode) — PLANNED
 
-**Why deferred:** The dashboard already shows NPCs and the active site. Pinning adds flexibility but also UI complexity.
-
-**The idea:**
-- GM can "pin" any entity (NPC, location, item, quest) to the dashboard sidebar for quick reference during a session
-- Pinned entities show a condensed card: name, status, one-line description
-- Optional inline edit of status field directly from the pin card (no navigation away)
-- Pins stored in `localStorage` or as a JSON field on the `Session` model
+Full implementation plan saved to `docs/pinned-entities-plan.md`. Pin/unpin API on Session model. 3 new JSON columns (location, quest, item) plus wiring up existing unused `pinned_npc_ids`. Dashboard panel with condensed cards. Migration required.
 
 ---
