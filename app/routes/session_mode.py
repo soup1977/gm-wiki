@@ -521,3 +521,133 @@ def suggest_consequences():
         return jsonify({'consequences': response})
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 502
+
+
+# ---------------------------------------------------------------------------
+# Pinned Entities — pin/unpin any entity to the active session dashboard
+# ---------------------------------------------------------------------------
+
+_PIN_COLUMN_MAP = {
+    'npc':      'pinned_npc_ids',
+    'location': 'pinned_location_ids',
+    'quest':    'pinned_quest_ids',
+    'item':     'pinned_item_ids',
+}
+
+_PIN_MODEL_MAP = {
+    'npc':      NPC,
+    'location': Location,
+    'quest':    Quest,
+    'item':     Item,
+}
+
+
+@session_mode_bp.route('/pin', methods=['POST'])
+@login_required
+def pin_entity():
+    """Add an entity to the active session's pinned list."""
+    campaign_id = get_active_campaign_id()
+    current_session_id = session.get('current_session_id')
+    if not campaign_id or not current_session_id:
+        return jsonify({'error': 'No active session.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    entity_type = data.get('entity_type', '').lower()
+    entity_id = data.get('entity_id')
+
+    if entity_type not in _PIN_COLUMN_MAP or not entity_id:
+        return jsonify({'error': 'Invalid entity_type or entity_id.'}), 400
+
+    # Verify the entity exists in this campaign
+    model = _PIN_MODEL_MAP[entity_type]
+    entity = model.query.filter_by(id=int(entity_id), campaign_id=campaign_id).first()
+    if not entity:
+        return jsonify({'error': 'Entity not found.'}), 404
+
+    game_session = GameSession.query.filter_by(
+        id=current_session_id, campaign_id=campaign_id
+    ).first()
+    if not game_session:
+        return jsonify({'error': 'Session not found.'}), 404
+
+    col = _PIN_COLUMN_MAP[entity_type]
+    current_ids = getattr(game_session, col) or []
+    if int(entity_id) not in current_ids:
+        current_ids = current_ids + [int(entity_id)]
+        setattr(game_session, col, current_ids)
+        db.session.commit()
+
+    return jsonify({'ok': True, 'pinned': True})
+
+
+@session_mode_bp.route('/unpin', methods=['POST'])
+@login_required
+def unpin_entity():
+    """Remove an entity from the active session's pinned list."""
+    campaign_id = get_active_campaign_id()
+    current_session_id = session.get('current_session_id')
+    if not campaign_id or not current_session_id:
+        return jsonify({'error': 'No active session.'}), 400
+
+    data = request.get_json(silent=True) or {}
+    entity_type = data.get('entity_type', '').lower()
+    entity_id = data.get('entity_id')
+
+    if entity_type not in _PIN_COLUMN_MAP or not entity_id:
+        return jsonify({'error': 'Invalid entity_type or entity_id.'}), 400
+
+    game_session = GameSession.query.filter_by(
+        id=current_session_id, campaign_id=campaign_id
+    ).first()
+    if not game_session:
+        return jsonify({'error': 'Session not found.'}), 404
+
+    col = _PIN_COLUMN_MAP[entity_type]
+    current_ids = getattr(game_session, col) or []
+    if int(entity_id) in current_ids:
+        current_ids = [i for i in current_ids if i != int(entity_id)]
+        setattr(game_session, col, current_ids)
+        db.session.commit()
+
+    return jsonify({'ok': True, 'pinned': False})
+
+
+@session_mode_bp.route('/pinned-entities')
+@login_required
+def get_pinned_entities():
+    """Return all pinned entities for the active session as JSON (used by the dashboard)."""
+    campaign_id = get_active_campaign_id()
+    current_session_id = session.get('current_session_id')
+    if not campaign_id or not current_session_id:
+        return jsonify({'entities': []})
+
+    game_session = GameSession.query.filter_by(
+        id=current_session_id, campaign_id=campaign_id
+    ).first()
+    if not game_session:
+        return jsonify({'entities': []})
+
+    entities = []
+    for entity_type, col in _PIN_COLUMN_MAP.items():
+        ids = getattr(game_session, col) or []
+        if not ids:
+            continue
+        model = _PIN_MODEL_MAP[entity_type]
+        for eid in ids:
+            entity = model.query.filter_by(id=eid, campaign_id=campaign_id).first()
+            if entity:
+                desc = ''
+                if hasattr(entity, 'role') and entity.role:
+                    desc = entity.role
+                elif hasattr(entity, 'type') and entity.type:
+                    desc = entity.type
+                elif hasattr(entity, 'status') and entity.status:
+                    desc = entity.status
+                entities.append({
+                    'entity_type': entity_type,
+                    'id': entity.id,
+                    'name': entity.name,
+                    'description': desc,
+                })
+
+    return jsonify({'entities': entities})

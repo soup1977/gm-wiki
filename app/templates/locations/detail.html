@@ -48,6 +48,13 @@
         {% else %}
         <span class="badge bg-secondary"><i class="bi bi-eye-slash"></i> Hidden from players</span>
         {% endif %}
+        {% if session.get('in_session_mode') and session.get('current_session_id') %}
+        <button type="button" class="btn btn-sm btn-outline-info pin-entity-btn"
+                data-entity-type="location" data-entity-id="{{ location.id }}"
+                title="Pin to session dashboard">
+            <i class="bi bi-pin-angle"></i> Pin
+        </button>
+        {% endif %}
         <a href="{{ url_for('locations.edit_location', location_id=location.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>

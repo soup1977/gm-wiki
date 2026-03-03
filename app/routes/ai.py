@@ -13,9 +13,20 @@ import re
 from flask import Blueprint, request, jsonify, session as flask_session
 from flask_login import login_required
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
-from app.models import ActivityLog
+from app.models import ActivityLog, AppSetting
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
+
+
+# ---------------------------------------------------------------------------
+# Configurable token limits — reads from AppSetting, falls back to defaults
+# ---------------------------------------------------------------------------
+
+def _get_max_tokens(setting_key, default, multiplier=1.0):
+    """Read a token limit from AppSetting, apply multiplier, clamp to range."""
+    base = int(AppSetting.get(setting_key, str(default)))
+    value = int(base * multiplier)
+    return max(256, min(value, 16384))
 
 # ---------------------------------------------------------------------------
 # Per-entity prompts and field schemas
@@ -352,8 +363,9 @@ def smart_fill():
     messages, system_prompt = _build_prompt(entity_type, text)
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=1024, json_mode=True,
-                      provider=get_feature_provider('smart_fill'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048, 0.5),
+                      json_mode=True, provider=get_feature_provider('smart_fill'))
         result = _extract_json(raw)
         return jsonify(result)
 
@@ -535,13 +547,13 @@ def generate_entry():
     # Bestiary needs moderate extra room for stat blocks
     if entity_type == 'adventure_site':
         concept_limit = 5000
-        max_out_tokens = 8000   # near Haiku's 8192 ceiling
+        max_out_tokens = _get_max_tokens('ai_max_tokens_generate', 2048, 4.0)
     elif entity_type == 'bestiary':
         concept_limit = 5000
-        max_out_tokens = 4096
+        max_out_tokens = _get_max_tokens('ai_max_tokens_generate', 2048, 2.0)
     else:
         concept_limit = 2000
-        max_out_tokens = 2048
+        max_out_tokens = _get_max_tokens('ai_max_tokens_generate', 2048)
 
     if len(concept) > concept_limit:
         return jsonify({'error': f'Concept is too long (max ~{concept_limit} characters).'}), 400
@@ -635,8 +647,9 @@ def brainstorm_arcs():
     ]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
-                      provider=get_feature_provider('generate'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                      json_mode=True, provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
@@ -729,8 +742,9 @@ def site_ideas():
     messages = [{'role': 'user', 'content': user_content}]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
-                      provider=get_feature_provider('generate'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                      json_mode=True, provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
@@ -817,8 +831,9 @@ def session_prep():
     messages = [{'role': 'user', 'content': '\n'.join(parts)}]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
-                      provider=get_feature_provider('generate'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                      json_mode=True, provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
@@ -903,8 +918,9 @@ def draft_summary():
     messages = [{'role': 'user', 'content': '\n'.join(parts)}]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
-                      provider=get_feature_provider('generate'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                      json_mode=True, provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
@@ -970,8 +986,9 @@ def generate_arc_structure():
     messages = [{'role': 'user', 'content': '\n'.join(parts)}]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True,
-                      provider=get_feature_provider('generate'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                      json_mode=True, provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
@@ -1036,8 +1053,9 @@ def propose_arc_entities():
     messages = [{'role': 'user', 'content': '\n'.join(parts) + '\n\nPropose the entities needed to run this arc.'}]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=3000, json_mode=True,
-                      provider=get_feature_provider('generate'))
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048, 1.5),
+                      json_mode=True, provider=get_feature_provider('generate'))
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
@@ -1115,7 +1133,8 @@ def genesis_create_entity():
     messages, system_prompt = _build_generate_prompt(entity_type, concept, world_context, arc_context)
 
     # Match the token limits used by the standard generate-entry endpoint
-    gen_tokens = 4096 if entity_type in ('location', 'npc') else 2048
+    mult = 2.0 if entity_type in ('location', 'npc') else 1.0
+    gen_tokens = _get_max_tokens('ai_max_tokens_generate', 2048, mult)
 
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=gen_tokens, json_mode=True,

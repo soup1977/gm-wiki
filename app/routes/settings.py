@@ -38,6 +38,13 @@ def index():
         for key in ('ai_prompt_smart_fill', 'ai_prompt_generate', 'ai_prompt_brainstorm_arcs',
                     'ai_prompt_site_ideas', 'ai_prompt_session_prep', 'ai_prompt_draft_summary'):
             AppSetting.set(key, request.form.get(key, '').strip())
+        # AI token limits
+        AppSetting.set('ai_max_tokens_standard',
+                       request.form.get('ai_max_tokens_standard', '2048').strip() or '2048')
+        AppSetting.set('ai_max_tokens_generate',
+                       request.form.get('ai_max_tokens_generate', '2048').strip() or '2048')
+        AppSetting.set('ai_max_tokens_assistant',
+                       request.form.get('ai_max_tokens_assistant', '4096').strip() or '4096')
         # Activity log settings
         AppSetting.set('activity_log_retention_days',
                        request.form.get('activity_log_retention_days', '90').strip() or '90')
@@ -66,6 +73,11 @@ def index():
 
     allow_signup = AppSetting.get('allow_signup', 'true') == 'true'
 
+    # AI token limits
+    ai_max_tokens_standard = AppSetting.get('ai_max_tokens_standard', '2048')
+    ai_max_tokens_generate = AppSetting.get('ai_max_tokens_generate', '2048')
+    ai_max_tokens_assistant = AppSetting.get('ai_max_tokens_assistant', '4096')
+
     # Activity log settings
     activity_log_retention_days = AppSetting.get('activity_log_retention_days', '90')
     activity_log_max_rows = AppSetting.get('activity_log_max_rows', '10000')
@@ -83,6 +95,9 @@ def index():
                            available_providers=available_providers,
                            feature_providers=feature_providers,
                            ai_prompts=ai_prompts,
+                           ai_max_tokens_standard=ai_max_tokens_standard,
+                           ai_max_tokens_generate=ai_max_tokens_generate,
+                           ai_max_tokens_assistant=ai_max_tokens_assistant,
                            activity_log_retention_days=activity_log_retention_days,
                            activity_log_max_rows=activity_log_max_rows)
 

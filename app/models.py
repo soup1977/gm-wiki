@@ -417,6 +417,9 @@ class Session(db.Model):
 
     # Phase 5 — Session Mode fields
     pinned_npc_ids = db.Column(db.JSON)      # Array of NPC IDs pinned for this session
+    pinned_location_ids = db.Column(db.JSON)  # Array of Location IDs pinned for this session
+    pinned_quest_ids = db.Column(db.JSON)     # Array of Quest IDs pinned for this session
+    pinned_item_ids = db.Column(db.JSON)      # Array of Item IDs pinned for this session
     active_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
     campaign = db.relationship('Campaign', backref='sessions')

@@ -187,6 +187,19 @@
     {% endif %}
 </div>
 
+{# ── Pinned Entities panel ──────────────────────────────────────────────── #}
+<div class="card bg-dark border-secondary mb-4" id="pinned-entities-panel">
+    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-pin-angle me-1"></i> Pinned Entities</h6>
+        <span class="badge bg-secondary" id="pinned-count">0</span>
+    </div>
+    <div class="card-body p-0" id="pinned-entities-list">
+        <div class="text-muted small p-3" id="pinned-empty">
+            No entities pinned to this session. Use the <i class="bi bi-pin-angle"></i> button on any NPC, Location, Quest, or Item detail page to pin it here for quick reference.
+        </div>
+    </div>
+</div>
+
 {# ── Encounters panel ─────────────────────────────────────────────────────── #}
 {% if session_encounters %}
 <div class="mb-4">
@@ -800,6 +813,97 @@
 })();
 </script>
 {% endif %}
+
+{# ── Pinned Entities loader ─────────────────────────────────────────────── #}
+<script>
+(function () {
+    'use strict';
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var listEl  = document.getElementById('pinned-entities-list');
+    var emptyEl = document.getElementById('pinned-empty');
+    var countEl = document.getElementById('pinned-count');
+    if (!listEl) return;
+
+    var ICONS = { npc: 'bi-person', location: 'bi-geo-alt', quest: 'bi-flag', item: 'bi-bag' };
+    var LABELS = { npc: 'NPC', location: 'Location', quest: 'Quest', item: 'Item' };
+    var URL_MAP = {
+        npc:      '/npcs/',
+        location: '/locations/',
+        quest:    '/quests/',
+        item:     '/items/',
+    };
+
+    function loadPinned() {
+        fetch('/session-mode/pinned-entities')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var entities = data.entities || [];
+                countEl.textContent = entities.length;
+                if (entities.length === 0) {
+                    emptyEl.style.display = '';
+                    return;
+                }
+                emptyEl.style.display = 'none';
+
+                var ul = document.createElement('ul');
+                ul.className = 'list-group list-group-flush';
+
+                entities.forEach(function (e) {
+                    var li = document.createElement('li');
+                    li.className = 'list-group-item bg-dark border-secondary py-2 d-flex justify-content-between align-items-center';
+                    li.innerHTML =
+                        '<div>' +
+                            '<span class="badge bg-secondary me-2"><i class="bi ' + (ICONS[e.entity_type] || 'bi-star') + '"></i></span>' +
+                            '<a href="' + (URL_MAP[e.entity_type] || '/') + e.id + '?from=session" class="text-decoration-none text-light fw-bold small">' +
+                                escapeHtml(e.name) +
+                            '</a>' +
+                            (e.description ? ' <span class="text-muted small ms-2">' + escapeHtml(e.description) + '</span>' : '') +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-outline-danger py-0 px-1 unpin-btn" title="Unpin" ' +
+                            'data-type="' + e.entity_type + '" data-id="' + e.id + '">' +
+                            '<i class="bi bi-pin-angle-fill"></i>' +
+                        '</button>';
+                    ul.appendChild(li);
+                });
+
+                // Remove any previous list
+                var oldUl = listEl.querySelector('ul');
+                if (oldUl) oldUl.remove();
+                listEl.appendChild(ul);
+
+                // Wire unpin buttons
+                ul.querySelectorAll('.unpin-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        unpin(btn.dataset.type, btn.dataset.id, btn);
+                    });
+                });
+            });
+    }
+
+    function unpin(entityType, entityId, btn) {
+        btn.disabled = true;
+        fetch('/session-mode/unpin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ entity_type: entityType, entity_id: parseInt(entityId, 10) }),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+            // Reload pinned list
+            var oldUl = listEl.querySelector('ul');
+            if (oldUl) oldUl.remove();
+            loadPinned();
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    loadPinned();
+})();
+</script>
 
 {% if active_site %}
 <script>

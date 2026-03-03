@@ -21,7 +21,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Campaign, NPC, Location, Quest, Item, ActivityLog
+from app.models import Campaign, NPC, Location, Quest, Item, ActivityLog, AppSetting, AdventureSite
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
 
 campaign_assistant_bp = Blueprint('campaign_assistant', __name__)
@@ -143,6 +143,7 @@ def chat():
 
     # Entity counts for the context panel
     context = {}
+    arcs = []
     if campaign:
         context = {
             'npc_count': NPC.query.filter_by(campaign_id=campaign.id).count(),
@@ -150,6 +151,7 @@ def chat():
             'quest_count': Quest.query.filter_by(campaign_id=campaign.id).count(),
             'item_count': Item.query.filter_by(campaign_id=campaign.id).count(),
         }
+        arcs = AdventureSite.query.filter_by(campaign_id=campaign.id).order_by(AdventureSite.name).all()
 
     return render_template(
         'campaign_assistant/chat.html',
@@ -157,6 +159,7 @@ def chat():
         ai_enabled=ai_enabled,
         context=context,
         history=history,
+        arcs=arcs,
     )
 
 
@@ -194,7 +197,9 @@ def send_message():
         history = history[-MAX_HISTORY_MESSAGES:]
 
     try:
-        raw_response = ai_chat(system_prompt, history, max_tokens=4096,
+        assistant_tokens = int(AppSetting.get('ai_max_tokens_assistant', '4096'))
+        assistant_tokens = max(256, min(assistant_tokens, 16384))
+        raw_response = ai_chat(system_prompt, history, max_tokens=assistant_tokens,
                                provider=get_feature_provider('assistant'))
     except AIProviderError as e:
         ActivityLog.log_event('error', 'campaign_assistant', 'AI chat failed',
@@ -226,6 +231,7 @@ def save_entity():
 
     entity_type = data.get('entity_type', '').lower()
     fields = data.get('fields', {})
+    story_arc_id = data.get('story_arc_id')
 
     if entity_type not in ENTITY_FIELDS:
         return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
@@ -233,6 +239,13 @@ def save_entity():
     campaign = _get_active_campaign()
     if not campaign:
         return jsonify({'error': 'No active campaign selected.'}), 400
+
+    # Resolve story_arc_id — validate it belongs to this campaign
+    arc_id = None
+    if story_arc_id:
+        arc = AdventureSite.query.filter_by(id=int(story_arc_id), campaign_id=campaign.id).first()
+        if arc:
+            arc_id = arc.id
 
     try:
         if entity_type == 'npc':
@@ -247,6 +260,7 @@ def save_entity():
                 secrets=fields.get('secrets') or '',
                 notes=fields.get('notes') or '',
                 is_player_visible=False,
+                story_arc_id=arc_id,
             )
             db.session.add(entity)
             db.session.commit()
@@ -261,6 +275,7 @@ def save_entity():
                 gm_notes=fields.get('gm_notes') or '',
                 notes=fields.get('notes') or '',
                 is_player_visible=False,
+                story_arc_id=arc_id,
             )
             db.session.add(entity)
             db.session.commit()
@@ -276,6 +291,7 @@ def save_entity():
                 outcome=fields.get('outcome') or '',
                 gm_notes=fields.get('gm_notes') or '',
                 is_player_visible=False,
+                story_arc_id=arc_id,
             )
             db.session.add(entity)
             db.session.commit()
@@ -294,6 +310,7 @@ def save_entity():
                 description=fields.get('description') or '',
                 gm_notes=fields.get('gm_notes') or '',
                 is_player_visible=False,
+                story_arc_id=arc_id,
             )
             db.session.add(entity)
             db.session.commit()
