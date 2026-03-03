@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import login_required
 from app import db
-from app.models import Session as GameSession, Quest, Location, Encounter, NPC, Item, Campaign
+from app.models import Session as GameSession, Quest, Location, Encounter, NPC, Item, Campaign, ActivityLog
 
 session_mode_bp = Blueprint('session_mode', __name__, url_prefix='/session-mode')
 
@@ -232,6 +232,8 @@ def save_post_session():
                 item.description = note
 
     db.session.commit()
+    ActivityLog.log_event('edited', 'session', game_session.title or f'Session {game_session.number}',
+                          entity_id=game_session.id, campaign_id=campaign_id, details='post-session wrap-up')
 
     # Check if the GM wants to start the next session
     if request.form.get('action') == 'next_session':

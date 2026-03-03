@@ -641,6 +641,48 @@ def create_app():
         db.session.commit()
         print(f"\nDone! Skipped {stats['skipped']} duplicates.")
 
+    # -----------------------------------------------------------------
+    # CLI: flask purge-activity-log
+    # Deletes activity log entries older than the retention period.
+    # -----------------------------------------------------------------
+    @app.cli.command('purge-activity-log')
+    def purge_activity_log():
+        """Delete activity log entries older than the retention period."""
+        from datetime import datetime, timedelta
+        from app.models import ActivityLog, AppSetting
+
+        days = int(AppSetting.get('activity_log_retention_days', '90'))
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        count = ActivityLog.query.filter(ActivityLog.timestamp < cutoff).delete()
+        db.session.commit()
+        print(f'Purged {count} activity log entries older than {days} days.')
+
+    # -----------------------------------------------------------------
+    # Auto-purge: trim activity log rows beyond max on ~1% of requests
+    # -----------------------------------------------------------------
+    @app.after_request
+    def auto_purge_activity_log(response):
+        import random
+        if random.random() < 0.01:  # ~1% of requests
+            try:
+                from app.models import ActivityLog, AppSetting
+                max_rows = int(AppSetting.get('activity_log_max_rows', '10000'))
+                total = ActivityLog.query.count()
+                if total > max_rows:
+                    # Delete oldest entries beyond the limit
+                    cutoff_entry = (ActivityLog.query
+                                    .order_by(ActivityLog.timestamp.desc())
+                                    .offset(max_rows)
+                                    .first())
+                    if cutoff_entry:
+                        ActivityLog.query.filter(
+                            ActivityLog.timestamp <= cutoff_entry.timestamp
+                        ).delete()
+                        db.session.commit()
+            except Exception:
+                pass  # Never break a request over log cleanup
+        return response
+
     # Security headers — added to every response
     @app.after_request
     def set_security_headers(response):

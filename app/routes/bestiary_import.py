@@ -8,7 +8,7 @@ import markdown as _md
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required
 from app import db
-from app.models import BestiaryEntry
+from app.models import BestiaryEntry, ActivityLog
 
 bestiary_import_bp = Blueprint('bestiary_import', __name__, url_prefix='/bestiary/import')
 
@@ -246,6 +246,8 @@ def search():
 
     data = _fetch_open5e('/monsters/', {'search': q, 'limit': 20})
     if data is None:
+        ActivityLog.log_event('error', 'bestiary_import', 'Open5e search failed',
+                              details='API unreachable', immediate=True)
         return jsonify({'error': 'Could not reach Open5e. Check your internet connection.'}), 502
 
     results = []
@@ -270,6 +272,8 @@ def preview():
 
     m = _fetch_open5e(f'/monsters/{slug}/')
     if m is None:
+        ActivityLog.log_event('error', 'bestiary_import', f'Open5e preview failed: {slug}',
+                              details='API unreachable', immediate=True)
         return jsonify({'error': f'Could not load creature data. Try again.'}), 502
 
     name = m.get('name', slug)
@@ -305,6 +309,8 @@ def save():
 
     m = _fetch_open5e(f'/monsters/{slug}/')
     if m is None:
+        ActivityLog.log_event('error', 'bestiary_import', f'Open5e save failed: {slug}',
+                              details='API unreachable', immediate=True)
         flash('Could not fetch creature data from Open5e. Please try again.', 'danger')
         return redirect(url_for('bestiary_import.import_web'))
 

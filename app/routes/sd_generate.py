@@ -9,7 +9,7 @@ POST /api/sd/generate
 from flask import Blueprint, request, jsonify, url_for, session
 from flask_login import login_required, current_user
 from app.sd_provider import sd_generate, SDProviderError, is_sd_enabled
-from app.models import Campaign
+from app.models import Campaign, ActivityLog
 
 sd_generate_bp = Blueprint('sd_generate', __name__, url_prefix='/api/sd')
 
@@ -44,4 +44,6 @@ def generate():
         img_url = url_for('static', filename='uploads/' + filename)
         return jsonify({'ok': True, 'filename': filename, 'url': img_url})
     except SDProviderError as e:
+        ActivityLog.log_event('error', 'sd_generate', 'Image generation failed',
+                              details=str(e)[:200], campaign_id=campaign_id, immediate=True)
         return jsonify({'ok': False, 'error': str(e)}), 500

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_user, logout_user, current_user
 from app import db, limiter
-from app.models import User, Campaign, AppSetting
+from app.models import User, Campaign, AppSetting, ActivityLog
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -30,6 +30,8 @@ def login():
             return redirect(next_page or url_for('main.index'))
 
         flash('Invalid username or password.', 'danger')
+        ActivityLog.log_event('error', 'auth', username or '(empty)',
+                              details='Failed login attempt', immediate=True)
 
     # Check if signup is enabled (for showing the signup link)
     allow_signup = AppSetting.get('allow_signup', 'true') == 'true'

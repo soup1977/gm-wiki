@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 from app import db
 from app.models import (Encounter, EncounterMonster, BestiaryEntry,
-                        MonsterInstance, RandomTable, Session as GameSession)
+                        MonsterInstance, RandomTable, Session as GameSession, ActivityLog)
 
 encounters_bp = Blueprint('encounters', __name__, url_prefix='/encounters')
 
@@ -139,6 +139,7 @@ def create_encounter():
         _save_monsters(encounter, entry_ids, counts)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'encounter', encounter.name, entity_id=encounter.id, campaign_id=campaign_id)
         flash(f'Encounter "{encounter.name}" created.', 'success')
         return redirect(url_for('encounters.encounter_detail', encounter_id=encounter.id))
 
@@ -199,6 +200,7 @@ def edit_encounter(encounter_id):
         _save_monsters(encounter, entry_ids, counts)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'encounter', encounter.name, entity_id=encounter.id, campaign_id=campaign_id)
         flash(f'Encounter "{encounter.name}" updated.', 'success')
         return redirect(url_for('encounters.encounter_detail', encounter_id=encounter.id))
 
@@ -218,6 +220,7 @@ def delete_encounter(encounter_id):
     name = encounter.name
     db.session.delete(encounter)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'encounter', name, entity_id=encounter_id, campaign_id=campaign_id)
     flash(f'Encounter "{name}" deleted.', 'success')
     return redirect(url_for('encounters.list_encounters'))
 

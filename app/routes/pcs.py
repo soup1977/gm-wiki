@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from app import db, save_upload
 from app.models import (PlayerCharacter, PlayerCharacterStat, CampaignStatTemplate,
-                         Location, Campaign, ICRPGCharacterSheet, ICRPGCharLoot,
+                         Location, Campaign, ICRPGCharacterSheet, ICRPGCharLoot, ActivityLog,
                          ICRPGCharAbility, ICRPGWorld, ICRPGLifeForm, ICRPGType,
                          ICRPGAbility, ICRPGStartingLoot, ICRPGLootDef, ICRPGSpell)
 
@@ -177,6 +177,7 @@ def create_pc():
             pc.portrait_filename = filename
 
         db.session.commit()
+        ActivityLog.log_event('created', 'pc', pc.character_name, entity_id=pc.id, campaign_id=campaign_id)
         flash(f'"{pc.character_name}" created!', 'success')
         return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
 
@@ -298,6 +299,7 @@ def edit_pc(pc_id):
             pc.portrait_filename = filename
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'pc', pc.character_name, entity_id=pc.id, campaign_id=campaign_id)
         flash(f'"{pc.character_name}" updated!', 'success')
         return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
 
@@ -323,6 +325,7 @@ def delete_pc(pc_id):
     # cascade='all, delete-orphan' on pc.stats handles PlayerCharacterStat rows
     db.session.delete(pc)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'pc', name, entity_id=pc_id, campaign_id=campaign_id)
 
     flash(f'"{name}" deleted.', 'warning')
     return redirect(url_for('pcs.list_pcs'))
@@ -955,6 +958,7 @@ def icrpg_create_character():
         ))
 
     db.session.commit()
+    ActivityLog.log_event('created', 'pc', pc.character_name, entity_id=pc.id, campaign_id=campaign_id)
 
     return jsonify({
         'ok': True,

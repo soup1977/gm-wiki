@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, session
 from flask_login import login_required
 from app import db
 from app.models import (Faction, Location, NPC, Quest, Item,
-                        Session as GameSession, RandomTable, BestiaryEntry)
+                        Session as GameSession, RandomTable, BestiaryEntry, ActivityLog)
 
 quick_create_bp = Blueprint('quick_create', __name__, url_prefix='/api')
 
@@ -135,6 +135,8 @@ def quick_create(entity_type):
     record = model(**kwargs)
     db.session.add(record)
     db.session.commit()
+    ActivityLog.log_event('created', entity_type, getattr(record, name_field),
+                          entity_id=record.id, campaign_id=campaign_id if campaign_scoped else None)
 
     resp = {'id': record.id, 'name': getattr(record, name_field)}
     prefix = SHORTCODE_PREFIXES.get(entity_type)

@@ -10,9 +10,10 @@ If no AI provider is configured, both endpoints return a 403.
 
 import json
 import re
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session as flask_session
 from flask_login import login_required
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+from app.models import ActivityLog
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -357,8 +358,12 @@ def smart_fill():
         return jsonify(result)
 
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_smart_fill', 'Smart Fill failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_smart_fill', 'Smart Fill failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -574,8 +579,12 @@ def generate_entry():
         return jsonify(result)
 
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_generate', 'Generate Entry failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_generate', 'Generate Entry failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -631,8 +640,12 @@ def brainstorm_arcs():
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_brainstorm', 'Brainstorm Arcs failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_brainstorm', 'Brainstorm Arcs failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -669,6 +682,8 @@ def save_idea_as_encounter():
     )
     db.session.add(encounter)
     db.session.commit()
+    ActivityLog.log_event('created', 'encounter', encounter.name, entity_id=encounter.id,
+                          campaign_id=campaign.id, details='from site idea')
 
     return jsonify({
         'id':   encounter.id,
@@ -719,8 +734,12 @@ def site_ideas():
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_site_ideas', 'Site Ideas failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_site_ideas', 'Site Ideas failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -803,8 +822,12 @@ def session_prep():
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_session_prep', 'Session Prep failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_session_prep', 'Session Prep failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -885,8 +908,12 @@ def draft_summary():
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_draft_summary', 'Draft Summary failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_draft_summary', 'Draft Summary failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -948,8 +975,12 @@ def generate_arc_structure():
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_arc_structure', 'Arc Structure failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_arc_structure', 'Arc Structure failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -1010,8 +1041,12 @@ def propose_arc_entities():
         result = _extract_json(raw)
         return jsonify(result)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_propose_entities', 'Propose Entities failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_propose_entities', 'Propose Entities failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -1087,8 +1122,12 @@ def genesis_create_entity():
                       provider=get_feature_provider('generate'))
         fields = _extract_json(raw)
     except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_genesis', 'Genesis failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_genesis', 'Genesis failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': str(e)}), 500
 
     # Resolve the model class and valid fields
@@ -1117,6 +1156,8 @@ def genesis_create_entity():
     entity = ModelClass(**kwargs)
     db.session.add(entity)
     db.session.commit()
+    ActivityLog.log_event('created', entity_type, entity.name, entity_id=entity.id,
+                          campaign_id=campaign.id, details='AI genesis')
 
     return jsonify({
         'id':          entity.id,

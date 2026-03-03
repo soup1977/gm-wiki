@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags, Faction
+from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags, Faction, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 _NPC_TEXT_FIELDS = ['physical_description', 'personality', 'notes', 'secrets']
@@ -99,6 +99,7 @@ def create_npc():
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'npc', npc.name, entity_id=npc.id, campaign_id=campaign_id)
 
         flash(f'NPC "{npc.name}" created!', 'success')
         return redirect(url_for('npcs.npc_detail', npc_id=npc.id))
@@ -182,6 +183,7 @@ def edit_npc(npc_id):
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'npc', npc.name, entity_id=npc.id, campaign_id=campaign_id)
 
         flash(f'NPC "{npc.name}" updated!', 'success')
         return redirect(url_for('npcs.npc_detail', npc_id=npc.id))
@@ -203,8 +205,11 @@ def set_npc_status(npc_id):
         return redirect(url_for('npcs.list_npcs'))
     new_status = request.form.get('status', '').strip()
     if new_status in NPC_STATUS_CHOICES:
+        old_status = npc.status
         npc.status = new_status
         db.session.commit()
+        ActivityLog.log_event('status_changed', 'npc', npc.name, entity_id=npc.id,
+                              campaign_id=campaign_id, details=f'{old_status} → {new_status}')
     return redirect(url_for('npcs.npc_detail', npc_id=npc_id))
 
 
@@ -228,6 +233,7 @@ def delete_npc(npc_id):
     # quest_npc_link, session_npc_link) automatically when the NPC is deleted.
     db.session.delete(npc)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'npc', name, entity_id=npc_id, campaign_id=campaign_id)
 
     flash(f'NPC "{name}" deleted.', 'warning')
     return redirect(url_for('npcs.list_npcs'))

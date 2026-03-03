@@ -21,7 +21,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Campaign, NPC, Location, Quest, Item
+from app.models import Campaign, NPC, Location, Quest, Item, ActivityLog
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
 
 campaign_assistant_bp = Blueprint('campaign_assistant', __name__)
@@ -197,6 +197,8 @@ def send_message():
         raw_response = ai_chat(system_prompt, history, max_tokens=4096,
                                provider=get_feature_provider('assistant'))
     except AIProviderError as e:
+        ActivityLog.log_event('error', 'campaign_assistant', 'AI chat failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': str(e)}), 500
 
     # Parse entity blocks out of the response
@@ -302,6 +304,8 @@ def save_entity():
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'campaign_assistant save_entity error: {e}')
+        ActivityLog.log_event('error', 'campaign_assistant', f'Entity save failed: {entity_type}',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
         return jsonify({'error': f'Failed to save: {str(e)}'}), 500
 
 

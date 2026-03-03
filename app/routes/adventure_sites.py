@@ -3,7 +3,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from app import db
-from app.models import AdventureSite, Session, Tag, get_or_create_tags, Campaign
+from app.models import AdventureSite, Session, Tag, get_or_create_tags, Campaign, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target, resolve_mentions_for_source
 
 adventure_sites_bp = Blueprint('adventure_sites', __name__)
@@ -112,6 +112,7 @@ def create_site():
                 db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'adventure_site', site.name, entity_id=site.id, campaign_id=campaign_id)
         flash(f'Adventure Site "{site.name}" created.', 'success')
         return redirect(url_for('adventure_sites.site_detail', site_id=site.id))
 
@@ -232,6 +233,7 @@ def genesis_save():
             db.session.add(m)
 
     db.session.commit()
+    ActivityLog.log_event('created', 'adventure_site', site.name, entity_id=site.id, campaign_id=campaign_id)
     return jsonify({'site_id': site.id, 'name': site.name}), 201
 
 
@@ -310,6 +312,7 @@ def edit_site(site_id):
                 db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'adventure_site', site.name, entity_id=site.id, campaign_id=campaign_id)
         flash(f'Adventure Site "{site.name}" updated.', 'success')
         return redirect(url_for('adventure_sites.site_detail', site_id=site.id))
 
@@ -326,6 +329,7 @@ def delete_site(site_id):
     clear_mentions('site', site.id)
     db.session.delete(site)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'adventure_site', name, entity_id=site_id, campaign_id=campaign_id)
     flash(f'Adventure Site "{name}" deleted.', 'success')
     return redirect(url_for('adventure_sites.list_sites'))
 

@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from app import db
-from app.models import Quest, NPC, Location, Tag, quest_tags, get_or_create_tags, Faction
+from app.models import Quest, NPC, Location, Tag, quest_tags, get_or_create_tags, Faction, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 quests_bp = Blueprint('quests', __name__)
@@ -114,6 +114,7 @@ def create_quest():
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('created', 'quest', quest.name, entity_id=quest.id, campaign_id=campaign_id)
         flash(f'Quest "{quest.name}" created.', 'success')
         return redirect(url_for('quests.quest_detail', quest_id=quest.id))
 
@@ -187,6 +188,7 @@ def edit_quest(quest_id):
                     db.session.add(m)
 
         db.session.commit()
+        ActivityLog.log_event('edited', 'quest', quest.name, entity_id=quest.id, campaign_id=campaign_id)
         flash(f'Quest "{quest.name}" updated.', 'success')
         return redirect(url_for('quests.quest_detail', quest_id=quest.id))
 
@@ -202,8 +204,11 @@ def set_quest_status(quest_id):
     quest = Quest.query.filter_by(id=quest_id, campaign_id=campaign_id).first_or_404()
     new_status = request.form.get('status', '').strip()
     if new_status in QUEST_STATUSES:
+        old_status = quest.status
         quest.status = new_status
         db.session.commit()
+        ActivityLog.log_event('status_changed', 'quest', quest.name, entity_id=quest.id,
+                              campaign_id=campaign_id, details=f'{old_status} → {new_status}')
     return redirect(url_for('quests.quest_detail', quest_id=quest_id))
 
 
@@ -215,5 +220,6 @@ def delete_quest(quest_id):
     name = quest.name
     db.session.delete(quest)
     db.session.commit()
+    ActivityLog.log_event('deleted', 'quest', name, entity_id=quest_id, campaign_id=campaign_id)
     flash(f'Quest "{name}" deleted.', 'success')
     return redirect(url_for('quests.list_quests'))

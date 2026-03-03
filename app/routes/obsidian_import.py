@@ -13,7 +13,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app import db
-from app.models import Campaign, NPC, Location, CompendiumEntry, Tag
+from app.models import Campaign, NPC, Location, CompendiumEntry, Tag, ActivityLog
 from app.obsidian_parser import (
     scan_vault, scan_images, parse_npc, parse_npc_faction,
     parse_location, parse_compendium, copy_image_to_uploads,
@@ -261,6 +261,8 @@ def execute():
         db.session.rollback()
         flash(f"Database error during import: {str(e)}", 'danger')
         results['errors'].append(f"Database commit failed: {str(e)}")
+        ActivityLog.log_event('error', 'obsidian_import', 'Import failed',
+                              details=str(e)[:200], campaign_id=campaign.id, immediate=True)
 
     # Clean up session
     for key in ['obsidian_vault_path', 'obsidian_campaign_id',
