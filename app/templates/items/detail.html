@@ -63,6 +63,11 @@
         <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>
+        {% if user_campaigns | length > 1 %}
+        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#copyEntityModal">
+            <i class="bi bi-files"></i> Copy
+        </button>
+        {% endif %}
         <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}"
               onsubmit="return confirm('Delete item \'{{ item.name }}\'? This cannot be undone.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -143,4 +148,7 @@
     </div>
 </div>
 {% endif %}
+{% set copy_entity_type = 'item' %}
+{% set copy_entity_id = item.id %}
+{% include 'partials/_copy_entity_modal.html' %}
 {% endblock %}

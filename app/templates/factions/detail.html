@@ -20,6 +20,11 @@
         <a href="{{ url_for('factions.edit_faction', faction_id=faction.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>
+        {% if user_campaigns | length > 1 %}
+        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#copyEntityModal">
+            <i class="bi bi-files"></i> Copy
+        </button>
+        {% endif %}
         <form method="POST"
               action="{{ url_for('factions.delete_faction', faction_id=faction.id) }}"
               onsubmit="return confirm('Delete faction \'{{ faction.name }}\'? This will unlink all associated NPCs, locations, and quests.')">
@@ -93,4 +98,7 @@
     </div>
 
 </div>
+{% set copy_entity_type = 'faction' %}
+{% set copy_entity_id = faction.id %}
+{% include 'partials/_copy_entity_modal.html' %}
 {% endblock %}

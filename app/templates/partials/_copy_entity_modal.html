@@ -1,0 +1,39 @@
+{# Copy to Campaign Modal — included on entity detail pages.
+   Set copy_entity_type and copy_entity_id before including this partial. #}
+{% if user_campaigns | length > 1 %}
+<div class="modal fade" id="copyEntityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">Copy to Another Campaign</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST"
+                  action="{{ url_for('copy_entity.copy_entity', entity_type=copy_entity_type, entity_id=copy_entity_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <label for="target_campaign_id" class="form-label">Destination campaign:</label>
+                    <select name="target_campaign_id" id="target_campaign_id" class="form-select" required>
+                        <option value="">-- Select campaign --</option>
+                        {% for c in user_campaigns %}
+                        {% if active_campaign and c.id != active_campaign.id %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <p class="text-muted small mt-2">
+                        Cross-campaign links (locations, NPCs, factions, etc.) will be
+                        cleared in the copy. Tags and images are duplicated.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-files"></i> Copy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
