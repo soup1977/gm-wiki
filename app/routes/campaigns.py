@@ -3,7 +3,10 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import (Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location,
                         CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat,
-                        AdventureSite, ActivityLog)
+                        AdventureSite, ActivityLog, Faction, Encounter, EntityMention,
+                        RandomTable, Tag, MonsterInstance,
+                        ICRPGWorld, ICRPGLifeForm, ICRPGType, ICRPGAbility,
+                        ICRPGLootDef, ICRPGSpell, ICRPGMilestonePath)
 
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/campaigns')
 
@@ -257,26 +260,43 @@ def delete_campaign(campaign_id):
     name = campaign.name
 
     # Delete in dependency order so nothing is left referencing a deleted object.
-    # Sessions link to NPCs/Locations/Items/Quests/Monsters — delete first.
+
+    # Entity mentions reference many entity types — delete first.
+    EntityMention.query.filter_by(campaign_id=campaign_id).delete()
+
+    # Encounters reference sessions, arcs, and random tables — delete before those.
+    # EncounterMonster rows cascade from Encounter automatically.
+    Encounter.query.filter_by(campaign_id=campaign_id).delete()
+
+    # Sessions link to NPCs/Locations/Items/Quests/Monsters — delete next.
     # Cascade on Session.attendances cleans up SessionAttendance rows automatically.
     for sess in list(campaign.sessions):
         db.session.delete(sess)
 
     # Monster instances link to sessions (many-to-many) — session deletion clears
     # those links, so instances themselves can now be safely deleted.
-    for instance in list(campaign.monster_instances):
-        db.session.delete(instance)
+    MonsterInstance.query.filter_by(campaign_id=campaign_id).delete()
+
+    # ICRPG homebrew catalog entries (only those with campaign_id set).
+    # Delete in dependency order: abilities/loot before types, types before worlds.
+    ICRPGSpell.query.filter_by(campaign_id=campaign_id).delete()
+    ICRPGMilestonePath.query.filter_by(campaign_id=campaign_id).delete()
+    ICRPGAbility.query.filter_by(campaign_id=campaign_id).delete()
+    ICRPGLootDef.query.filter_by(campaign_id=campaign_id).delete()
+    ICRPGType.query.filter_by(campaign_id=campaign_id).delete()
+    ICRPGLifeForm.query.filter_by(campaign_id=campaign_id).delete()
+    ICRPGWorld.query.filter_by(campaign_id=campaign_id).delete()
 
     # Player characters — sessions are gone so attendance records are already cleaned
-    # up by the Session cascade. PC stats cascade via PlayerCharacter.stats.
+    # up by the Session cascade. ICRPG sheets cascade via PlayerCharacter.icrpg_sheet.
     for pc in list(campaign.player_characters):
         db.session.delete(pc)
 
     # Compendium entries are standalone.
-    for entry in list(campaign.compendium_entries):
-        db.session.delete(entry)
+    CompendiumEntry.query.filter_by(campaign_id=campaign_id).delete()
 
     # Custom random tables (built-ins have campaign_id=None and are left alone).
+    # TableRow rows cascade from RandomTable automatically.
     for table in list(campaign.random_tables):
         db.session.delete(table)
 
@@ -298,7 +318,7 @@ def delete_campaign(campaign_id):
         npc.connected_locations = []
         db.session.delete(npc)
 
-    # Locations are last — nullify parent refs first to avoid self-referential errors.
+    # Locations — nullify parent refs first to avoid self-referential errors.
     for loc in list(campaign.locations):
         loc.parent_location_id = None
     db.session.flush()
@@ -307,19 +327,20 @@ def delete_campaign(campaign_id):
         db.session.delete(loc)
 
     # Adventure sites — NPCs/Locations/Quests/Items that referenced them are
-    # already deleted above, so story_arc_id FKs are gone. Sessions and their
-    # adventure_site_session links were cleared in the sessions loop.
+    # already deleted above, so story_arc_id FKs are gone.
     for site in list(campaign.adventure_sites):
         site.tags = []
+        site.sessions = []
         db.session.delete(site)
 
+    # Factions — NPCs that referenced them are already deleted.
+    Faction.query.filter_by(campaign_id=campaign_id).delete()
+
     # Tags — association rows (npc_tags, etc.) were cleared when entities were deleted.
-    for tag in list(campaign.tags):
-        db.session.delete(tag)
+    Tag.query.filter_by(campaign_id=campaign_id).delete()
 
     # Stat template fields are standalone per campaign.
-    for field in list(campaign.stat_template_fields):
-        db.session.delete(field)
+    CampaignStatTemplate.query.filter_by(campaign_id=campaign_id).delete()
 
     # Clean up activity log entries for this campaign
     ActivityLog.query.filter_by(campaign_id=campaign_id).delete()
