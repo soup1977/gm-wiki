@@ -641,6 +641,8 @@ def create_app():
         db.session.commit()
         print(f"\nDone! Skipped {stats['skipped']} duplicates.")
 
+    from scripts.import_descent import register_import_command
+    register_import_command(app)
     # -----------------------------------------------------------------
     # CLI: flask purge-activity-log
     # Deletes activity log entries older than the retention period.

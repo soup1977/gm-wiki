@@ -7,6 +7,7 @@ services:
     volumes:
       - ./instance:/app/instance          # SQLite database persists here
       - ./uploads:/app/app/static/uploads  # Uploaded images/maps persist here
+      - /mnt/user/appdata/gm-wiki/The_Descent_2:/app/descent-vault:ro
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=sqlite:////app/instance/gm_wiki.db
