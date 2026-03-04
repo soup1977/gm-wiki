@@ -28,6 +28,11 @@
         <a href="{{ url_for('compendium.edit_entry', entry_id=entry.id) }}" class="btn btn-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>
+        {% if user_campaigns | length > 1 %}
+        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#copyEntityModal">
+            <i class="bi bi-files"></i> Copy
+        </button>
+        {% endif %}
         <form method="POST" action="{{ url_for('compendium.delete_entry', entry_id=entry.id) }}"
               onsubmit="return confirm('Delete entry \'{{ entry.title }}\'? This cannot be undone.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -56,4 +61,7 @@
     </div>
 </div>
 {% endif %}
+{% set copy_entity_type = 'compendium' %}
+{% set copy_entity_id = entry.id %}
+{% include 'partials/_copy_entity_modal.html' %}
 {% endblock %}

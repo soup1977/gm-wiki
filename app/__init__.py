@@ -255,6 +255,7 @@ def create_app():
     from app.routes.sd_generate import sd_generate_bp
     from app.routes.campaign_assistant import campaign_assistant_bp
     from app.routes.icrpg_catalog import icrpg_catalog_bp
+    from app.routes.copy_entity import copy_entity_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -288,6 +289,7 @@ def create_app():
     app.register_blueprint(sd_generate_bp)
     app.register_blueprint(campaign_assistant_bp)
     app.register_blueprint(icrpg_catalog_bp)
+    app.register_blueprint(copy_entity_bp)
 
     # Exempt AJAX-only blueprints from CSRF — these are called from JavaScript
     # using fetch() and are already protected by same-origin policy + login_required
@@ -315,7 +317,12 @@ def create_app():
             else:
                 flask_session.pop('active_campaign_id', None)
         is_icrpg = ('icrpg' in (active_campaign.system or '').lower()) if active_campaign else False
-        return dict(active_campaign=active_campaign, is_icrpg=is_icrpg)
+        # All user campaigns — used by the "Copy to Campaign" modal
+        if current_user.is_authenticated:
+            user_campaigns = Campaign.query.filter_by(user_id=current_user.id).order_by(Campaign.name).all()
+        else:
+            user_campaigns = []
+        return dict(active_campaign=active_campaign, is_icrpg=is_icrpg, user_campaigns=user_campaigns)
 
     @app.context_processor
     def inject_app_version():

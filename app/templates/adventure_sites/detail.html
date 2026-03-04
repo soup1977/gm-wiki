@@ -34,6 +34,11 @@
         <a href="{{ url_for('adventure_sites.edit_site', site_id=site.id) }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-pencil"></i> Edit
         </a>
+        {% if user_campaigns | length > 1 %}
+        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#copyEntityModal">
+            <i class="bi bi-files"></i> Copy
+        </button>
+        {% endif %}
         <form method="POST" action="{{ url_for('adventure_sites.delete_site', site_id=site.id) }}"
               onsubmit="return confirm('Delete {{ site.name }}? This cannot be undone.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -596,4 +601,7 @@ function suggestMilestones() {
 }
 </script>
 {% endif %}
+{% set copy_entity_type = 'adventure_site' %}
+{% set copy_entity_id = site.id %}
+{% include 'partials/_copy_entity_modal.html' %}
 {% endblock %}
