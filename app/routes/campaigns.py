@@ -159,6 +159,7 @@ def edit_campaign(campaign_id):
         campaign.description = request.form.get('description', '').strip()
         campaign.image_style_prompt = request.form.get('image_style_prompt', '').strip() or None
         campaign.ai_world_context = request.form.get('ai_world_context', '').strip() or None
+        campaign.is_public = 'is_public' in request.form
         db.session.commit()
         ActivityLog.log_event('edited', 'campaign', campaign.name, entity_id=campaign.id)
         flash(f'Campaign "{campaign.name}" updated.', 'success')

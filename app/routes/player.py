@@ -1,23 +1,21 @@
 """
 player.py — Player-facing dashboard blueprint (Phase 22).
 
-URL space: /player/
-
-Players see only:
-  - Campaigns they are members of
-  - Their own PCs
-  - Locations marked is_player_visible=True OR with a revealed AdventureRoom (is_revealed=True)
-  - NPCs, Quests, Items, Compendium entries marked is_player_visible=True
-  - Items where owner_pc_id matches one of their PCs
+Self-service player flow:
+1. Log in → Player Dashboard (my campaigns + my PCs)
+2. "Join a Campaign" → list of public campaigns → click to join (creates CampaignMembership)
+3. "Create Character" → ICRPG wizard (if ICRPG campaign) or normal PC create form
+4. View revealed locations, visible NPCs/quests/items, compendium
 
 GMs landing here are redirected to the GM dashboard.
 """
 
-from flask import Blueprint, render_template, redirect, url_for, abort, flash
+from flask import (Blueprint, render_template, redirect, url_for,
+                   abort, flash, request, session)
 from flask_login import login_required, current_user
 from app.models import (
     Campaign, CampaignMembership, PlayerCharacter, Location,
-    NPC, Quest, Item, CompendiumEntry, AdventureRoom
+    NPC, Quest, Item, AdventureRoom
 )
 from app import db
 
@@ -29,16 +27,15 @@ def _get_player_campaigns():
     owned = Campaign.query.filter_by(user_id=current_user.id).all()
     memberships = CampaignMembership.query.filter_by(user_id=current_user.id).all()
     member_campaign_ids = {m.campaign_id for m in memberships}
-    # Combine, deduplicate
     owned_ids = {c.id for c in owned}
     extra = Campaign.query.filter(
         Campaign.id.in_(member_campaign_ids - owned_ids)
-    ).all()
+    ).all() if member_campaign_ids - owned_ids else []
     return owned + extra
 
 
-def _player_owns_campaign(campaign):
-    """True if current user is a member (any role) or owner of this campaign."""
+def _player_can_access(campaign):
+    """True if current user owns or is a member of this campaign."""
     if campaign.user_id == current_user.id:
         return True
     return CampaignMembership.query.filter_by(
@@ -48,10 +45,11 @@ def _player_owns_campaign(campaign):
 
 def _revealed_location_ids(campaign_id):
     """Return set of campaign Location IDs linked to any revealed AdventureRoom."""
-    rooms = AdventureRoom.query.filter_by(is_revealed=True).join(
-        AdventureRoom.scene
-    ).all()
     ids = set()
+    rooms = (AdventureRoom.query
+             .filter_by(is_revealed=True)
+             .join(AdventureRoom.scene)
+             .all())
     for room in rooms:
         if room.location_id and room.scene.act.adventure.campaign_id == campaign_id:
             ids.add(room.location_id)
@@ -69,11 +67,45 @@ def dashboard():
     if current_user.role in ('gm', 'asst_gm') or current_user.is_admin:
         return redirect(url_for('main.index'))
 
-    campaigns = _get_player_campaigns()
+    my_campaigns = _get_player_campaigns()
     my_pcs = PlayerCharacter.query.filter_by(user_id=current_user.id).all()
     return render_template('player/dashboard.html',
-                           campaigns=campaigns,
+                           my_campaigns=my_campaigns,
                            my_pcs=my_pcs)
+
+
+# ---------------------------------------------------------------------------
+# Browse & join public campaigns
+# ---------------------------------------------------------------------------
+
+@player_bp.route('/join/')
+@login_required
+def browse_campaigns():
+    """List public campaigns the player hasn't joined yet."""
+    already_in = {c.id for c in _get_player_campaigns()}
+    public_campaigns = Campaign.query.filter_by(is_public=True, status='active').all()
+    available = [c for c in public_campaigns if c.id not in already_in]
+    return render_template('player/browse_campaigns.html', campaigns=available)
+
+
+@player_bp.route('/join/<int:campaign_id>', methods=['POST'])
+@login_required
+def join_campaign(campaign_id):
+    """Create a CampaignMembership and redirect to that campaign's player home."""
+    campaign = Campaign.query.get_or_404(campaign_id)
+    if not campaign.is_public:
+        abort(403)
+    existing = CampaignMembership.query.filter_by(
+        campaign_id=campaign_id, user_id=current_user.id).first()
+    if not existing:
+        membership = CampaignMembership(
+            campaign_id=campaign_id, user_id=current_user.id, role='player')
+        db.session.add(membership)
+        db.session.commit()
+        flash(f'You joined {campaign.name}!', 'success')
+    # Set this campaign active in Flask session so PC create forms work
+    session['active_campaign_id'] = campaign_id
+    return redirect(url_for('player.campaign_home', campaign_id=campaign_id))
 
 
 # ---------------------------------------------------------------------------
@@ -84,27 +116,40 @@ def dashboard():
 @login_required
 def campaign_home(campaign_id):
     campaign = Campaign.query.get_or_404(campaign_id)
-    if not _player_owns_campaign(campaign):
+    if not _player_can_access(campaign):
         abort(403)
+
+    # Set as active campaign so PC forms work
+    session['active_campaign_id'] = campaign_id
 
     revealed_loc_ids = _revealed_location_ids(campaign_id)
     locations = Location.query.filter(
         Location.campaign_id == campaign_id,
-        db.or_(Location.is_player_visible == True, Location.id.in_(revealed_loc_ids))
+        db.or_(Location.is_player_visible == True,
+               Location.id.in_(revealed_loc_ids) if revealed_loc_ids else db.false())
     ).order_by(Location.name).all()
 
-    npcs = NPC.query.filter_by(campaign_id=campaign_id, is_player_visible=True).order_by(NPC.name).all()
-    quests = Quest.query.filter_by(campaign_id=campaign_id, is_player_visible=True).order_by(Quest.name).all()
+    npcs = NPC.query.filter_by(campaign_id=campaign_id, is_player_visible=True)\
+               .order_by(NPC.name).all()
+    quests = Quest.query.filter_by(campaign_id=campaign_id, is_player_visible=True)\
+                  .order_by(Quest.name).all()
 
     my_pc_ids = [pc.id for pc in PlayerCharacter.query.filter_by(
         campaign_id=campaign_id, user_id=current_user.id).all()]
     items = Item.query.filter(
         Item.campaign_id == campaign_id,
-        db.or_(Item.is_player_visible == True, Item.owner_pc_id.in_(my_pc_ids) if my_pc_ids else db.false())
+        db.or_(
+            Item.is_player_visible == True,
+            Item.owner_pc_id.in_(my_pc_ids) if my_pc_ids else db.false()
+        )
     ).order_by(Item.name).all()
 
     my_pcs = PlayerCharacter.query.filter_by(
-        campaign_id=campaign_id, user_id=current_user.id).order_by(PlayerCharacter.character_name).all()
+        campaign_id=campaign_id, user_id=current_user.id
+    ).order_by(PlayerCharacter.character_name).all()
+
+    system = (campaign.system or '').lower()
+    is_icrpg = 'icrpg' in system
 
     return render_template('player/campaign_home.html',
                            campaign=campaign,
@@ -113,19 +158,20 @@ def campaign_home(campaign_id):
                            quests=quests,
                            items=items,
                            my_pcs=my_pcs,
-                           revealed_loc_ids=revealed_loc_ids)
+                           revealed_loc_ids=revealed_loc_ids,
+                           is_icrpg=is_icrpg)
 
 
 # ---------------------------------------------------------------------------
-# PC sheet (view + edit own stats)
+# PC sheet — view own PC (redirects to appropriate system sheet)
 # ---------------------------------------------------------------------------
 
 @player_bp.route('/pc/<int:pc_id>/')
 @login_required
 def pc_sheet(pc_id):
     pc = PlayerCharacter.query.get_or_404(pc_id)
-    # Must be the owner
     if pc.user_id != current_user.id:
         abort(403)
-    # Redirect to the GM-side PC detail page — it handles both ICRPG and generic sheets
+    # Set active campaign so sheet routes work
+    session['active_campaign_id'] = pc.campaign_id
     return redirect(url_for('pcs.pc_detail', pc_id=pc_id))

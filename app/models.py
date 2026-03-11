@@ -88,6 +88,7 @@ class Campaign(db.Model):
     name = db.Column(db.String(200), nullable=False)
     system = db.Column(db.String(100))         # Free text — "D&D 5e", "ICRPG", whatever
     status = db.Column(db.String(50), default='active')   # active / on hiatus / complete
+    is_public = db.Column(db.Boolean, default=False)       # players can discover and join this campaign
     description = db.Column(db.Text)
     image_style_prompt = db.Column(db.Text)   # prepended to all SD image generation prompts
     ai_world_context = db.Column(db.Text)    # injected into AI Generate Entry system prompts

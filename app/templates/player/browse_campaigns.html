@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Join a Campaign{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:700px;">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="{{ url_for('player.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="mb-0">Join a Campaign</h2>
+    </div>
+
+    {% if campaigns %}
+    <div class="list-group">
+        {% for campaign in campaigns %}
+        <div class="list-group-item bg-dark border-secondary text-light mb-2 rounded">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1 me-3">
+                    <div class="fw-bold fs-5">{{ campaign.name }}</div>
+                    {% if campaign.system %}
+                    <div class="text-muted small mb-1">{{ campaign.system }}</div>
+                    {% endif %}
+                    {% if campaign.description %}
+                    <div class="small text-muted">{{ campaign.description | truncate(200) }}</div>
+                    {% endif %}
+                </div>
+                <form method="POST" action="{{ url_for('player.join_campaign', campaign_id=campaign.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary flex-shrink-0">
+                        <i class="bi bi-plus-circle me-1"></i>Join
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-map fs-1 d-block mb-3 opacity-25"></i>
+        <p class="mb-0">No public campaigns are available right now.</p>
+        <p class="small">Ask your GM to make their campaign public so you can join.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

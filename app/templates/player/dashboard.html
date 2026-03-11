@@ -1,17 +1,59 @@
 {% extends "base.html" %}
-{% block title %}Player Dashboard{% endblock %}
+{% block title %}My Dashboard{% endblock %}
 
 {% block content %}
 <div class="container py-4">
-    <h2 class="mb-4">Welcome, {{ current_user.username }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Welcome, {{ current_user.username }}</h2>
+        <a href="{{ url_for('player.browse_campaigns') }}" class="btn btn-outline-primary">
+            <i class="bi bi-search me-1"></i>Join a Campaign
+        </a>
+    </div>
+
+    <!-- My Campaigns -->
+    <div class="card bg-dark border-secondary mb-4">
+        <div class="card-header border-secondary">
+            <span class="fw-bold"><i class="bi bi-map me-2"></i>My Campaigns</span>
+        </div>
+        <div class="card-body p-0">
+            {% if my_campaigns %}
+            <div class="list-group list-group-flush">
+                {% for campaign in my_campaigns %}
+                <a href="{{ url_for('player.campaign_home', campaign_id=campaign.id) }}"
+                   class="list-group-item list-group-item-action bg-dark border-secondary text-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">{{ campaign.name }}</div>
+                        {% if campaign.system %}<div class="text-muted small">{{ campaign.system }}</div>{% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {% set my_pcs_in = my_pcs | selectattr('campaign_id', 'equalto', campaign.id) | list %}
+                        {% if my_pcs_in %}
+                        <span class="badge bg-primary">{{ my_pcs_in | length }} PC{% if my_pcs_in|length != 1 %}s{% endif %}</span>
+                        {% endif %}
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="bi bi-map fs-1 d-block mb-2 opacity-25"></i>
+                <p class="mb-2">You haven't joined any campaigns yet.</p>
+                <a href="{{ url_for('player.browse_campaigns') }}" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i>Browse Public Campaigns
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
     <!-- My Characters -->
-    <div class="card bg-dark border-secondary mb-4">
-        <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+    {% if my_pcs %}
+    <div class="card bg-dark border-secondary">
+        <div class="card-header border-secondary">
             <span class="fw-bold"><i class="bi bi-person-badge me-2"></i>My Characters</span>
         </div>
         <div class="card-body">
-            {% if my_pcs %}
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                 {% for pc in my_pcs %}
                 <div class="col">
@@ -32,35 +74,8 @@
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-            <p class="text-muted fst-italic">No characters claimed yet. Ask your GM to assign your character to your account.</p>
-            {% endif %}
         </div>
     </div>
-
-    <!-- My Campaigns -->
-    <div class="card bg-dark border-secondary">
-        <div class="card-header border-secondary">
-            <span class="fw-bold"><i class="bi bi-map me-2"></i>My Campaigns</span>
-        </div>
-        <div class="card-body">
-            {% if campaigns %}
-            <div class="list-group list-group-flush">
-                {% for campaign in campaigns %}
-                <a href="{{ url_for('player.campaign_home', campaign_id=campaign.id) }}"
-                   class="list-group-item list-group-item-action bg-dark border-secondary text-light d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-semibold">{{ campaign.name }}</div>
-                        {% if campaign.system %}<div class="text-muted small">{{ campaign.system }}</div>{% endif %}
-                    </div>
-                    <i class="bi bi-chevron-right text-muted"></i>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted fst-italic">You haven't been added to any campaigns yet.</p>
-            {% endif %}
-        </div>
-    </div>
+    {% endif %}
 </div>
 {% endblock %}
