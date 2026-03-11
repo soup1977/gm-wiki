@@ -14,11 +14,11 @@
         </div>
         <!-- Create character button -->
         {% if is_icrpg %}
-        <a href="{{ url_for('pcs.icrpg_wizard') }}" class="btn btn-primary">
+        <a href="{{ url_for('pcs.icrpg_wizard', campaign_id=campaign.id) }}" class="btn btn-primary">
             <i class="bi bi-person-plus me-1"></i>New Character
         </a>
         {% else %}
-        <a href="{{ url_for('pcs.create_pc') }}" class="btn btn-primary">
+        <a href="{{ url_for('pcs.create_pc', campaign_id=campaign.id) }}" class="btn btn-primary">
             <i class="bi bi-person-plus me-1"></i>New Character
         </a>
         {% endif %}
@@ -32,9 +32,9 @@
             <div class="fw-bold">You don't have a character in this campaign yet.</div>
             <div class="small">
                 {% if is_icrpg %}
-                <a href="{{ url_for('pcs.icrpg_wizard') }}" class="alert-link">Use the ICRPG Character Wizard</a> to build your character.
+                <a href="{{ url_for('pcs.icrpg_wizard', campaign_id=campaign.id) }}" class="alert-link">Use the ICRPG Character Wizard</a> to build your character.
                 {% else %}
-                <a href="{{ url_for('pcs.create_pc') }}" class="alert-link">Create your character</a> to get started.
+                <a href="{{ url_for('pcs.create_pc', campaign_id=campaign.id) }}" class="alert-link">Create your character</a> to get started.
                 {% endif %}
             </div>
         </div>
@@ -77,7 +77,8 @@
                     {% if locations %}
                     <div class="list-group list-group-flush">
                         {% for loc in locations %}
-                        <div class="list-group-item bg-dark border-secondary text-light">
+                        <a href="{{ url_for('player.player_location_detail', campaign_id=campaign.id, location_id=loc.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
                             <div class="fw-semibold">
                                 {{ loc.name }}
                                 {% if loc.id in revealed_loc_ids %}
@@ -86,7 +87,7 @@
                             </div>
                             {% if loc.type %}<div class="text-muted small">{{ loc.type }}</div>{% endif %}
                             {% if loc.description %}<div class="small mt-1">{{ loc.description | truncate(120) }}</div>{% endif %}
-                        </div>
+                        </a>
                         {% endfor %}
                     </div>
                     {% else %}
@@ -105,7 +106,8 @@
                     {% if quests %}
                     <div class="list-group list-group-flush">
                         {% for q in quests %}
-                        <div class="list-group-item bg-dark border-secondary text-light">
+                        <a href="{{ url_for('player.player_quest_detail', campaign_id=campaign.id, quest_id=q.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
                             <div class="d-flex align-items-start gap-2">
                                 <span class="badge bg-{{ 'success' if q.status == 'Complete' else 'warning text-dark' if q.status == 'Active' else 'secondary' }} mt-1">
                                     {{ q.status or 'Open' }}
@@ -115,7 +117,7 @@
                                     {% if q.hook %}<div class="small text-muted mt-1">{{ q.hook | truncate(100) }}</div>{% endif %}
                                 </div>
                             </div>
-                        </div>
+                        </a>
                         {% endfor %}
                     </div>
                     {% else %}
@@ -139,11 +141,12 @@
                     {% if npcs %}
                     <div class="list-group list-group-flush">
                         {% for npc in npcs %}
-                        <div class="list-group-item bg-dark border-secondary text-light">
+                        <a href="{{ url_for('player.player_npc_detail', campaign_id=campaign.id, npc_id=npc.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
                             <div class="fw-semibold">{{ npc.name }}</div>
                             {% if npc.role %}<div class="text-muted small">{{ npc.role }}</div>{% endif %}
                             {% if npc.description %}<div class="small mt-1">{{ npc.description | truncate(100) }}</div>{% endif %}
-                        </div>
+                        </a>
                         {% endfor %}
                     </div>
                     {% else %}
@@ -162,14 +165,15 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         {% for item in items %}
-                        <div class="list-group-item bg-dark border-secondary text-light">
+                        <a href="{{ url_for('player.player_item_detail', campaign_id=campaign.id, item_id=item.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
                             <div class="fw-semibold">
                                 {{ item.name }}
                                 {% if item.rarity %}<span class="badge bg-secondary ms-1 small">{{ item.rarity }}</span>{% endif %}
                                 {% if item.owner_pc %}<span class="badge bg-primary ms-1 small">{{ item.owner_pc.character_name }}</span>{% endif %}
                             </div>
                             {% if item.description %}<div class="small text-muted mt-1">{{ item.description | truncate(100) }}</div>{% endif %}
-                        </div>
+                        </a>
                         {% endfor %}
                     </div>
                 </div>

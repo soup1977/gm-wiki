@@ -299,6 +299,26 @@ body { overflow: hidden; }
                 {% else %}
                 <div class="text-muted small fst-italic">No quests linked to this adventure.</div>
                 {% endif %}
+
+                <!-- Factions quick-ref -->
+                {% if linked_factions %}
+                <div class="mt-2">
+                    <div class="small text-muted text-uppercase fw-bold mb-1">Factions</div>
+                    {% for faction in linked_factions %}
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge
+                            {% if faction.disposition == 'hostile' %}bg-danger
+                            {% elif faction.disposition == 'friendly' %}bg-success
+                            {% elif faction.disposition == 'neutral' %}bg-warning text-dark
+                            {% else %}bg-secondary{% endif %}" style="font-size:.65rem;">
+                            {{ faction.disposition or '?' }}
+                        </span>
+                        <a href="{{ url_for('factions.faction_detail', faction_id=faction.id) }}" target="_blank"
+                           class="small text-light text-decoration-none">{{ faction.name }}</a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
 
             <!-- Tab 3: NPCs -->
@@ -309,7 +329,9 @@ body { overflow: hidden; }
                     <div class="d-flex justify-content-between align-items-center py-1
                                 {% if not loop.last %}border-bottom border-secondary{% endif %}">
                         <div>
-                            <div class="small fw-semibold">{{ npc.name }}</div>
+                            <div class="small fw-semibold">{{ npc.name }}
+                                {% if npc.faction %}<span class="badge bg-secondary ms-1" style="font-size:.6rem;">{{ npc.faction.name }}</span>{% endif %}
+                            </div>
                             {% if npc.role %}<div class="text-muted" style="font-size:.7rem;">{{ npc.role }}</div>{% endif %}
                         </div>
                         <button class="btn btn-sm btn-outline-info py-0 px-2" style="font-size:.7rem;"

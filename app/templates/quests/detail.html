@@ -4,7 +4,9 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        {% if session.get('in_session_mode') %}
+        {% if player_view %}
+        <li class="breadcrumb-item"><a href="{{ url_for('player.campaign_home', campaign_id=quest.campaign_id) }}">{{ quest.campaign.name }}</a></li>
+        {% elif session.get('in_session_mode') %}
         <li class="breadcrumb-item">
             <a href="{{ url_for('session_mode.dashboard') }}">Session Dashboard</a>
         </li>
@@ -62,6 +64,7 @@
             {% endif %}
         </div>
     </div>
+    {% if not player_view %}
     <div class="d-flex gap-2 align-items-center">
         {% if quest.is_player_visible %}
         <a href="{{ url_for('wiki.wiki_quest_detail', campaign_id=quest.campaign_id, quest_id=quest.id) }}"
@@ -94,12 +97,17 @@
             </button>
         </form>
     </div>
+    {% endif %}
 </div>
 
 {% if quest.tags %}
 <div class="mb-3">
     {% for tag in quest.tags | sort(attribute='name') %}
+    {% if player_view %}
+    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+    {% else %}
     <a href="{{ url_for('quests.list_quests', tag=tag.name) }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+    {% endif %}
     {% endfor %}
 </div>
 {% endif %}
@@ -128,7 +136,7 @@
         </div>
         {% endif %}
 
-        {% if quest.gm_notes %}
+        {% if quest.gm_notes and not player_view %}
         <div class="mb-4 p-3 border border-warning rounded">
             <h5 class="text-warning"><i class="bi bi-eye-slash"></i> GM Notes</h5>
             <div class="mb-0">{{ quest.gm_notes | md | safe }}</div>

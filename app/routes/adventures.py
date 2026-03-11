@@ -223,6 +223,11 @@ def detail(adventure_id):
     all_campaign_pcs = PlayerCharacter.query.filter_by(
         campaign_id=campaign.id, status='active'
     ).order_by(PlayerCharacter.character_name).all() if campaign else []
+    # Factions for this adventure
+    linked_factions = adventure.factions
+    all_campaign_factions = Faction.query.filter_by(
+        campaign_id=campaign.id
+    ).order_by(Faction.name).all() if campaign else []
     return render_template('adventures/detail.html',
                            adventure=adventure,
                            campaign=campaign,
@@ -238,7 +243,9 @@ def detail(adventure_id):
                            all_campaign_quests=all_campaign_quests,
                            all_items=all_items,
                            party_pcs=party_pcs,
-                           all_campaign_pcs=all_campaign_pcs)
+                           all_campaign_pcs=all_campaign_pcs,
+                           linked_factions=linked_factions,
+                           all_campaign_factions=all_campaign_factions)
 
 
 # ---------------------------------------------------------------------------
@@ -626,7 +633,8 @@ def run(adventure_id):
                            active_location=active_location,
                            all_locations=all_locations,
                            all_tables=all_tables,
-                           campaign_pcs=campaign_pcs)
+                           campaign_pcs=campaign_pcs,
+                           linked_factions=adventure.factions)
 
 
 # ---------------------------------------------------------------------------
@@ -763,6 +771,11 @@ def link_entity(adventure_id):
         if pc and pc not in adventure.party_pcs:
             adventure.party_pcs.append(pc)
             db.session.commit()
+    elif entity_type == 'faction' and entity_id:
+        faction = Faction.query.get(entity_id)
+        if faction and faction not in adventure.factions:
+            adventure.factions.append(faction)
+            db.session.commit()
     else:
         model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}
         model = model_map.get(entity_type)
@@ -791,6 +804,11 @@ def unlink_entity(adventure_id):
         pc = PlayerCharacter.query.get(entity_id)
         if pc and pc in adventure.party_pcs:
             adventure.party_pcs.remove(pc)
+            db.session.commit()
+    elif entity_type == 'faction' and entity_id:
+        faction = Faction.query.get(entity_id)
+        if faction and faction in adventure.factions:
+            adventure.factions.remove(faction)
             db.session.commit()
     else:
         model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}

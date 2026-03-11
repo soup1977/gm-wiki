@@ -17,6 +17,7 @@ from app.models import (
     Campaign, CampaignMembership, PlayerCharacter, Location,
     NPC, Quest, Item, AdventureRoom
 )
+from app.shortcode import resolve_mentions_for_target
 from app import db
 
 player_bp = Blueprint('player', __name__, url_prefix='/player')
@@ -160,6 +161,86 @@ def campaign_home(campaign_id):
                            my_pcs=my_pcs,
                            revealed_loc_ids=revealed_loc_ids,
                            is_icrpg=is_icrpg)
+
+
+# ---------------------------------------------------------------------------
+# Player entity detail views (player_view=True hides GM-only fields)
+# ---------------------------------------------------------------------------
+
+def _player_can_see_location(loc, campaign_id):
+    revealed_ids = _revealed_location_ids(campaign_id)
+    return loc.is_player_visible or loc.id in revealed_ids
+
+
+def _player_can_see_item(item, campaign_id):
+    if item.is_player_visible:
+        return True
+    my_pc_ids = [pc.id for pc in PlayerCharacter.query.filter_by(
+        campaign_id=campaign_id, user_id=current_user.id).all()]
+    return item.owner_pc_id in my_pc_ids if my_pc_ids else False
+
+
+@player_bp.route('/campaign/<int:campaign_id>/npc/<int:npc_id>/')
+@login_required
+def player_npc_detail(campaign_id, npc_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    if not _player_can_access(campaign):
+        abort(403)
+    npc = NPC.query.get_or_404(npc_id)
+    if npc.campaign_id != campaign_id or not npc.is_player_visible:
+        abort(403)
+    session['active_campaign_id'] = campaign_id
+    mentions = resolve_mentions_for_target('npc', npc_id)
+    return render_template('npcs/detail.html', npc=npc, mentions=mentions, player_view=True)
+
+
+@player_bp.route('/campaign/<int:campaign_id>/location/<int:location_id>/')
+@login_required
+def player_location_detail(campaign_id, location_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    if not _player_can_access(campaign):
+        abort(403)
+    location = Location.query.get_or_404(location_id)
+    if location.campaign_id != campaign_id or not _player_can_see_location(location, campaign_id):
+        abort(403)
+    session['active_campaign_id'] = campaign_id
+    mentions = resolve_mentions_for_target('loc', location_id)
+    ancestors = []
+    current = location.parent_location
+    while current and len(ancestors) < 10:
+        ancestors.append(current)
+        current = current.parent_location
+    ancestors.reverse()
+    return render_template('locations/detail.html', location=location,
+                           mentions=mentions, ancestors=ancestors, player_view=True)
+
+
+@player_bp.route('/campaign/<int:campaign_id>/quest/<int:quest_id>/')
+@login_required
+def player_quest_detail(campaign_id, quest_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    if not _player_can_access(campaign):
+        abort(403)
+    quest = Quest.query.get_or_404(quest_id)
+    if quest.campaign_id != campaign_id or not quest.is_player_visible:
+        abort(403)
+    session['active_campaign_id'] = campaign_id
+    mentions = resolve_mentions_for_target('quest', quest_id)
+    return render_template('quests/detail.html', quest=quest, mentions=mentions, player_view=True)
+
+
+@player_bp.route('/campaign/<int:campaign_id>/item/<int:item_id>/')
+@login_required
+def player_item_detail(campaign_id, item_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    if not _player_can_access(campaign):
+        abort(403)
+    item = Item.query.get_or_404(item_id)
+    if item.campaign_id != campaign_id or not _player_can_see_item(item, campaign_id):
+        abort(403)
+    session['active_campaign_id'] = campaign_id
+    mentions = resolve_mentions_for_target('item', item_id)
+    return render_template('items/detail.html', item=item, mentions=mentions, player_view=True)
 
 
 # ---------------------------------------------------------------------------

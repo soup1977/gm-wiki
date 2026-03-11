@@ -316,6 +316,14 @@ def create_app():
                 active_campaign = Campaign.query.filter_by(
                     id=active_campaign_id, user_id=current_user.id
                 ).first()
+                if not active_campaign and current_user.role == 'player':
+                    # Players don't own campaigns — check membership
+                    from app.models import CampaignMembership
+                    membership = CampaignMembership.query.filter_by(
+                        campaign_id=active_campaign_id, user_id=current_user.id
+                    ).first()
+                    if membership:
+                        active_campaign = Campaign.query.get(active_campaign_id)
                 if not active_campaign:
                     flask_session.pop('active_campaign_id', None)
             else:
@@ -327,6 +335,39 @@ def create_app():
         else:
             user_campaigns = []
         return dict(active_campaign=active_campaign, is_icrpg=is_icrpg, user_campaigns=user_campaigns)
+
+    @app.before_request
+    def auto_set_player_campaign():
+        """For player-role users, always ensure active_campaign_id is set in session.
+        If the session value is missing or no longer valid for this player, restore it
+        from their most recent campaign membership. This means the session can never
+        stay lost across page navigation for players."""
+        from flask import session as flask_session, request as flask_request
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return
+        if current_user.role not in ('player',) or current_user.is_admin:
+            return
+        # Skip static files and auth routes
+        if flask_request.endpoint and flask_request.endpoint.startswith('static'):
+            return
+        current_id = flask_session.get('active_campaign_id')
+        if current_id:
+            # Verify player still has access to this campaign
+            from app.models import Campaign, CampaignMembership
+            has_access = (
+                Campaign.query.filter_by(id=current_id, user_id=current_user.id).first()
+                or CampaignMembership.query.filter_by(campaign_id=current_id, user_id=current_user.id).first()
+            )
+            if has_access:
+                return  # session is valid, nothing to do
+        # Session is missing or stale — restore from most recent membership
+        from app.models import CampaignMembership
+        membership = CampaignMembership.query.filter_by(
+            user_id=current_user.id
+        ).order_by(CampaignMembership.joined_at.desc()).first()
+        if membership:
+            flask_session['active_campaign_id'] = membership.campaign_id
 
     @app.context_processor
     def inject_app_version():
