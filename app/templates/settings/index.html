@@ -250,39 +250,53 @@
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">
-                    Control how many tokens the AI can generate per request. Higher = more detailed output but slower/costlier.
+                    Control how many tokens the AI can generate per request. Higher = more detailed output but slower and costlier. When in doubt, leave these at their defaults.
                 </p>
-                <div class="mb-3">
-                    <label for="ai_max_tokens_standard" class="form-label small">Standard AI Tasks</label>
-                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
-                           id="ai_max_tokens_standard" name="ai_max_tokens_standard"
-                           min="256" max="8192" step="256"
-                           value="{{ ai_max_tokens_standard }}">
-                    <div class="form-text">Used by Smart Fill (0.5x), Brainstorm, Site Ideas, Session Prep, Draft Summary, Arc Structure, and Propose Entities (1.5x). Default: 2048.</div>
-                </div>
-                <div class="mb-3">
-                    <label for="ai_max_tokens_generate" class="form-label small">Generate Entry</label>
-                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
-                           id="ai_max_tokens_generate" name="ai_max_tokens_generate"
-                           min="256" max="8192" step="256"
-                           value="{{ ai_max_tokens_generate }}">
-                    <div class="form-text">Used by Generate Entry and Genesis Wizard. Adventure Sites use 4x, Bestiary uses 2x, NPCs/Locations use 2x. Default: 2048.</div>
-                </div>
-                <div class="mb-3">
-                    <label for="ai_max_tokens_assistant" class="form-label small">Campaign Assistant</label>
-                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
-                           id="ai_max_tokens_assistant" name="ai_max_tokens_assistant"
-                           min="256" max="8192" step="256"
-                           value="{{ ai_max_tokens_assistant }}">
-                    <div class="form-text">Used by the Campaign Assistant chat. Default: 4096.</div>
-                </div>
-                <div class="mb-2">
-                    <label for="ai_max_tokens_adventure" class="form-label small">Generate Adventure Draft</label>
-                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
-                           id="ai_max_tokens_adventure" name="ai_max_tokens_adventure"
-                           min="2048" max="16384" step="1024"
-                           value="{{ ai_max_tokens_adventure }}">
-                    <div class="form-text">Used by Generate Adventure Draft. Larger adventures need more tokens — increase if you get JSON errors. Default: 8192.</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="ai_max_tokens_standard" class="form-label small">Standard AI Tasks</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                id="ai_max_tokens_standard" name="ai_max_tokens_standard">
+                            <option value="1024"  {% if ai_max_tokens_standard == '1024'  %}selected{% endif %}>1,024 — Minimal</option>
+                            <option value="2048"  {% if ai_max_tokens_standard == '2048'  %}selected{% endif %}>2,048 — Default</option>
+                            <option value="4096"  {% if ai_max_tokens_standard == '4096'  %}selected{% endif %}>4,096 — Detailed</option>
+                            <option value="8192"  {% if ai_max_tokens_standard == '8192'  %}selected{% endif %}>8,192 — Verbose</option>
+                        </select>
+                        <div class="form-text">Smart Fill, Brainstorm, Session Prep, Draft Summary, etc.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ai_max_tokens_generate" class="form-label small">Generate Entry</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                id="ai_max_tokens_generate" name="ai_max_tokens_generate">
+                            <option value="1024"  {% if ai_max_tokens_generate == '1024'  %}selected{% endif %}>1,024 — Brief</option>
+                            <option value="2048"  {% if ai_max_tokens_generate == '2048'  %}selected{% endif %}>2,048 — Default</option>
+                            <option value="4096"  {% if ai_max_tokens_generate == '4096'  %}selected{% endif %}>4,096 — Detailed</option>
+                            <option value="8192"  {% if ai_max_tokens_generate == '8192'  %}selected{% endif %}>8,192 — Very Detailed</option>
+                        </select>
+                        <div class="form-text">Generate Entry, Genesis Wizard, Story Arc generation.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ai_max_tokens_assistant" class="form-label small">Campaign Assistant</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                id="ai_max_tokens_assistant" name="ai_max_tokens_assistant">
+                            <option value="2048"  {% if ai_max_tokens_assistant == '2048'  %}selected{% endif %}>2,048 — Short answers</option>
+                            <option value="4096"  {% if ai_max_tokens_assistant == '4096'  %}selected{% endif %}>4,096 — Default</option>
+                            <option value="8192"  {% if ai_max_tokens_assistant == '8192'  %}selected{% endif %}>8,192 — Long answers</option>
+                            <option value="16384" {% if ai_max_tokens_assistant == '16384' %}selected{% endif %}>16,384 — Maximum</option>
+                        </select>
+                        <div class="form-text">Campaign Assistant chat responses.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ai_max_tokens_adventure" class="form-label small">Generate Adventure Draft</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                id="ai_max_tokens_adventure" name="ai_max_tokens_adventure">
+                            <option value="4096"  {% if ai_max_tokens_adventure == '4096'  %}selected{% endif %}>4,096 — Small adventure</option>
+                            <option value="8192"  {% if ai_max_tokens_adventure == '8192'  %}selected{% endif %}>8,192 — Default</option>
+                            <option value="12288" {% if ai_max_tokens_adventure == '12288' %}selected{% endif %}>12,288 — Large adventure</option>
+                            <option value="16384" {% if ai_max_tokens_adventure == '16384' %}selected{% endif %}>16,384 — Maximum (increase if you get JSON errors)</option>
+                        </select>
+                        <div class="form-text">Generate Adventure Draft. Increase if you get JSON errors on big concepts.</div>
+                    </div>
                 </div>
             </div>
         </div>
