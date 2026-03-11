@@ -268,13 +268,21 @@
                            value="{{ ai_max_tokens_generate }}">
                     <div class="form-text">Used by Generate Entry and Genesis Wizard. Adventure Sites use 4x, Bestiary uses 2x, NPCs/Locations use 2x. Default: 2048.</div>
                 </div>
-                <div class="mb-2">
+                <div class="mb-3">
                     <label for="ai_max_tokens_assistant" class="form-label small">Campaign Assistant</label>
                     <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
                            id="ai_max_tokens_assistant" name="ai_max_tokens_assistant"
                            min="256" max="8192" step="256"
                            value="{{ ai_max_tokens_assistant }}">
                     <div class="form-text">Used by the Campaign Assistant chat. Default: 4096.</div>
+                </div>
+                <div class="mb-2">
+                    <label for="ai_max_tokens_adventure" class="form-label small">Generate Adventure Draft</label>
+                    <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           id="ai_max_tokens_adventure" name="ai_max_tokens_adventure"
+                           min="2048" max="16384" step="1024"
+                           value="{{ ai_max_tokens_adventure }}">
+                    <div class="form-text">Used by Generate Adventure Draft. Larger adventures need more tokens — increase if you get JSON errors. Default: 8192.</div>
                 </div>
             </div>
         </div>
@@ -372,7 +380,8 @@
                         ('brainstorm_arcs', 'Brainstorm Arcs',  'Suggests 3-5 story arc ideas from campaign context.'),
                         ('site_ideas',      'Story Arc Ideas',  'Suggests 4-6 new areas/encounters for an adventure site. Uses {world_section} placeholder.'),
                         ('session_prep',    'Session Prep',     'Generates prep notes for an upcoming session. Uses {world_section} placeholder.'),
-                        ('draft_summary',   'Draft Summary',    'Turns GM notes into a player-facing session recap. Uses {world_section} placeholder.'),
+                        ('draft_summary',        'Draft Summary',          'Turns GM notes into a player-facing session recap. Uses {world_section} placeholder.'),
+                        ('generate_adventure',   'Generate Adventure Draft','Generates a full adventure skeleton from a concept. Uses {stat_instructions} and {world_context_line} placeholders.'),
                     ] %}
 
                     <div class="row g-4">

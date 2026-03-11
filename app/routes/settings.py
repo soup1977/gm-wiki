@@ -45,6 +45,8 @@ def index():
                        request.form.get('ai_max_tokens_generate', '2048').strip() or '2048')
         AppSetting.set('ai_max_tokens_assistant',
                        request.form.get('ai_max_tokens_assistant', '4096').strip() or '4096')
+        AppSetting.set('ai_max_tokens_adventure',
+                       request.form.get('ai_max_tokens_adventure', '8192').strip() or '8192')
         # Activity log settings
         AppSetting.set('activity_log_retention_days',
                        request.form.get('activity_log_retention_days', '90').strip() or '90')
@@ -77,6 +79,7 @@ def index():
     ai_max_tokens_standard = AppSetting.get('ai_max_tokens_standard', '2048')
     ai_max_tokens_generate = AppSetting.get('ai_max_tokens_generate', '2048')
     ai_max_tokens_assistant = AppSetting.get('ai_max_tokens_assistant', '4096')
+    ai_max_tokens_adventure = AppSetting.get('ai_max_tokens_adventure', '8192')
 
     # Activity log settings
     activity_log_retention_days = AppSetting.get('activity_log_retention_days', '90')
@@ -87,7 +90,7 @@ def index():
     ai_prompts = {
         key: AppSetting.get(f'ai_prompt_{key}') or DEFAULT_PROMPTS[key]
         for key in ('smart_fill', 'generate', 'brainstorm_arcs',
-                    'site_ideas', 'session_prep', 'draft_summary')
+                    'site_ideas', 'session_prep', 'draft_summary', 'generate_adventure')
     }
 
     return render_template('settings/index.html', ai_config=config, stats=stats,
@@ -98,6 +101,7 @@ def index():
                            ai_max_tokens_standard=ai_max_tokens_standard,
                            ai_max_tokens_generate=ai_max_tokens_generate,
                            ai_max_tokens_assistant=ai_max_tokens_assistant,
+                           ai_max_tokens_adventure=ai_max_tokens_adventure,
                            activity_log_retention_days=activity_log_retention_days,
                            activity_log_max_rows=activity_log_max_rows)
 

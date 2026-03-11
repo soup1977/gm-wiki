@@ -295,6 +295,103 @@ Rules:
 - Every entity you propose should have a clear reason to exist in THIS specific arc.
 - If the arc doesn't naturally call for items or encounters, return empty arrays for those.
 """,
+
+    'generate_adventure': """\
+You are an expert tabletop RPG adventure designer.
+Generate a structured adventure module from the GM's concept.
+
+{world_context_line}
+
+Creature stat instructions: {stat_instructions}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences, no explanation.
+- All string values must be on a single line — no literal newlines inside strings.
+- Use a pipe character | to separate bullet points in gm_notes (e.g. "- Gate is locked | - Groaning sounds beyond | - Secret door behind tapestry").
+- Apostrophes and quotes inside strings must be avoided or rephrased.
+
+JSON structure:
+{
+  "title": "Adventure Title",
+  "tagline": "One evocative sentence",
+  "synopsis": "2-3 sentence GM overview",
+  "hook": "How players get involved. 1-2 sentences.",
+  "premise": "What is at stake. 1-2 sentences.",
+  "acts": [
+    {
+      "number": 1,
+      "title": "Act Title",
+      "description": "1-2 sentence act overview",
+      "scenes": [
+        {
+          "title": "Scene Location Name",
+          "description": "1-2 sentence area description",
+          "scene_type": "dungeon",
+          "rooms": [
+            {
+              "key": "A1",
+              "title": "Room Name",
+              "read_aloud": "2 vivid sentences in present tense for players.",
+              "gm_notes": "- First note | - Second note | - Third note",
+              "creatures": [
+                {
+                  "name": "Creature Name",
+                  "hearts": 1,
+                  "effort_type": "WEAPON",
+                  "special_move": "One sentence special ability",
+                  "timer_rounds": null,
+                  "hp": null,
+                  "ac": null,
+                  "cr": ""
+                }
+              ],
+              "loot": [
+                {
+                  "name": "Item Name",
+                  "description": "Brief description"
+                }
+              ],
+              "hazards": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "key_npcs": [
+    {
+      "name": "NPC Name",
+      "role": "Villain",
+      "notes": "1-2 sentence personality and motivation"
+    }
+  ],
+  "factions": [
+    {
+      "name": "Faction Name",
+      "disposition": "hostile",
+      "notes": "1-2 sentence description"
+    }
+  ],
+  "quests": [
+    {
+      "name": "Quest Title",
+      "hook": "One sentence — how players get involved.",
+      "scope": "adventure",
+      "status": "Active"
+    }
+  ]
+}
+
+Scope guidelines:
+- 2-3 acts total
+- 1-2 scenes per act
+- 3-5 rooms per scene
+- read_aloud: 2-3 sentences
+- gm_notes: 2-4 bullet points separated by |
+- 0-2 creatures per room, 0-1 loot per room
+- Include 2-4 key NPCs and 1-3 factions
+- Include 2-4 quests: scope must be either "adventure" or "campaign"
+""",
 }
 
 
@@ -1231,107 +1328,18 @@ def generate_adventure_draft():
             "Keep it system-agnostic."
         )
 
-    system_prompt = f"""You are an expert tabletop RPG adventure designer.
-Generate a structured adventure module from the GM's concept.
-
-{f'Campaign world context: {world_context}' if world_context else ''}
-
-Creature stat instructions: {stat_instructions}
-
-IMPORTANT JSON rules:
-- Return ONLY the raw JSON object. No markdown, no code fences, no explanation.
-- All string values must be on a single line — no literal newlines inside strings.
-- Use a pipe character | to separate bullet points in gm_notes (e.g. "- Gate is locked | - Groaning sounds beyond | - Secret door behind tapestry").
-- Apostrophes and quotes inside strings must be avoided or rephrased.
-
-JSON structure:
-{{
-  "title": "Adventure Title",
-  "tagline": "One evocative sentence",
-  "synopsis": "2-3 sentence GM overview",
-  "hook": "How players get involved. 1-2 sentences.",
-  "premise": "What is at stake. 1-2 sentences.",
-  "acts": [
-    {{
-      "number": 1,
-      "title": "Act Title",
-      "description": "1-2 sentence act overview",
-      "scenes": [
-        {{
-          "title": "Scene Location Name",
-          "description": "1-2 sentence area description",
-          "scene_type": "dungeon",
-          "rooms": [
-            {{
-              "key": "A1",
-              "title": "Room Name",
-              "read_aloud": "2 vivid sentences in present tense for players.",
-              "gm_notes": "- First note | - Second note | - Third note",
-              "creatures": [
-                {{
-                  "name": "Creature Name",
-                  "hearts": 1,
-                  "effort_type": "WEAPON",
-                  "special_move": "One sentence special ability",
-                  "timer_rounds": null,
-                  "hp": null,
-                  "ac": null,
-                  "cr": ""
-                }}
-              ],
-              "loot": [
-                {{
-                  "name": "Item Name",
-                  "description": "Brief description"
-                }}
-              ],
-              "hazards": []
-            }}
-          ]
-        }}
-      ]
-    }}
-  ],
-  "key_npcs": [
-    {{
-      "name": "NPC Name",
-      "role": "Villain",
-      "notes": "1-2 sentence personality and motivation"
-    }}
-  ],
-  "factions": [
-    {{
-      "name": "Faction Name",
-      "disposition": "hostile",
-      "notes": "1-2 sentence description"
-    }}
-  ],
-  "quests": [
-    {{
-      "name": "Quest Title",
-      "hook": "One sentence — how players get involved.",
-      "scope": "adventure",
-      "status": "Active"
-    }}
-  ]
-}}
-
-Scope guidelines (keep response size manageable):
-- 2-3 acts total
-- 1 scene per act
-- 3-4 rooms per scene (8-12 rooms total)
-- read_aloud: 2 sentences MAX
-- gm_notes: 2-4 bullet points separated by |
-- 0-2 creatures per room, 0-1 loot per room
-- Include 2-3 key NPCs and 1-2 factions
-- Include 2-4 quests: scope must be either "adventure" (specific to this adventure) or "campaign" (could span beyond this adventure)"""
+    world_context_line = f'Campaign world context: {world_context}' if world_context else ''
+    system_prompt = _get_system_prompt('generate_adventure',
+                                       stat_instructions=stat_instructions,
+                                       world_context_line=world_context_line)
 
     messages = [{'role': 'user', 'content': f'Generate an adventure from this concept:\n\n{concept}'}]
 
     try:
         provider = get_feature_provider('generate')
+        max_tokens = _get_max_tokens('ai_max_tokens_adventure', 8192)
         response = ai_chat(system_prompt, messages,
-                           max_tokens=6000,
+                           max_tokens=max_tokens,
                            json_mode=True,
                            provider=provider)
 
