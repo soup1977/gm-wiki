@@ -64,9 +64,11 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(256), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    role = db.Column(db.String(20), default='player')  # 'gm', 'asst_gm', 'player'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     campaigns = db.relationship('Campaign', backref='owner', lazy=True)
+    memberships = db.relationship('CampaignMembership', backref='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
@@ -86,13 +88,38 @@ class Campaign(db.Model):
     name = db.Column(db.String(200), nullable=False)
     system = db.Column(db.String(100))         # Free text — "D&D 5e", "ICRPG", whatever
     status = db.Column(db.String(50), default='active')   # active / on hiatus / complete
+    is_public = db.Column(db.Boolean, default=False)       # players can discover and join this campaign
     description = db.Column(db.Text)
     image_style_prompt = db.Column(db.Text)   # prepended to all SD image generation prompts
     ai_world_context = db.Column(db.Text)    # injected into AI Generate Entry system prompts
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    memberships = db.relationship('CampaignMembership', backref='campaign', lazy=True,
+                                  cascade='all, delete-orphan')
+
     def __repr__(self):
         return f'<Campaign {self.name}>'
+
+
+class CampaignMembership(db.Model):
+    """Tracks which users are members of a campaign and at what role.
+
+    The campaign owner (campaign.user_id) is implicitly GM.
+    This table handles invited players, co-GMs (asst_gm), and
+    allows one user to be player in one campaign and GM in another.
+    """
+    __tablename__ = 'campaign_memberships'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    campaign_id = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    role        = db.Column(db.String(20), default='player')  # 'gm', 'asst_gm', 'player'
+    joined_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('campaign_id', 'user_id', name='uq_campaign_member'),)
+
+    def __repr__(self):
+        return f'<CampaignMembership user={self.user_id} campaign={self.campaign_id} role={self.role}>'
 
 
 class Faction(db.Model):
@@ -1232,6 +1259,12 @@ adventure_quest_link = db.Table('adventure_quest_link',
     db.Column('quest_id',     db.Integer, db.ForeignKey('quests.id'),    primary_key=True)
 )
 
+# Association: Adventure ↔ PlayerCharacter (PCs active in this adventure)
+adventure_pc_link = db.Table('adventure_pc_link',
+    db.Column('adventure_id', db.Integer, db.ForeignKey('adventure.id'), primary_key=True),
+    db.Column('pc_id',        db.Integer, db.ForeignKey('player_characters.id'), primary_key=True)
+)
+
 
 class Adventure(db.Model):
     """Top-level structured adventure module.
@@ -1260,9 +1293,10 @@ class Adventure(db.Model):
     # Relationships
     acts     = db.relationship('AdventureAct', backref='adventure', cascade='all, delete-orphan',
                                order_by='AdventureAct.sort_order')
-    key_npcs        = db.relationship('NPC',     secondary=adventure_npc_link,     backref='adventures')
-    factions        = db.relationship('Faction', secondary=adventure_faction_link, backref='adventures')
-    campaign_quests = db.relationship('Quest',   secondary=adventure_quest_link,   backref='linked_adventures')
+    key_npcs        = db.relationship('NPC',             secondary=adventure_npc_link,  backref='adventures')
+    factions        = db.relationship('Faction',         secondary=adventure_faction_link, backref='adventures')
+    campaign_quests = db.relationship('Quest',           secondary=adventure_quest_link,  backref='linked_adventures')
+    party_pcs       = db.relationship('PlayerCharacter', secondary=adventure_pc_link,     backref='adventures')
 
     def __repr__(self):
         return f'<Adventure {self.name}>'
@@ -1322,7 +1356,8 @@ class AdventureRoom(db.Model):
     - gm_notes: bullet-point GM guidance (always visible to GM)
     - creatures, loot, hazards via child relationships
 
-    is_revealed is set per run via Flask session — it does not persist in DB.
+    is_revealed persists in DB — once the GM reveals a room it stays visible to players
+    until explicitly un-revealed.
     """
     __tablename__ = 'adventure_room'
 
@@ -1333,6 +1368,7 @@ class AdventureRoom(db.Model):
     title       = db.Column(db.String(200), nullable=False)
     read_aloud    = db.Column(db.Text)            # 2-3 sentences for players
     gm_notes      = db.Column(db.Text)            # bullet-point GM guidance
+    is_revealed   = db.Column(db.Boolean, default=False)  # persistent: GM has revealed read-aloud to players
     is_cleared    = db.Column(db.Boolean, default=False)  # persistent: party has cleared this room
     cleared_notes = db.Column(db.Text)            # what actually happened when cleared
     sort_order    = db.Column(db.Integer, default=0)

@@ -645,6 +645,7 @@
             ability_ids: wiz.abilityIds,
             loot_picks: wiz.lootPicks,
             basic_loot_picks: wiz.basicLootPicks,
+            campaign_id: (typeof WIZARD_CAMPAIGN_ID !== 'undefined' ? WIZARD_CAMPAIGN_ID : null),
         };
 
         fetch('/pcs/icrpg/create', {

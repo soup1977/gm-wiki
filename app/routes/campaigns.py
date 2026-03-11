@@ -6,7 +6,8 @@ from app.models import (Campaign, Session, CompendiumEntry, Item, Quest, NPC, Lo
                         AdventureSite, ActivityLog, Faction, Encounter, EntityMention,
                         RandomTable, Tag, MonsterInstance, Adventure,
                         ICRPGWorld, ICRPGLifeForm, ICRPGType, ICRPGAbility,
-                        ICRPGLootDef, ICRPGSpell, ICRPGMilestonePath)
+                        ICRPGLootDef, ICRPGSpell, ICRPGMilestonePath,
+                        CampaignMembership, User)
 
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/campaigns')
 
@@ -158,6 +159,7 @@ def edit_campaign(campaign_id):
         campaign.description = request.form.get('description', '').strip()
         campaign.image_style_prompt = request.form.get('image_style_prompt', '').strip() or None
         campaign.ai_world_context = request.form.get('ai_world_context', '').strip() or None
+        campaign.is_public = 'is_public' in request.form
         db.session.commit()
         ActivityLog.log_event('edited', 'campaign', campaign.name, entity_id=campaign.id)
         flash(f'Campaign "{campaign.name}" updated.', 'success')
@@ -355,3 +357,66 @@ def delete_campaign(campaign_id):
 
     flash(f'Campaign "{name}" and all its content deleted.', 'warning')
     return redirect(url_for('campaigns.list_campaigns'))
+
+
+# ---------------------------------------------------------------------------
+# Campaign member management (Phase 22)
+# ---------------------------------------------------------------------------
+
+@campaigns_bp.route('/<int:campaign_id>/members/add', methods=['POST'])
+@login_required
+def add_member(campaign_id):
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
+    username = request.form.get('username', '').strip()
+    role = request.form.get('role', 'player')
+    if role not in ('player', 'asst_gm'):
+        role = 'player'
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        flash(f'No user found with username "{username}".', 'danger')
+        return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign_id))
+    if user.id == current_user.id:
+        flash('You are already the GM of this campaign.', 'warning')
+        return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign_id))
+    existing = CampaignMembership.query.filter_by(campaign_id=campaign_id, user_id=user.id).first()
+    if existing:
+        existing.role = role
+        db.session.commit()
+        flash(f'{username} role updated to {role}.', 'success')
+    else:
+        membership = CampaignMembership(campaign_id=campaign_id, user_id=user.id, role=role)
+        db.session.add(membership)
+        # Upgrade user's site role to match if needed
+        if role == 'asst_gm' and user.role == 'player':
+            user.role = 'asst_gm'
+        db.session.commit()
+        flash(f'{username} added as {role}.', 'success')
+    return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign_id))
+
+
+@campaigns_bp.route('/<int:campaign_id>/members/<int:user_id>/remove', methods=['POST'])
+@login_required
+def remove_member(campaign_id, user_id):
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
+    membership = CampaignMembership.query.filter_by(
+        campaign_id=campaign_id, user_id=user_id).first_or_404()
+    username = membership.user.username
+    db.session.delete(membership)
+    db.session.commit()
+    flash(f'{username} removed from campaign.', 'info')
+    return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign_id))
+
+
+@campaigns_bp.route('/<int:campaign_id>/members/<int:user_id>/role', methods=['POST'])
+@login_required
+def change_member_role(campaign_id, user_id):
+    campaign = Campaign.query.filter_by(id=campaign_id, user_id=current_user.id).first_or_404()
+    membership = CampaignMembership.query.filter_by(
+        campaign_id=campaign_id, user_id=user_id).first_or_404()
+    role = request.form.get('role', 'player')
+    if role not in ('player', 'asst_gm'):
+        role = 'player'
+    membership.role = role
+    db.session.commit()
+    flash(f'{membership.user.username} role changed to {role}.', 'success')
+    return redirect(url_for('campaigns.campaign_detail', campaign_id=campaign_id))

@@ -129,7 +129,13 @@ def list_pcs():
 def create_pc():
     campaign_id = get_active_campaign_id()
     if not campaign_id:
+        campaign_id = request.args.get('campaign_id', type=int)
+        if campaign_id:
+            session['active_campaign_id'] = campaign_id
+    if not campaign_id:
         flash('Please select a campaign first.', 'warning')
+        if current_user.role == 'player':
+            return redirect(url_for('player.dashboard'))
         return redirect(url_for('main.index'))
 
     template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
@@ -179,6 +185,8 @@ def create_pc():
         db.session.commit()
         ActivityLog.log_event('created', 'pc', pc.character_name, entity_id=pc.id, campaign_id=campaign_id)
         flash(f'"{pc.character_name}" created!', 'success')
+        if current_user.role == 'player' and not current_user.is_admin:
+            return redirect(url_for('player.pc_sheet', pc_id=pc.id))
         return redirect(url_for('pcs.pc_detail', pc_id=pc.id))
 
     return render_template('pcs/form.html', pc=None,
@@ -190,11 +198,17 @@ def create_pc():
 @pcs_bp.route('/<int:pc_id>')
 @login_required
 def pc_detail(pc_id):
-    campaign_id = get_active_campaign_id()
     pc = PlayerCharacter.query.get_or_404(pc_id)
-    if pc.campaign_id != campaign_id:
-        flash('Character not found in this campaign.', 'danger')
-        return redirect(url_for('pcs.list_pcs'))
+    # Always sync the session to the PC's campaign — same pattern as switch_campaign.
+    # Owners and admins can always access; GMs only if it's their campaign.
+    if pc.user_id == current_user.id or current_user.is_admin:
+        campaign_id = pc.campaign_id
+        session['active_campaign_id'] = campaign_id
+    else:
+        campaign_id = get_active_campaign_id()
+        if pc.campaign_id != campaign_id:
+            flash('Character not found in this campaign.', 'danger')
+            return redirect(url_for('pcs.list_pcs'))
 
     if request.args.get('from') != 'session':
         session.pop('in_session_mode', None)
@@ -226,20 +240,25 @@ def pc_detail(pc_id):
             can_edit_stats = current_user.is_admin or (
                 sheet.allow_player_edit and _is_owner(pc)
             )
+            player_view = (current_user.role == 'player' and not current_user.is_admin)
             return render_template('pcs/icrpg_sheet.html',
                                    pc=pc, sheet=sheet,
                                    can_edit=_can_edit(pc),
                                    can_edit_stats=can_edit_stats,
                                    is_owner=_is_owner(pc),
-                                   sheet_catalog=sheet_catalog)
+                                   sheet_catalog=sheet_catalog,
+                                   player_view=player_view)
         else:
+            player_view = (current_user.role == 'player' and not current_user.is_admin)
             return render_template('pcs/detail.html', pc=pc,
                                    stats_display=stats_display,
                                    can_edit=_can_edit(pc),
-                                   show_icrpg_banner=True)
+                                   show_icrpg_banner=True,
+                                   player_view=player_view)
 
+    player_view = (current_user.role == 'player' and not current_user.is_admin)
     return render_template('pcs/detail.html', pc=pc, stats_display=stats_display,
-                           can_edit=_can_edit(pc))
+                           can_edit=_can_edit(pc), player_view=player_view)
 
 
 @pcs_bp.route('/<int:pc_id>/edit', methods=['GET', 'POST'])
@@ -746,7 +765,13 @@ def icrpg_wizard():
     """Render the 8-step ICRPG character creation wizard."""
     campaign_id = get_active_campaign_id()
     if not campaign_id:
+        campaign_id = request.args.get('campaign_id', type=int)
+        if campaign_id:
+            session['active_campaign_id'] = campaign_id
+    if not campaign_id:
         flash('Please select a campaign first.', 'warning')
+        if current_user.role == 'player':
+            return redirect(url_for('player.dashboard'))
         return redirect(url_for('main.index'))
 
     campaign = Campaign.query.get(campaign_id)
@@ -782,22 +807,24 @@ def icrpg_wizard():
 
     catalog_json = _serialize_catalog(worlds, life_forms, types, basic_loot)
 
-    return render_template('pcs/icrpg_wizard.html', catalog_json=catalog_json)
+    return render_template('pcs/icrpg_wizard.html', catalog_json=catalog_json,
+                           campaign_id=campaign_id)
 
 
 @pcs_bp.route('/icrpg/create', methods=['POST'])
 @login_required
 def icrpg_create_character():
     """Create a PlayerCharacter + ICRPGCharacterSheet from the wizard."""
-    campaign_id = get_active_campaign_id()
+    data = request.get_json(silent=True) or {}
+    campaign_id = get_active_campaign_id() or data.get('campaign_id')
     if not campaign_id:
         return jsonify({'error': 'No active campaign.'}), 400
+    # Always keep the session current so subsequent routes (pc_detail) find it
+    session['active_campaign_id'] = campaign_id
 
     campaign = Campaign.query.get(campaign_id)
     if not campaign or 'icrpg' not in (campaign.system or '').lower():
         return jsonify({'error': 'Not an ICRPG campaign.'}), 400
-
-    data = request.get_json(silent=True) or {}
 
     # ── Validate text fields ──────────────────────────────────
     character_name = (data.get('character_name') or '').strip()
@@ -897,6 +924,7 @@ def icrpg_create_character():
     # ── Create records ────────────────────────────────────────
     pc = PlayerCharacter(
         campaign_id=campaign_id,
+        user_id=current_user.id,
         character_name=character_name,
         player_name=player_name,
         race_or_ancestry=life_form.name,
@@ -960,10 +988,16 @@ def icrpg_create_character():
     db.session.commit()
     ActivityLog.log_event('created', 'pc', pc.character_name, entity_id=pc.id, campaign_id=campaign_id)
 
+    # Players go through player.pc_sheet which sets session before hitting pc_detail
+    if current_user.role == 'player' and not current_user.is_admin:
+        redirect_url = url_for('player.pc_sheet', pc_id=pc.id)
+    else:
+        redirect_url = url_for('pcs.pc_detail', pc_id=pc.id)
+
     return jsonify({
         'ok': True,
         'pc_id': pc.id,
-        'redirect': url_for('pcs.pc_detail', pc_id=pc.id),
+        'redirect': redirect_url,
     })
 
 

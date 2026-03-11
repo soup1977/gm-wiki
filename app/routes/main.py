@@ -9,6 +9,8 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 @login_required
 def index():
+    if current_user.role == 'player' and not current_user.is_admin:
+        return redirect(url_for('player.dashboard'))
     campaigns = Campaign.query.filter_by(user_id=current_user.id).order_by(Campaign.name).all()
     active_campaign_id = session.get('active_campaign_id')
     active_campaign = Campaign.query.filter_by(

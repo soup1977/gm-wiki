@@ -721,6 +721,117 @@
                 </div>
             </div>
 
+            <!-- Party PCs -->
+            <div class="col-12">
+                <div class="card border-primary bg-dark">
+                    <div class="card-header border-primary py-2 d-flex justify-content-between align-items-center">
+                        <small class="fw-bold text-uppercase text-primary">
+                            <i class="bi bi-people me-1"></i>Party
+                            <span class="badge bg-primary ms-1">{{ party_pcs|length }}</span>
+                        </small>
+                        <button class="btn btn-sm btn-outline-primary py-0" data-bs-toggle="collapse" data-bs-target="#link-pc-form">
+                            <i class="bi bi-plus"></i> Add PC
+                        </button>
+                    </div>
+                    <div class="collapse px-3 pt-2" id="link-pc-form">
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="pc">
+                            <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">— select PC —</option>
+                                {% for pc in all_campaign_pcs %}{% if pc not in party_pcs %}
+                                <option value="{{ pc.id }}">{{ pc.character_name }}{% if pc.player_name %} ({{ pc.player_name }}){% endif %}</option>
+                                {% endif %}{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">Add</button>
+                        </form>
+                    </div>
+                    <div class="card-body py-2">
+                        {% if party_pcs %}
+                        <div class="row g-2">
+                            {% for pc in party_pcs %}
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center gap-2 border border-secondary rounded px-2 py-1">
+                                    <span class="fw-semibold small">{{ pc.character_name }}</span>
+                                    {% if pc.player_name %}<span class="text-muted" style="font-size:.7rem;">{{ pc.player_name }}</span>{% endif %}
+                                    {% if pc.class_or_role %}<span class="badge bg-secondary" style="font-size:.6rem;">{{ pc.class_or_role }}</span>{% endif %}
+                                    <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}" class="d-inline mb-0">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="entity_type" value="pc">
+                                        <input type="hidden" name="entity_id" value="{{ pc.id }}">
+                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1" title="Remove from party">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-muted small fst-italic">No PCs added to this adventure yet. Click "Add PC" to link campaign characters.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Factions -->
+            <div class="col-12">
+                <div class="card border-secondary bg-dark">
+                    <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
+                        <small class="fw-bold text-uppercase text-muted">
+                            <i class="bi bi-shield-fill me-1"></i>Factions
+                            <span class="badge bg-secondary ms-1">{{ linked_factions|length }}</span>
+                        </small>
+                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-faction-form">
+                            <i class="bi bi-plus"></i> Link Faction
+                        </button>
+                    </div>
+                    <div class="collapse" id="link-faction-form">
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="p-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="faction">
+                            <div class="input-group input-group-sm">
+                                <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                    <option value="">— select faction —</option>
+                                    {% for f in all_campaign_factions %}{% if f not in linked_factions %}
+                                    <option value="{{ f.id }}">{{ f.name }}{% if f.disposition %} ({{ f.disposition }}){% endif %}</option>
+                                    {% endif %}{% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Link</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-body py-2">
+                        {% if linked_factions %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for faction in linked_factions %}
+                            <div class="d-flex align-items-center gap-2 border border-secondary rounded px-2 py-1">
+                                <a href="{{ url_for('factions.faction_detail', faction_id=faction.id) }}" class="fw-semibold small text-light text-decoration-none">{{ faction.name }}</a>
+                                <span class="badge
+                                    {% if faction.disposition == 'hostile' %}bg-danger
+                                    {% elif faction.disposition == 'friendly' %}bg-success
+                                    {% elif faction.disposition == 'neutral' %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}" style="font-size:.6rem;">
+                                    {{ faction.disposition or 'unknown' }}
+                                </span>
+                                <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}" class="d-inline mb-0">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="entity_type" value="faction">
+                                    <input type="hidden" name="entity_id" value="{{ faction.id }}">
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 ms-1" title="Unlink faction">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-muted small fst-italic">No factions linked to this adventure. Click "Link Faction" to connect campaign factions.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

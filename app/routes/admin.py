@@ -33,6 +33,9 @@ def create_user():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         is_admin = 'is_admin' in request.form
+        role = request.form.get('role', 'player')
+        if role not in ('gm', 'asst_gm', 'player'):
+            role = 'player'
 
         if not username:
             flash('Username is required.', 'danger')
@@ -44,7 +47,7 @@ def create_user():
             flash(f'Username "{username}" is already taken.', 'danger')
             return render_template('admin/user_form.html', user=None)
 
-        user = User(username=username, is_admin=is_admin)
+        user = User(username=username, is_admin=is_admin, role=role)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()

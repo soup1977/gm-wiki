@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — Player View{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="{{ url_for('player.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="flex-grow-1">
+            <h2 class="mb-0">{{ campaign.name }}</h2>
+            {% if campaign.system %}<div class="text-muted small">{{ campaign.system }}</div>{% endif %}
+        </div>
+        <!-- Create character button -->
+        {% if is_icrpg %}
+        <a href="{{ url_for('pcs.icrpg_wizard', campaign_id=campaign.id) }}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i>New Character
+        </a>
+        {% else %}
+        <a href="{{ url_for('pcs.create_pc', campaign_id=campaign.id) }}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i>New Character
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- My Characters callout (when no PCs yet) -->
+    {% if not my_pcs %}
+    <div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+        <i class="bi bi-person-badge fs-3"></i>
+        <div>
+            <div class="fw-bold">You don't have a character in this campaign yet.</div>
+            <div class="small">
+                {% if is_icrpg %}
+                <a href="{{ url_for('pcs.icrpg_wizard', campaign_id=campaign.id) }}" class="alert-link">Use the ICRPG Character Wizard</a> to build your character.
+                {% else %}
+                <a href="{{ url_for('pcs.create_pc', campaign_id=campaign.id) }}" class="alert-link">Create your character</a> to get started.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- My Characters -->
+    <div class="card bg-dark border-primary mb-4">
+        <div class="card-header border-primary">
+            <span class="fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>My Characters</span>
+        </div>
+        <div class="card-body p-2">
+            {% for pc in my_pcs %}
+            <a href="{{ url_for('player.pc_sheet', pc_id=pc.id) }}"
+               class="d-flex justify-content-between align-items-center p-2 rounded mb-1 text-decoration-none text-light">
+                <div>
+                    <div class="fw-semibold">{{ pc.character_name }}</div>
+                    <div class="text-muted small">
+                        {% if pc.class_or_role %}{{ pc.class_or_role }}{% endif %}
+                        {% if pc.level_or_rank %} · {{ pc.level_or_rank }}{% endif %}
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Left column -->
+        <div class="col-md-6">
+
+            <!-- Locations -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-geo-alt me-2"></i>Locations</span>
+                    <span class="badge bg-secondary">{{ locations | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if locations %}
+                    <div class="list-group list-group-flush">
+                        {% for loc in locations %}
+                        <a href="{{ url_for('player.player_location_detail', campaign_id=campaign.id, location_id=loc.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
+                            <div class="fw-semibold">
+                                {{ loc.name }}
+                                {% if loc.id in revealed_loc_ids %}
+                                <span class="badge bg-info ms-1" style="font-size:.6rem;">Visited</span>
+                                {% endif %}
+                            </div>
+                            {% if loc.type %}<div class="text-muted small">{{ loc.type }}</div>{% endif %}
+                            {% if loc.description %}<div class="small mt-1">{{ loc.description | truncate(120) }}</div>{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No locations revealed yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quests -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-journal-check me-2"></i>Quests</span>
+                    <span class="badge bg-secondary">{{ quests | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if quests %}
+                    <div class="list-group list-group-flush">
+                        {% for q in quests %}
+                        <a href="{{ url_for('player.player_quest_detail', campaign_id=campaign.id, quest_id=q.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-{{ 'success' if q.status == 'Complete' else 'warning text-dark' if q.status == 'Active' else 'secondary' }} mt-1">
+                                    {{ q.status or 'Open' }}
+                                </span>
+                                <div>
+                                    <div class="fw-semibold">{{ q.name }}</div>
+                                    {% if q.hook %}<div class="small text-muted mt-1">{{ q.hook | truncate(100) }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No quests shared yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right column -->
+        <div class="col-md-6">
+
+            <!-- NPCs -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-people me-2"></i>People</span>
+                    <span class="badge bg-secondary">{{ npcs | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if npcs %}
+                    <div class="list-group list-group-flush">
+                        {% for npc in npcs %}
+                        <a href="{{ url_for('player.player_npc_detail', campaign_id=campaign.id, npc_id=npc.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
+                            <div class="fw-semibold">{{ npc.name }}</div>
+                            {% if npc.role %}<div class="text-muted small">{{ npc.role }}</div>{% endif %}
+                            {% if npc.description %}<div class="small mt-1">{{ npc.description | truncate(100) }}</div>{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No people shared yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Items / Loot -->
+            {% if items %}
+            <div class="card bg-dark border-warning mb-4">
+                <div class="card-header border-warning d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-warning"><i class="bi bi-bag me-2"></i>Items &amp; Loot</span>
+                    <span class="badge bg-warning text-dark">{{ items | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for item in items %}
+                        <a href="{{ url_for('player.player_item_detail', campaign_id=campaign.id, item_id=item.id) }}"
+                           class="list-group-item list-group-item-action bg-dark border-secondary text-light text-decoration-none">
+                            <div class="fw-semibold">
+                                {{ item.name }}
+                                {% if item.rarity %}<span class="badge bg-secondary ms-1 small">{{ item.rarity }}</span>{% endif %}
+                                {% if item.owner_pc %}<span class="badge bg-primary ms-1 small">{{ item.owner_pc.character_name }}</span>{% endif %}
+                            </div>
+                            {% if item.description %}<div class="small text-muted mt-1">{{ item.description | truncate(100) }}</div>{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

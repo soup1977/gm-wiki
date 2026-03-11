@@ -5,7 +5,9 @@
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        {% if session.get('in_session_mode') %}
+        {% if player_view %}
+        <li class="breadcrumb-item"><a href="{{ url_for('player.campaign_home', campaign_id=npc.campaign_id) }}">{{ npc.campaign.name }}</a></li>
+        {% elif session.get('in_session_mode') %}
         <li class="breadcrumb-item">
             <a href="{{ url_for('session_mode.dashboard') }}">Session Dashboard</a>
         </li>
@@ -31,6 +33,7 @@
             Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=npc.campaign.id) }}">{{ npc.campaign.name }}</a>
         </p>
     </div>
+    {% if not player_view %}
     <div class="d-flex gap-2 align-items-start">
         {% if npc.is_player_visible %}
         <a href="{{ url_for('wiki.wiki_npc_detail', campaign_id=npc.campaign_id, npc_id=npc.id) }}"
@@ -86,12 +89,17 @@
             </button>
         </form>
     </div>
+    {% endif %}
 </div>
 
 {% if npc.tags %}
 <div class="mb-3">
     {% for tag in npc.tags | sort(attribute='name') %}
+    {% if player_view %}
+    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+    {% else %}
     <a href="{{ url_for('npcs.list_npcs', tag=tag.name) }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+    {% endif %}
     {% endfor %}
 </div>
 {% endif %}
@@ -124,7 +132,7 @@
 </div>
 {% endif %}
 
-{% if npc.secrets %}
+{% if npc.secrets and not player_view %}
 <div class="mb-4">
     <h5><i class="bi bi-eye-slash"></i> Secrets (GM Only)</h5>
     <div class="card bg-dark border-warning">

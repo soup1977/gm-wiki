@@ -4,7 +4,11 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
+        {% if player_view %}
+        <li class="breadcrumb-item"><a href="{{ url_for('player.campaign_home', campaign_id=pc.campaign_id) }}">Campaign Home</a></li>
+        {% else %}
         <li class="breadcrumb-item"><a href="{{ url_for('pcs.list_pcs') }}">Player Characters</a></li>
+        {% endif %}
         <li class="breadcrumb-item active">{{ pc.character_name }}</li>
     </ol>
 </nav>

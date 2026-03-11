@@ -23,7 +23,17 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             {% if current_user.is_authenticated %}
-            <!-- Left side: Campaign + Reference dropdowns -->
+            {% if current_user.role == 'player' and not current_user.is_admin %}
+            <!-- Player simplified nav -->
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('player.dashboard') }}">
+                        <i class="bi bi-house me-1"></i>My Dashboard
+                    </a>
+                </li>
+            </ul>
+            {% else %}
+            <!-- Left side: Campaign + Reference dropdowns (GM/Asst GM) -->
             <ul class="navbar-nav me-auto">
                 {% if active_campaign %}
                 <!-- Campaign dropdown -->
@@ -106,6 +116,7 @@
                     </ul>
                 </li>
             </ul>
+            {% endif %}{# end player/gm nav split #}
 
             <!-- Right side: search, dice, session mode, combat, wiki, user menu -->
             <ul class="navbar-nav align-items-center gap-1">
@@ -129,29 +140,25 @@
 
                 <!-- Session Mode removed — features merged into Adventure Runner -->
 
-                <!-- Combat Tracker -->
+                <!-- Combat Tracker (GM/admin only) -->
+                {% if current_user.role != 'player' or current_user.is_admin %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('combat.tracker') }}"
                        title="Combat Tracker" data-bs-toggle="tooltip">
                         <i class="bi bi-shield-shaded"></i>
                     </a>
                 </li>
+                {% endif %}
 
-                <!-- Campaign Assistant -->
+                <!-- Campaign Assistant (GM/admin only) -->
+                {% if current_user.role != 'player' or current_user.is_admin %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('campaign_assistant.chat') }}"
                        title="Campaign Assistant" data-bs-toggle="tooltip">
                         <i class="bi bi-robot"></i>
                     </a>
                 </li>
-
-                <!-- Player Wiki -->
-                <li class="nav-item">
-                    <a class="nav-link text-info" href="{{ url_for('wiki.wiki_index') }}"
-                       title="Player Wiki" data-bs-toggle="tooltip">
-                        <i class="bi bi-journal-bookmark"></i>
-                    </a>
-                </li>
+                {% endif %}
 
                 <!-- User menu dropdown -->
                 <li class="nav-item dropdown ms-2">
@@ -169,6 +176,11 @@
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
                         {% endif %}
+                        {% if current_user.role == 'player' and not current_user.is_admin %}
+                        <li><a class="dropdown-item" href="{{ url_for('player.dashboard') }}">
+                            <i class="bi bi-folder2 me-2"></i>Campaigns
+                        </a></li>
+                        {% else %}
                         <li><a class="dropdown-item" href="{{ url_for('campaigns.list_campaigns') }}">
                             <i class="bi bi-folder2 me-2"></i>Campaigns
                         </a></li>
@@ -185,10 +197,13 @@
                             <i class="bi bi-cloud-download me-2"></i>D&D 5e SRD Import
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
+                        {% endif %}
+                        {% if current_user.role != 'player' or current_user.is_admin %}
                         <li><a class="dropdown-item" href="{{ url_for('main.user_guide') }}">
                             <i class="bi bi-book me-2"></i>User Guide
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
+                        {% endif %}
                         <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                             <i class="bi bi-box-arrow-right me-2"></i>Log Out
                         </a></li>

@@ -155,10 +155,12 @@
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
+            {% elif not is_icrpg %}
             <p class="text-muted small mt-3">
                 No stat fields defined for this campaign yet.
+                {% if active_campaign %}
                 <a href="{{ url_for('campaigns.edit_campaign', campaign_id=active_campaign.id) }}#stat-template">Add stat fields</a> in Campaign Settings.
+                {% endif %}
             </p>
             {% endif %}
 

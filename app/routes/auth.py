@@ -27,7 +27,9 @@ def login():
             # Only allow relative redirects — prevents open redirect attacks
             if next_page and not next_page.startswith('/'):
                 next_page = None
-            return redirect(next_page or url_for('main.index'))
+            if not next_page:
+                next_page = url_for('player.dashboard') if user.role == 'player' else url_for('main.index')
+            return redirect(next_page)
 
         flash('Invalid username or password.', 'danger')
         ActivityLog.log_event('error', 'auth', username or '(empty)',
@@ -82,14 +84,14 @@ def signup():
             flash('That email is already registered.', 'danger')
             return render_template('auth/signup.html')
 
-        user = User(username=username, email=email, is_admin=False)
+        user = User(username=username, email=email, is_admin=False, role='player')
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
 
         login_user(user)
         flash(f'Welcome, {username}! Your account has been created.', 'success')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('player.dashboard'))
 
     return render_template('auth/signup.html')
 
@@ -116,7 +118,7 @@ def setup():
             return render_template('auth/setup.html')
 
         # Create the admin user
-        admin = User(username=username, is_admin=True)
+        admin = User(username=username, is_admin=True, role='gm')
         admin.set_password(password)
         db.session.add(admin)
         db.session.flush()
