@@ -105,11 +105,7 @@ def create_campaign():
         session['active_campaign_id'] = campaign.id
         flash(f'Campaign "{campaign.name}" created!', 'success')
 
-        # If AI is configured, send the GM to the genesis wizard to create their first Story Arc
-        from app.ai_provider import is_ai_enabled
-        if is_ai_enabled():
-            return redirect(url_for('adventure_sites.genesis_wizard', from_new_campaign=1))
-        return redirect(url_for('main.index'))
+        return redirect(url_for('adventures.create'))
 
     return render_template('campaigns/create.html', stat_presets=STAT_PRESETS)
 
