@@ -4,7 +4,7 @@ from app import db
 from app.models import (Campaign, Session, CompendiumEntry, Item, Quest, NPC, Location,
                         CampaignStatTemplate, PlayerCharacter, PlayerCharacterStat,
                         AdventureSite, ActivityLog, Faction, Encounter, EntityMention,
-                        RandomTable, Tag, MonsterInstance,
+                        RandomTable, Tag, MonsterInstance, Adventure,
                         ICRPGWorld, ICRPGLifeForm, ICRPGType, ICRPGAbility,
                         ICRPGLootDef, ICRPGSpell, ICRPGMilestonePath)
 
@@ -120,9 +120,12 @@ def campaign_detail(campaign_id):
 
     # Aggregate stats for the campaign summary card
     quests = campaign.quests
-    sites = campaign.adventure_sites
-
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
     item_count = Item.query.filter_by(campaign_id=campaign_id).count()
+    recent_sessions = (Session.query
+                       .filter_by(campaign_id=campaign_id)
+                       .order_by(Session.number.desc())
+                       .limit(5).all())
 
     stats = {
         'sessions': len(campaign.sessions),
@@ -132,11 +135,12 @@ def campaign_detail(campaign_id):
         'quests_total': len(quests),
         'quests_active': sum(1 for q in quests if q.status == 'active'),
         'quests_completed': sum(1 for q in quests if q.status == 'completed'),
-        'sites_total': len(sites),
-        'sites_completed': sum(1 for s in sites if s.status == 'Completed'),
+        'adventures_total': len(adventures),
+        'adventures_active': sum(1 for a in adventures if a.status == 'Active'),
     }
 
-    return render_template('campaigns/detail.html', campaign=campaign, stats=stats)
+    return render_template('campaigns/detail.html', campaign=campaign, stats=stats,
+                           adventures=adventures, recent_sessions=recent_sessions)
 
 
 @campaigns_bp.route('/<int:campaign_id>/edit', methods=['GET', 'POST'])

@@ -21,21 +21,21 @@
             data-bs-toggle="modal" data-bs-target="#smartFillModal">
         <i class="bi bi-stars"></i> Smart Fill
     </button>
-    {% if quest and quest.story_arc %}
+    {% if quest and quest.adventure %}
     <span class="badge bg-warning text-dark ms-1">
-        <i class="bi bi-map-fill me-1"></i>
-        <a href="{{ url_for('adventure_sites.site_detail', site_id=quest.story_arc.id) }}"
-           class="text-dark text-decoration-none">{{ quest.story_arc.name }}</a>
+        <i class="bi bi-book me-1"></i>
+        <a href="{{ url_for('adventures.detail', adventure_id=quest.adventure.id) }}"
+           class="text-dark text-decoration-none">{{ quest.adventure.name }}</a>
     </span>
     {% endif %}
     {% endif %}
 </div>
-{% if quest and quest.story_arc %}
+{% if quest and quest.adventure %}
 <p class="text-muted small mb-3">
     <i class="bi bi-stars text-warning me-1"></i>
-    <strong>Arc-aware AI:</strong> Smart Fill will include the
-    <a href="{{ url_for('adventure_sites.site_detail', site_id=quest.story_arc.id) }}">{{ quest.story_arc.name }}</a>
-    arc's premise as context, keeping generated content coherent with the story.
+    <strong>Adventure-aware AI:</strong> Smart Fill will include the
+    <a href="{{ url_for('adventures.detail', adventure_id=quest.adventure.id) }}">{{ quest.adventure.name }}</a>
+    adventure's premise as context, keeping generated content coherent with the story.
 </p>
 {% endif %}
 
@@ -180,6 +180,20 @@
 
     </div><!-- row -->
 
+    {% if adventures %}
+    <div class="mb-3">
+        <label class="form-label">Adventure (optional)</label>
+        <select name="adventure_id" class="form-select bg-dark text-light border-secondary">
+            <option value="">— None —</option>
+            {% for adv in adventures %}
+            <option value="{{ adv.id }}" {% if quest and quest.adventure_id == adv.id %}selected{% endif %}>
+                {{ adv.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-circle"></i> {% if quest %}Save Changes{% else %}Create Quest{% endif %}
@@ -190,8 +204,8 @@
 </form>
 {% if ai_enabled %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'quest';</script>
-{% if quest and quest.story_arc_id %}
-<script>window.AI_STORY_ARC_ID = {{ quest.story_arc_id }};</script>
+{% if quest and quest.adventure_id %}
+<script>window.AI_STORY_ARC_ID = {{ quest.adventure_id }};</script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
 {% endif %}

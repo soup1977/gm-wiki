@@ -1,0 +1,950 @@
+{% extends "base.html" %}
+{% block title %}{{ adventure.name }} — The War Table{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <nav aria-label="breadcrumb" class="mb-1">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a href="{{ url_for('adventures.list_adventures') }}">Adventures</a></li>
+                <li class="breadcrumb-item active">{{ adventure.name }}</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">{{ adventure.name }}</h2>
+        {% if adventure.tagline %}<p class="text-muted fst-italic mb-0">{{ adventure.tagline }}</p>{% endif %}
+    </div>
+    <div class="d-flex gap-2 flex-shrink-0 ms-3">
+        <a href="{{ url_for('adventures.run', adventure_id=adventure.id) }}" class="btn btn-warning">
+            <i class="bi bi-play-fill me-1"></i>Run
+        </a>
+        <a href="{{ url_for('adventures.edit', adventure_id=adventure.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form method="POST" action="{{ url_for('adventures.delete', adventure_id=adventure.id) }}"
+              onsubmit="return confirm('Delete this adventure and all its rooms?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+    </div>
+</div>
+
+<!-- Status badges -->
+<div class="d-flex gap-2 mb-3">
+    <span class="badge fs-6
+        {% if adventure.status == 'Active' %}bg-success
+        {% elif adventure.status == 'Complete' %}bg-secondary
+        {% elif adventure.status == 'Ready' %}bg-primary
+        {% else %}bg-dark border border-secondary{% endif %}">
+        {{ adventure.status }}
+    </span>
+    <span class="badge bg-secondary">{{ adventure.system_hint | upper }}</span>
+    <span class="text-muted small d-flex align-items-center">
+        <i class="bi bi-list-ol me-1"></i>{{ adventure.acts | length }} Acts ·
+        {% set total_rooms = namespace(count=0) %}
+        {% for act in adventure.acts %}{% for scene in act.scenes %}{% set total_rooms.count = total_rooms.count + scene.rooms | length %}{% endfor %}{% endfor %}
+        {{ total_rooms.count }} Rooms
+    </span>
+</div>
+
+<!-- 4-Tab layout -->
+<ul class="nav nav-tabs border-secondary mb-3" id="adventureTabs">
+    <li class="nav-item">
+        <a class="nav-link active" id="tab-overview-btn" data-bs-toggle="tab" href="#tab-overview">
+            <i class="bi bi-info-circle me-1"></i>Overview
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab-notes-btn" data-bs-toggle="tab" href="#tab-notes">
+            <i class="bi bi-journal-text me-1"></i>Planning Notes
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab-structure-btn" data-bs-toggle="tab" href="#tab-structure">
+            <i class="bi bi-diagram-3 me-1"></i>Structure
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab-entities-btn" data-bs-toggle="tab" href="#tab-entities">
+            <i class="bi bi-people me-1"></i>Entities
+            {% set entity_count = linked_npcs|length + linked_locations|length + linked_quests|length + linked_items|length %}
+            {% if entity_count %}<span class="badge bg-secondary ms-1">{{ entity_count }}</span>{% endif %}
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+    <!-- ===== Tab 1: Overview ===== -->
+    <div class="tab-pane fade show active" id="tab-overview">
+        {% if adventure.synopsis or adventure.hook or adventure.premise %}
+        <div class="row g-2 mb-4">
+            {% if adventure.synopsis %}
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark h-100">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Synopsis</div>
+                        <div class="small">{{ adventure.synopsis }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="col-md-6">
+                {% if adventure.hook %}
+                <div class="card border-secondary bg-dark mb-2">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Hook</div>
+                        <div class="small">{{ adventure.hook }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if adventure.premise %}
+                <div class="card border-secondary bg-dark">
+                    <div class="card-body py-2">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Premise</div>
+                        <div class="small">{{ adventure.premise }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if adventure.key_npcs or adventure.factions %}
+        <div class="row g-2">
+            {% if adventure.key_npcs %}
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark">
+                    <div class="card-header border-secondary py-2">
+                        <small class="fw-bold text-uppercase text-muted">Key NPCs</small>
+                    </div>
+                    <div class="card-body py-2">
+                        {% for npc in adventure.key_npcs %}
+                        <div class="mb-1">
+                            <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="fw-semibold">{{ npc.name }}</a>
+                            {% if npc.role %}<span class="text-muted small ms-1">— {{ npc.role }}</span>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if adventure.factions %}
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark">
+                    <div class="card-header border-secondary py-2">
+                        <small class="fw-bold text-uppercase text-muted">Factions</small>
+                    </div>
+                    <div class="card-body py-2">
+                        {% for faction in adventure.factions %}
+                        <div class="mb-1">
+                            <a href="{{ url_for('factions.faction_detail', faction_id=faction.id) }}" class="fw-semibold">{{ faction.name }}</a>
+                            {% if faction.disposition %}
+                            <span class="badge ms-1
+                                {% if faction.disposition == 'hostile' %}bg-danger
+                                {% elif faction.disposition == 'friendly' %}bg-success
+                                {% else %}bg-secondary{% endif %} small">
+                                {{ faction.disposition }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if not adventure.synopsis and not adventure.hook and not adventure.premise and not adventure.key_npcs %}
+        <div class="text-muted fst-italic small">No overview details yet. <a href="{{ url_for('adventures.edit', adventure_id=adventure.id) }}">Edit this adventure</a> to add synopsis, hook, and premise.</div>
+        {% endif %}
+    </div>
+
+    <!-- ===== Tab 2: Planning Notes ===== -->
+    <div class="tab-pane fade" id="tab-notes">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">Markdown supported. Auto-saves when you click Save.</span>
+            <button class="btn btn-sm btn-outline-warning" id="aibrainstorm-btn" onclick="runBrainstorm()">
+                <i class="bi bi-stars me-1"></i>AI: Brainstorm
+            </button>
+        </div>
+        <form id="planning-notes-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea id="planning-notes-textarea" name="planning_notes"
+                      class="form-control bg-dark text-light border-secondary"
+                      rows="20"
+                      placeholder="# Planning Notes&#10;&#10;Use this space for plot threads, villain motivations, pacing notes, session prep...">{{ adventure.planning_notes or '' }}</textarea>
+            <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-success btn-sm" onclick="savePlanningNotes()">
+                    <i class="bi bi-floppy me-1"></i>Save Notes
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleNotesPreview()">
+                    <i class="bi bi-eye me-1"></i>Preview
+                </button>
+                <span id="notes-save-status" class="text-muted small d-flex align-items-center ms-2"></span>
+            </div>
+        </form>
+        <div id="planning-notes-preview" class="mt-3 p-3 bg-dark border border-secondary rounded" style="display:none;"></div>
+
+        <!-- AI Brainstorm result -->
+        <div id="brainstorm-result" class="mt-3" style="display:none;"></div>
+    </div>
+
+    <!-- ===== Tab 3: Structure ===== -->
+    <div class="tab-pane fade" id="tab-structure">
+
+        {% for act in adventure.acts %}
+        <div class="card border-secondary bg-dark mb-3">
+            <div class="card-header act-header border-secondary d-flex justify-content-between align-items-center py-2">
+                <span class="fw-bold">
+                    <span class="text-warning me-2">Act {{ act.number }}</span>{{ act.title }}
+                </span>
+                <div class="d-flex gap-1">
+                    <!-- Edit act inline -->
+                    <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="modal"
+                            data-bs-target="#editActModal{{ act.id }}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <form method="POST" action="{{ url_for('adventures.delete_act', act_id=act.id) }}"
+                          onsubmit="return confirm('Delete Act {{ act.number }}: {{ act.title }} and ALL its scenes and rooms?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+            {% if act.description %}
+            <div class="card-body py-2 border-bottom border-secondary">
+                <small class="text-muted">{{ act.description }}</small>
+            </div>
+            {% endif %}
+
+            {% for scene in act.scenes %}
+            <div class="card-body py-2 {% if not loop.last or act.scenes %}border-bottom border-secondary{% endif %}">
+                <div class="scene-header rounded px-2 py-1 mb-2 d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold text-info">
+                        <i class="bi bi-geo-alt me-1"></i>{{ scene.title }}
+                        {% if scene.scene_type %}<small class="text-muted ms-1">({{ scene.scene_type }})</small>{% endif %}
+                    </span>
+                    <div class="d-flex gap-1 align-items-center">
+                        <small class="text-muted me-1">{{ scene.rooms | length }} rooms</small>
+                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="modal"
+                                data-bs-target="#editSceneModal{{ scene.id }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('adventures.delete_scene', scene_id=scene.id) }}"
+                              onsubmit="return confirm('Delete scene \"{{ scene.title }}\" and all its rooms?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+
+                {% for room in scene.rooms %}
+                <div class="card border-secondary bg-dark mb-2 room-card {% if room.is_cleared %}room-cleared{% endif %}" id="room-{{ room.id }}">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="room-key me-2">{{ room.key or '—' }}</span>
+                                <span class="fw-semibold">{{ room.title }}</span>
+                                {% if room.is_cleared %}<span class="badge bg-secondary ms-1 small">Cleared</span>{% endif %}
+                            </div>
+                            <div class="d-flex gap-1 flex-shrink-0 align-items-center">
+                                {% if room.creatures %}
+                                <span class="badge bg-danger creature-badge"><i class="bi bi-skull me-1"></i>{{ room.creatures | length }}</span>
+                                {% endif %}
+                                {% if room.loot %}
+                                <span class="badge bg-warning text-dark creature-badge"><i class="bi bi-gem me-1"></i>{{ room.loot | length }}</span>
+                                {% endif %}
+                                {% if room.hazards %}
+                                <span class="badge creature-badge" style="background:#fd7e14"><i class="bi bi-exclamation-triangle me-1"></i>{{ room.hazards | length }}</span>
+                                {% endif %}
+                                <!-- AI buttons per room -->
+                                <button class="btn btn-sm btn-outline-warning py-0" title="AI: Flesh Out"
+                                        onclick="aiFleshOut({{ room.id }})">
+                                    <i class="bi bi-stars"></i>
+                                </button>
+                                <a href="{{ url_for('adventures.edit_room', room_id=room.id) }}"
+                                   class="btn btn-sm btn-outline-secondary py-0 ms-1">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% if room.read_aloud %}
+                        <div class="read-aloud-preview small mt-1 ps-2 border-start border-info">{{ room.read_aloud | truncate(120) }}</div>
+                        {% endif %}
+                        {% if room.creatures %}
+                        <div class="mt-1">
+                            {% for c in room.creatures %}
+                            <span class="badge bg-dark border border-secondary me-1 creature-badge">
+                                💀 {{ c.name }}
+                                {% if adventure.system_hint == 'icrpg' and c.hearts %}❤️×{{ c.hearts }}{% endif %}
+                                {% if adventure.system_hint == 'd20' and c.hp %}{{ c.hp }}HP{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <!-- AI flesh-out result area -->
+                        <div id="ai-room-result-{{ room.id }}" class="mt-2" style="display:none;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="d-flex gap-1 mt-1">
+                    <form method="POST" action="{{ url_for('adventures.add_room', scene_id=scene.id) }}" class="flex-grow-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="bi bi-plus me-1"></i>Add Room
+                        </button>
+                    </form>
+                    <button class="btn btn-sm btn-outline-warning" title="AI: Generate Rooms for this scene"
+                            onclick="aiGenerateRooms({{ scene.id }})">
+                        <i class="bi bi-stars me-1"></i>AI Rooms
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Add scene button -->
+            <div class="card-footer border-secondary py-2">
+                <button class="btn btn-sm btn-outline-info w-100" data-bs-toggle="modal"
+                        data-bs-target="#addSceneModal{{ act.id }}">
+                    <i class="bi bi-plus me-1"></i>Add Scene
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit Act Modal -->
+        <div class="modal fade" id="editActModal{{ act.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark border-secondary">
+                    <form method="POST" action="{{ url_for('adventures.edit_act', act_id=act.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Edit Act {{ act.number }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Title</label>
+                            <input type="text" name="title" class="form-control bg-dark text-light border-secondary"
+                                   value="{{ act.title }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description</label>
+                            <textarea name="description" class="form-control bg-dark text-light border-secondary"
+                                      rows="2">{{ act.description or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save Act</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Scene Modal -->
+        <div class="modal fade" id="addSceneModal{{ act.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark border-secondary">
+                    <form method="POST" action="{{ url_for('adventures.add_scene', act_id=act.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Add Scene to Act {{ act.number }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Scene Title</label>
+                            <input type="text" name="title" class="form-control bg-dark text-light border-secondary"
+                                   placeholder="The Vault Entrance" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Type</label>
+                            <select name="scene_type" class="form-select bg-dark text-light border-secondary">
+                                <option value="">— choose —</option>
+                                <option value="dungeon">Dungeon</option>
+                                <option value="town">Town</option>
+                                <option value="wilderness">Wilderness</option>
+                                <option value="ship">Ship</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description (optional)</label>
+                            <textarea name="description" class="form-control bg-dark text-light border-secondary"
+                                      rows="2" placeholder="Brief description of this area..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Add Scene</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Scene Modals -->
+        {% for scene in act.scenes %}
+        <div class="modal fade" id="editSceneModal{{ scene.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark border-secondary">
+                    <form method="POST" action="{{ url_for('adventures.edit_scene', scene_id=scene.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Edit Scene</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Title</label>
+                            <input type="text" name="title" class="form-control bg-dark text-light border-secondary"
+                                   value="{{ scene.title }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Type</label>
+                            <select name="scene_type" class="form-select bg-dark text-light border-secondary">
+                                <option value="">— choose —</option>
+                                {% for t in ['dungeon','town','wilderness','ship','other'] %}
+                                <option value="{{ t }}" {% if scene.scene_type == t %}selected{% endif %}>{{ t|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Description</label>
+                            <textarea name="description" class="form-control bg-dark text-light border-secondary"
+                                      rows="2">{{ scene.description or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save Scene</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% endfor %}
+
+        <!-- Add Act button -->
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#addActModal">
+                <i class="bi bi-plus me-1"></i>Add Act
+            </button>
+        </div>
+
+        <!-- Add Act Modal -->
+        <div class="modal fade" id="addActModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark border-secondary">
+                    <form method="POST" action="{{ url_for('adventures.add_act', adventure_id=adventure.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Add Act</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Act Title</label>
+                            <input type="text" name="title" class="form-control bg-dark text-light border-secondary"
+                                   placeholder="Into the Deep" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Add Act</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI generate rooms result area -->
+        <div id="ai-scene-result" class="mb-3" style="display:none;"></div>
+    </div>
+
+    <!-- ===== Tab 4: Entities ===== -->
+    <div class="tab-pane fade" id="tab-entities">
+
+        <!-- Generate Entities from Rooms button -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <small class="text-muted">Entities linked to this adventure appear here. Use the button to promote room creatures and loot into campaign records.</small>
+            <button class="btn btn-sm btn-outline-warning flex-shrink-0 ms-2" id="gen-entities-btn"
+                    onclick="generateEntitiesFromRooms(this)">
+                <i class="bi bi-stars me-1"></i>Generate Entities from Rooms
+            </button>
+        </div>
+
+        <div class="row g-3">
+
+            <!-- NPCs -->
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark h-100">
+                    <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
+                        <small class="fw-bold text-uppercase text-muted">NPCs <span class="badge bg-secondary">{{ linked_npcs|length }}</span></small>
+                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-npc-form">
+                            <i class="bi bi-plus"></i> Link
+                        </button>
+                    </div>
+                    <div class="collapse px-3 pt-2" id="link-npc-form">
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="npc">
+                            <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">— select NPC —</option>
+                                {% for npc in all_npcs %}{% if npc.adventure_id != adventure.id %}
+                                <option value="{{ npc.id }}">{{ npc.name }}</option>
+                                {% endif %}{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">Link</button>
+                        </form>
+                        <div class="mb-2">
+                            <a href="{{ url_for('npcs.create_npc') }}" class="btn btn-sm btn-outline-info w-100">
+                                <i class="bi bi-plus me-1"></i>Create New NPC
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body py-2">
+                        {% for npc in linked_npcs %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="fw-semibold">{{ npc.name }}</a>
+                                {% if npc.role %}<span class="text-muted small ms-1">{{ npc.role }}</span>{% endif %}
+                            </div>
+                            <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="entity_type" value="npc">
+                                <input type="hidden" name="entity_id" value="{{ npc.id }}">
+                                <button type="submit" class="btn btn-sm btn-link text-muted p-0" title="Unlink">✕</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small fst-italic">No NPCs linked yet.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locations -->
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark h-100">
+                    <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
+                        <small class="fw-bold text-uppercase text-muted">Locations <span class="badge bg-secondary">{{ linked_locations|length }}</span></small>
+                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-location-form">
+                            <i class="bi bi-plus"></i> Link
+                        </button>
+                    </div>
+                    <div class="collapse px-3 pt-2" id="link-location-form">
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="location">
+                            <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">— select Location —</option>
+                                {% for loc in all_locations %}{% if loc.adventure_id != adventure.id %}
+                                <option value="{{ loc.id }}">{{ loc.name }}</option>
+                                {% endif %}{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">Link</button>
+                        </form>
+                    </div>
+                    <div class="card-body py-2">
+                        {% for loc in linked_locations %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}" class="fw-semibold">{{ loc.name }}</a>
+                                {% if loc.type %}<span class="text-muted small ms-1">{{ loc.type }}</span>{% endif %}
+                            </div>
+                            <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="entity_type" value="location">
+                                <input type="hidden" name="entity_id" value="{{ loc.id }}">
+                                <button type="submit" class="btn btn-sm btn-link text-muted p-0">✕</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small fst-italic">No locations linked yet.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quests -->
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark h-100">
+                    <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
+                        <small class="fw-bold text-uppercase text-muted">Quests <span class="badge bg-secondary">{{ linked_quests|length }}</span></small>
+                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-quest-form">
+                            <i class="bi bi-plus"></i> Link
+                        </button>
+                    </div>
+                    <div class="collapse px-3 pt-2" id="link-quest-form">
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="quest">
+                            <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">— select Quest —</option>
+                                {% for q in all_quests %}{% if q.adventure_id != adventure.id %}
+                                <option value="{{ q.id }}">{{ q.name }}</option>
+                                {% endif %}{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">Link</button>
+                        </form>
+                    </div>
+                    <div class="card-body py-2">
+                        {% for q in linked_quests %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <a href="{{ url_for('quests.quest_detail', quest_id=q.id) }}" class="fw-semibold">{{ q.name }}</a>
+                                <span class="badge bg-secondary ms-1 small">{{ q.status }}</span>
+                            </div>
+                            <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="entity_type" value="quest">
+                                <input type="hidden" name="entity_id" value="{{ q.id }}">
+                                <button type="submit" class="btn btn-sm btn-link text-muted p-0">✕</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small fst-italic">No quests linked yet.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="col-md-6">
+                <div class="card border-secondary bg-dark h-100">
+                    <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
+                        <small class="fw-bold text-uppercase text-muted">Items <span class="badge bg-secondary">{{ linked_items|length }}</span></small>
+                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-item-form">
+                            <i class="bi bi-plus"></i> Link
+                        </button>
+                    </div>
+                    <div class="collapse px-3 pt-2" id="link-item-form">
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="item">
+                            <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">— select Item —</option>
+                                {% for item in all_items %}{% if item.adventure_id != adventure.id %}
+                                <option value="{{ item.id }}">{{ item.name }}</option>
+                                {% endif %}{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">Link</button>
+                        </form>
+                    </div>
+                    <div class="card-body py-2">
+                        {% for item in linked_items %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <a href="{{ url_for('items.item_detail', item_id=item.id) }}" class="fw-semibold">{{ item.name }}</a>
+                                {% if item.rarity %}<span class="text-muted small ms-1">{{ item.rarity }}</span>{% endif %}
+                            </div>
+                            <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="entity_type" value="item">
+                                <input type="hidden" name="entity_id" value="{{ item.id }}">
+                                <button type="submit" class="btn btn-sm btn-link text-muted p-0">✕</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small fst-italic">No items linked yet.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.act-header { background: rgba(255,193,7,0.1); border-left: 3px solid var(--bs-warning); }
+.scene-header { background: rgba(13,202,240,0.08); border-left: 3px solid var(--bs-info); }
+.room-card { border-left: 3px solid var(--bs-secondary); }
+.room-card.room-cleared { opacity: 0.6; border-left-color: var(--bs-success); }
+.room-key { font-family: monospace; font-weight: bold; color: var(--bs-warning); }
+.read-aloud-preview { font-style: italic; color: var(--bs-info); }
+.creature-badge { font-size: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ADVENTURE_ID = {{ adventure.id }};
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+
+// ── Planning Notes ──────────────────────────────────────────────────────────
+async function savePlanningNotes() {
+    const notes = document.getElementById('planning-notes-textarea').value;
+    const status = document.getElementById('notes-save-status');
+    status.textContent = 'Saving...';
+    const form = new FormData();
+    form.append('planning_notes', notes);
+    const resp = await fetch(`/adventures/${ADVENTURE_ID}/planning-notes`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN },
+        body: form,
+    });
+    status.textContent = resp.ok ? 'Saved ✓' : 'Error saving';
+    setTimeout(() => { status.textContent = ''; }, 3000);
+}
+
+function toggleNotesPreview() {
+    const preview = document.getElementById('planning-notes-preview');
+    if (preview.style.display === 'none') {
+        const raw = document.getElementById('planning-notes-textarea').value;
+        // Simple markdown-to-HTML (headings, bold, italic, bullets)
+        let html = raw
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/^### (.+)/gm,'<h5>$1</h5>')
+            .replace(/^## (.+)/gm,'<h4>$1</h4>')
+            .replace(/^# (.+)/gm,'<h3>$1</h3>')
+            .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g,'<em>$1</em>')
+            .replace(/^- (.+)/gm,'<li>$1</li>')
+            .replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>')
+            .replace(/\n/g,'<br>');
+        preview.innerHTML = html;
+        preview.style.display = '';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// ── AI: Brainstorm Planning Notes ──────────────────────────────────────────
+async function runBrainstorm() {
+    const resultEl = document.getElementById('brainstorm-result');
+    const btn = document.getElementById('aibrainstorm-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    resultEl.style.display = '';
+    resultEl.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Generating ideas...';
+    try {
+        const resp = await fetch('/api/ai/brainstorm-adventure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ adventure_id: ADVENTURE_ID }),
+        });
+        const data = await resp.json();
+        if (data.text) {
+            resultEl.innerHTML = `
+                <div class="card border-warning bg-dark">
+                    <div class="card-header border-warning py-1">
+                        <small class="text-warning fw-bold">AI Brainstorm Ideas</small>
+                        <button class="btn btn-sm btn-outline-warning py-0 ms-2"
+                                onclick="appendBrainstorm(this)">Append to Notes</button>
+                    </div>
+                    <div class="card-body py-2 small" style="white-space:pre-wrap">${data.text}</div>
+                </div>`;
+        } else {
+            resultEl.innerHTML = `<div class="alert alert-danger small">${data.error || 'No result.'}</div>`;
+        }
+    } catch(e) {
+        resultEl.innerHTML = `<div class="alert alert-danger small">${e.message}</div>`;
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-stars me-1"></i>AI: Brainstorm';
+}
+
+function appendBrainstorm(btn) {
+    const text = btn.closest('.card').querySelector('.card-body').textContent;
+    const ta = document.getElementById('planning-notes-textarea');
+    ta.value += '\n\n---\n' + text;
+    savePlanningNotes();
+    document.getElementById('brainstorm-result').style.display = 'none';
+}
+
+// ── AI: Flesh Out Room ──────────────────────────────────────────────────────
+async function aiFleshOut(roomId) {
+    const resultEl = document.getElementById('ai-room-result-' + roomId);
+    resultEl.style.display = '';
+    resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span><small class="text-muted">Fleshing out room...</small>';
+    try {
+        const resp = await fetch('/api/ai/flesh-out-room', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ room_id: roomId, adventure_id: ADVENTURE_ID }),
+        });
+        const data = await resp.json();
+        if (data.error) {
+            resultEl.innerHTML = `<small class="text-danger">${data.error}</small>`;
+            return;
+        }
+
+        // Build checkbox-based preview
+        let html = `<div class="card border-warning bg-dark mt-1">
+            <div class="card-header border-warning py-1"><small class="fw-bold text-warning text-uppercase">AI Flesh-Out Preview</small></div>
+            <div class="card-body py-2 small" id="flesh-preview-${roomId}">`;
+
+        // Text fields — always applied, no checkbox
+        if (data.read_aloud) {
+            html += `<div class="mb-2"><span class="text-muted small text-uppercase">Read Aloud</span>
+                <div class="fst-italic text-info mt-1">${data.read_aloud}</div></div>`;
+        }
+        if (data.gm_notes) {
+            html += `<div class="mb-2"><span class="text-muted small text-uppercase">GM Notes</span>
+                <div class="text-muted mt-1" style="white-space:pre-line">${data.gm_notes}</div></div>`;
+        }
+
+        // Suggested additions with checkboxes
+        const hasSuggestions = (data.new_creatures && data.new_creatures.length) ||
+                               (data.new_loot && data.new_loot.length) ||
+                               (data.new_npcs && data.new_npcs.length);
+        if (hasSuggestions) {
+            html += `<hr class="border-secondary my-2"><div class="text-muted small text-uppercase mb-1">Suggested Additions</div>`;
+
+            (data.new_creatures || []).forEach((c, i) => {
+                const key = `flesh-creature-${roomId}-${i}`;
+                const detail = [c.hearts ? `❤️${c.hearts}` : null, c.effort_type ? `⚔️${c.effort_type}` : null,
+                                c.hp ? `${c.hp}HP` : null, c.ac ? `AC${c.ac}` : null].filter(Boolean).join(' ');
+                html += `<div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="${key}" checked>
+                    <label class="form-check-label" for="${key}">
+                        💀 <strong>${c.name}</strong> <span class="text-muted">${detail}</span>
+                        ${c.special_move ? `<br><span class="ms-3 text-warning">⚡ ${c.special_move}</span>` : ''}
+                    </label></div>`;
+            });
+
+            (data.new_loot || []).forEach((l, i) => {
+                const key = `flesh-loot-${roomId}-${i}`;
+                html += `<div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="${key}" checked>
+                    <label class="form-check-label" for="${key}">
+                        🗝 <strong>${l.name}</strong>
+                        ${l.description ? `<span class="text-muted"> — ${l.description}</span>` : ''}
+                    </label></div>`;
+            });
+
+            (data.new_npcs || []).forEach((n, i) => {
+                const key = `flesh-npc-${roomId}-${i}`;
+                html += `<div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="${key}" checked>
+                    <label class="form-check-label" for="${key}">
+                        🧑 <strong>${n.name}</strong>
+                        ${n.role ? `<span class="text-muted"> — ${n.role}</span>` : ''}
+                        ${n.notes ? `<br><span class="ms-3 text-muted small">${n.notes}</span>` : ''}
+                    </label></div>`;
+            });
+        }
+
+        html += `</div>
+            <div class="card-footer border-warning py-1 d-flex gap-2">
+                <button class="btn btn-sm btn-warning" onclick="applyFleshOut(${roomId})">
+                    <i class="bi bi-check-circle me-1"></i>Apply Selected
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('ai-room-result-${roomId}').style.display='none'">Discard</button>
+            </div></div>`;
+
+        // Store data for applyFleshOut to read (avoids JSON-in-HTML-attribute injection issues)
+        window._fleshOutData = window._fleshOutData || {};
+        window._fleshOutData[roomId] = data;
+
+        resultEl.innerHTML = html;
+    } catch(e) {
+        resultEl.innerHTML = `<small class="text-danger">${e.message}</small>`;
+    }
+}
+
+async function applyFleshOut(roomId) {
+    const data = window._fleshOutData && window._fleshOutData[roomId];
+    if (!data) { alert('No flesh-out data found. Please re-run Flesh Out.'); return; }
+
+    // Collect only checked suggestions
+    const checkedCreatures = (data.new_creatures || []).filter((_, i) =>
+        document.getElementById(`flesh-creature-${roomId}-${i}`)?.checked);
+    const checkedLoot = (data.new_loot || []).filter((_, i) =>
+        document.getElementById(`flesh-loot-${roomId}-${i}`)?.checked);
+    const checkedNpcs = (data.new_npcs || []).filter((_, i) =>
+        document.getElementById(`flesh-npc-${roomId}-${i}`)?.checked);
+
+    const payload = {
+        read_aloud: data.read_aloud || '',
+        gm_notes: data.gm_notes || '',
+        new_creatures: checkedCreatures,
+        new_loot: checkedLoot,
+        new_npcs: checkedNpcs,
+    };
+
+    const resp = await fetch(`/api/ai/apply-room-flesh-out/${roomId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify(payload),
+    });
+    const result = await resp.json().catch(() => ({}));
+    if (resp.ok && result.success) { location.reload(); }
+    else {
+        console.error('Apply flesh-out failed:', result);
+        alert('Apply failed: ' + (result.error || `HTTP ${resp.status}`));
+    }
+}
+
+// ── AI: Generate Rooms for Scene ──────────────────────────────────────────
+async function aiGenerateRooms(sceneId) {
+    const resultEl = document.getElementById('ai-scene-result');
+    resultEl.style.display = '';
+    resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span><small>Generating rooms...</small>';
+    try {
+        const resp = await fetch('/api/ai/generate-scene-rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ scene_id: sceneId, adventure_id: ADVENTURE_ID }),
+        });
+        const data = await resp.json();
+        if (data.rooms) {
+            location.reload();
+        } else {
+            resultEl.innerHTML = `<div class="alert alert-danger small">${data.error || 'Failed.'}</div>`;
+        }
+    } catch(e) {
+        resultEl.innerHTML = `<div class="alert alert-danger small">${e.message}</div>`;
+    }
+}
+
+// ── Generate Entities from Rooms ────────────────────────────────────────────
+async function generateEntitiesFromRooms(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    try {
+        const resp = await fetch(`/adventures/{{ adventure.id }}/generate-entities`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF_TOKEN },
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const msg = `Created ${data.npcs_created} NPC${data.npcs_created !== 1 ? 's' : ''} and ${data.items_created} item${data.items_created !== 1 ? 's' : ''}.`;
+            btn.innerHTML = `<i class="bi bi-check-circle me-1"></i>${msg}`;
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate Entities from Rooms';
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate Entities from Rooms';
+        alert('Error: ' + e.message);
+    }
+}
+
+// ── Tab anchor support ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const hash = window.location.hash;
+    if (hash === '#tab-structure' || hash.startsWith('#room-')) {
+        document.getElementById('tab-structure-btn').click();
+    } else if (hash === '#tab-notes') {
+        document.getElementById('tab-notes-btn').click();
+    } else if (hash === '#tab-entities') {
+        document.getElementById('tab-entities-btn').click();
+    } else if (!hash && {{ 'true' if adventure.acts else 'false' }}) {
+        // Default to Structure tab when adventure has content
+        document.getElementById('tab-structure-btn').click();
+    }
+});
+</script>
+{% endblock %}

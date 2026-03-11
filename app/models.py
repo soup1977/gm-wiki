@@ -222,10 +222,12 @@ class Location(db.Model):
 
     # Home story arc (set when created via genesis wizard; nullable for manually created locations)
     story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=True)
 
     # Relationships
     campaign = db.relationship('Campaign', backref='locations')
     story_arc = db.relationship('AdventureSite', backref='arc_locations', foreign_keys=[story_arc_id])
+    adventure = db.relationship('Adventure', backref='linked_locations', foreign_keys=[adventure_id])
     faction = db.relationship('Faction', backref='locations', foreign_keys=[faction_id])
     parent_location = db.relationship(
         'Location',
@@ -277,10 +279,12 @@ class NPC(db.Model):
 
     # Home story arc (set when created via genesis wizard; nullable for manually created NPCs)
     story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=True)
 
     # Relationships
     campaign = db.relationship('Campaign', backref='npcs')
     story_arc = db.relationship('AdventureSite', backref='arc_npcs', foreign_keys=[story_arc_id])
+    adventure   = db.relationship('Adventure', backref='linked_npcs', foreign_keys=[adventure_id])
     faction_rel = db.relationship('Faction', backref='npcs', foreign_keys=[faction_id])
     home_location = db.relationship('Location', backref='npcs_living_here', foreign_keys=[home_location_id])
     # Locations this NPC is associated with (separate from home)
@@ -321,10 +325,12 @@ class Quest(db.Model):
 
     # Home story arc (set when created via genesis wizard; nullable for manually created quests)
     story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=True)
 
     campaign = db.relationship('Campaign', backref='quests')
     faction = db.relationship('Faction', backref='quests', foreign_keys=[faction_id])
     story_arc = db.relationship('AdventureSite', backref='arc_quests', foreign_keys=[story_arc_id])
+    adventure = db.relationship('Adventure', backref='linked_quests', foreign_keys=[adventure_id])
     involved_npcs = db.relationship('NPC', secondary=quest_npc_link, backref='quests')
     involved_locations = db.relationship('Location', secondary=quest_location_link, backref='quests')
     tags = db.relationship('Tag', secondary=quest_tags)
@@ -353,9 +359,11 @@ class Item(db.Model):
 
     # Home story arc (set when created via genesis wizard; nullable for manually created items)
     story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=True)
 
     campaign = db.relationship('Campaign', backref='items')
     story_arc = db.relationship('AdventureSite', backref='arc_items', foreign_keys=[story_arc_id])
+    adventure = db.relationship('Adventure', backref='linked_items', foreign_keys=[adventure_id])
     owner_npc = db.relationship('NPC', backref='items_owned', foreign_keys=[owner_npc_id])
     origin_location = db.relationship('Location', backref='items_found_here', foreign_keys=[origin_location_id])
     tags = db.relationship('Tag', secondary=item_tags)
@@ -415,6 +423,9 @@ class Session(db.Model):
     gm_notes = db.Column(db.Text)            # GM-only notes
     is_player_visible = db.Column(db.Boolean, default=False)  # Phase 6
 
+    # Adventure link — set when session is started from the runner
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=True)
+
     # Phase 5 — Session Mode fields
     pinned_npc_ids = db.Column(db.JSON)      # Array of NPC IDs pinned for this session
     pinned_location_ids = db.Column(db.JSON)  # Array of Location IDs pinned for this session
@@ -422,7 +433,8 @@ class Session(db.Model):
     pinned_item_ids = db.Column(db.JSON)      # Array of Item IDs pinned for this session
     active_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
-    campaign = db.relationship('Campaign', backref='sessions')
+    campaign  = db.relationship('Campaign',   backref='sessions')
+    adventure = db.relationship('Adventure',  backref='sessions', foreign_keys=[adventure_id])
     npcs_featured = db.relationship('NPC', secondary=session_npc_link, backref='sessions')
     locations_visited = db.relationship('Location', secondary=session_location_link, backref='sessions')
     items_mentioned = db.relationship('Item', secondary=session_item_link, backref='sessions')
@@ -581,10 +593,12 @@ class Encounter(db.Model):
     loot_table_id  = db.Column(db.Integer, db.ForeignKey('random_tables.id'), nullable=True)
 
     story_arc_id = db.Column(db.Integer, db.ForeignKey('adventure_site.id'), nullable=True)
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=True)
 
     campaign   = db.relationship('Campaign',      backref='encounters')
     session    = db.relationship('Session',       backref='encounters', foreign_keys=[session_id])
     story_arc  = db.relationship('AdventureSite', backref='arc_encounters')
+    adventure  = db.relationship('Adventure',     backref='linked_encounters', foreign_keys=[adventure_id])
     loot_table = db.relationship('RandomTable',   backref='encounters')
     monsters   = db.relationship('EncounterMonster', backref='encounter',
                                  cascade='all, delete-orphan', order_by='EncounterMonster.id')
@@ -1192,3 +1206,245 @@ class EntityMention(db.Model):
     source_id   = db.Column(db.Integer, nullable=False)
     target_type = db.Column(db.String(50), nullable=False)
     target_id   = db.Column(db.Integer, nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# Phase 20: Adventure Builder & Runner
+# ---------------------------------------------------------------------------
+
+# Association: Adventure ↔ NPC (key NPCs featured in the adventure)
+adventure_npc_link = db.Table('adventure_npc_link',
+    db.Column('adventure_id', db.Integer, db.ForeignKey('adventure.id'), primary_key=True),
+    db.Column('npc_id', db.Integer, db.ForeignKey('npcs.id'), primary_key=True)
+)
+
+# Association: Adventure ↔ Faction
+adventure_faction_link = db.Table('adventure_faction_link',
+    db.Column('adventure_id', db.Integer, db.ForeignKey('adventure.id'), primary_key=True),
+    db.Column('faction_id', db.Integer, db.ForeignKey('factions.id'), primary_key=True)
+)
+
+
+class Adventure(db.Model):
+    """Top-level structured adventure module.
+
+    Analogous to a Pathfinder adventure path volume or D&D module.
+    Contains Acts → Scenes → Rooms, each with structured content cards.
+    AI generates the full skeleton from a one-paragraph concept.
+    """
+    __tablename__ = 'adventure'
+
+    id               = db.Column(db.Integer, primary_key=True)
+    campaign_id      = db.Column(db.Integer, db.ForeignKey('campaigns.id'), nullable=False)
+    name             = db.Column(db.String(200), nullable=False)
+    tagline          = db.Column(db.String(300))           # one-line pitch
+    concept          = db.Column(db.Text)                  # original user prompt
+    synopsis         = db.Column(db.Text)                  # GM-facing overview
+    hook             = db.Column(db.Text)                  # how players get involved
+    premise          = db.Column(db.Text)                  # what's at stake
+    planning_notes   = db.Column(db.Text)                  # free Markdown — replaces Story Arc content blob
+    # icrpg | d20 | generic — controls creature stat block display
+    system_hint      = db.Column(db.String(20), default='generic')
+    status           = db.Column(db.String(30), default='Draft')  # Draft/Ready/Active/Complete
+    is_player_visible = db.Column(db.Boolean, default=False)
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    acts     = db.relationship('AdventureAct', backref='adventure', cascade='all, delete-orphan',
+                               order_by='AdventureAct.sort_order')
+    key_npcs = db.relationship('NPC', secondary=adventure_npc_link, backref='adventures')
+    factions = db.relationship('Faction', secondary=adventure_faction_link, backref='adventures')
+
+    def __repr__(self):
+        return f'<Adventure {self.name}>'
+
+
+class AdventureAct(db.Model):
+    """A major story beat / chapter within an adventure.
+
+    Example: Act 1 "Into the Vault", Act 2 "The Betrayal", Act 3 "Final Stand".
+    Contains one or more Scenes (physical locations / areas to explore).
+    """
+    __tablename__ = 'adventure_act'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    adventure_id = db.Column(db.Integer, db.ForeignKey('adventure.id'), nullable=False)
+    number       = db.Column(db.Integer, nullable=False)   # 1, 2, 3...
+    title        = db.Column(db.String(200), nullable=False)
+    description  = db.Column(db.Text)
+    sort_order   = db.Column(db.Integer, default=0)
+
+    scenes = db.relationship('AdventureScene', backref='act', cascade='all, delete-orphan',
+                             order_by='AdventureScene.sort_order')
+
+    def __repr__(self):
+        return f'<AdventureAct {self.number}: {self.title}>'
+
+
+class AdventureScene(db.Model):
+    """A physical area within an act: a dungeon, a town, a forest, a ship.
+
+    Contains multiple keyed rooms (A1, A2, B1...).
+    Optionally linked to an existing Location entity for cross-referencing.
+    """
+    __tablename__ = 'adventure_scene'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    act_id      = db.Column(db.Integer, db.ForeignKey('adventure_act.id'), nullable=False)
+    title       = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    scene_type  = db.Column(db.String(50))    # dungeon / town / wilderness / ship / etc.
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    sort_order  = db.Column(db.Integer, default=0)
+
+    rooms    = db.relationship('AdventureRoom', backref='scene', cascade='all, delete-orphan',
+                               order_by='AdventureRoom.sort_order')
+    location = db.relationship('Location', backref='adventure_scenes')
+
+    def __repr__(self):
+        return f'<AdventureScene {self.title}>'
+
+
+class AdventureRoom(db.Model):
+    """A single keyed room/encounter within a scene (A1, A2, B1, B2...).
+
+    The core atom of the adventure. Contains:
+    - read_aloud: text read to players when they enter (hidden until revealed)
+    - gm_notes: bullet-point GM guidance (always visible to GM)
+    - creatures, loot, hazards via child relationships
+
+    is_revealed is set per run via Flask session — it does not persist in DB.
+    """
+    __tablename__ = 'adventure_room'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    scene_id    = db.Column(db.Integer, db.ForeignKey('adventure_scene.id'), nullable=False)
+    key         = db.Column(db.String(10))      # e.g. "A1", "B3", "BOSS"
+    title       = db.Column(db.String(200), nullable=False)
+    read_aloud    = db.Column(db.Text)            # 2-3 sentences for players
+    gm_notes      = db.Column(db.Text)            # bullet-point GM guidance
+    is_cleared    = db.Column(db.Boolean, default=False)  # persistent: party has cleared this room
+    cleared_notes = db.Column(db.Text)            # what actually happened when cleared
+    sort_order    = db.Column(db.Integer, default=0)
+
+    creatures = db.relationship('RoomCreature', backref='room', cascade='all, delete-orphan',
+                                order_by='RoomCreature.id')
+    loot      = db.relationship('RoomLoot', backref='room', cascade='all, delete-orphan',
+                                order_by='RoomLoot.id')
+    hazards   = db.relationship('RoomHazard', backref='room', cascade='all, delete-orphan',
+                                order_by='RoomHazard.id')
+    room_npcs = db.relationship('RoomNPC', backref='room', cascade='all, delete-orphan',
+                                order_by='RoomNPC.id')
+
+    def display_key(self):
+        """Return 'A1' or fall back to room title if no key set."""
+        return self.key if self.key else self.title
+
+    def __repr__(self):
+        return f'<AdventureRoom {self.key}: {self.title}>'
+
+
+class RoomCreature(db.Model):
+    """A monster or NPC stat block inside a room.
+
+    Dual-mode: ICRPG fields (hearts, effort_type, special_move, timer_rounds)
+    or d20 fields (hp, ac, cr, actions). Display is driven by adventure.system_hint.
+    Optionally references an existing BestiaryEntry for stats lookup.
+    """
+    __tablename__ = 'room_creature'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    room_id     = db.Column(db.Integer, db.ForeignKey('adventure_room.id'), nullable=False)
+    name        = db.Column(db.String(200), nullable=False)
+
+    # ICRPG stat fields
+    hearts      = db.Column(db.Integer, default=1)         # number of hearts (10 HP each)
+    effort_type = db.Column(db.String(20))                 # BASIC / WEAPON / MAGIC / ULTIMATE
+    special_move = db.Column(db.String(500))               # one special ability description
+    timer_rounds = db.Column(db.Integer)                   # ICRPG countdown timer (optional)
+
+    # d20 stat fields
+    hp          = db.Column(db.Integer)
+    ac          = db.Column(db.Integer)
+    cr          = db.Column(db.String(10))                 # "1/4", "5", "17"
+    actions     = db.Column(db.Text)                       # free-text action list
+
+    # Optional link to bestiary for full stat block
+    bestiary_entry_id = db.Column(db.Integer, db.ForeignKey('bestiary_entries.id'), nullable=True)
+    bestiary_entry    = db.relationship('BestiaryEntry', backref='room_creatures')
+
+    def __repr__(self):
+        return f'<RoomCreature {self.name}>'
+
+
+class RoomLoot(db.Model):
+    """A treasure or item reward inside a room.
+
+    Optionally references an ICRPGLootDef for ICRPG loot card integration.
+    """
+    __tablename__ = 'room_loot'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    room_id     = db.Column(db.Integer, db.ForeignKey('adventure_room.id'), nullable=False)
+    name        = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    loot_def_id = db.Column(db.Integer, db.ForeignKey('icrpg_loot_defs.id'), nullable=True)
+    loot_def    = db.relationship('ICRPGLootDef', backref='room_loot_entries')
+
+    def __repr__(self):
+        return f'<RoomLoot {self.name}>'
+
+
+class RoomHazard(db.Model):
+    """A trap, environmental danger, or skill challenge inside a room."""
+    __tablename__ = 'room_hazard'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    room_id      = db.Column(db.Integer, db.ForeignKey('adventure_room.id'), nullable=False)
+    name         = db.Column(db.String(200), nullable=False)
+    description  = db.Column(db.Text)
+    dc_or_target = db.Column(db.String(50))    # e.g. "DC 15 DEX" or "Target 12"
+    consequence  = db.Column(db.Text)          # what happens on failure
+
+    def __repr__(self):
+        return f'<RoomHazard {self.name}>'
+
+
+class RoomNPC(db.Model):
+    """Links an NPC to a room — they appear in the room card as a named character,
+    not as a creature stat block. Created when AI flesh-out or generate-entities
+    promotes a key_npc suggestion into a real campaign NPC record."""
+    __tablename__ = 'room_npc'
+
+    id      = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('adventure_room.id'), nullable=False)
+    npc_id  = db.Column(db.Integer, db.ForeignKey('npcs.id'), nullable=False)
+
+    npc = db.relationship('NPC', backref='room_appearances')
+
+    def __repr__(self):
+        return f'<RoomNPC room={self.room_id} npc={self.npc_id}>'
+
+
+class AdventureRoomLog(db.Model):
+    """Records what happened in a specific room during a specific session.
+
+    Created live at the table via the runner's [Log Room] button.
+    Shown as history in future runner sessions.
+    """
+    __tablename__ = 'adventure_room_log'
+
+    id                  = db.Column(db.Integer, primary_key=True)
+    session_id          = db.Column(db.Integer, db.ForeignKey('sessions.id'), nullable=False)
+    room_id             = db.Column(db.Integer, db.ForeignKey('adventure_room.id'), nullable=False)
+    visited             = db.Column(db.Boolean, default=True)
+    gm_notes            = db.Column(db.Text)     # what actually happened in this room
+    creatures_defeated  = db.Column(db.Boolean, default=False)
+    loot_taken          = db.Column(db.Boolean, default=False)
+    created_at          = db.Column(db.DateTime, default=datetime.utcnow)
+
+    session = db.relationship('Session',       backref='room_logs')
+    room    = db.relationship('AdventureRoom', backref='session_logs')
+
+    def __repr__(self):
+        return f'<AdventureRoomLog session={self.session_id} room={self.room_id}>'

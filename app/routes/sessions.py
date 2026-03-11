@@ -4,7 +4,8 @@ from flask_login import login_required
 from app import db
 from app.models import (Session, NPC, Location, Item, Quest, Tag, session_tags,
                         get_or_create_tags, PlayerCharacter, SessionAttendance,
-                        MonsterInstance, AdventureSite, Encounter, ActivityLog)
+                        MonsterInstance, AdventureSite, Encounter, ActivityLog,
+                        Adventure)
 from app.shortcode import process_shortcodes, clear_mentions
 
 sessions_bp = Blueprint('sessions', __name__)
@@ -71,6 +72,7 @@ def create_session():
         .order_by(MonsterInstance.instance_name).all()
     all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
         .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
     # Encounters available to plan (not yet assigned to a session)
     encounters = Encounter.query.filter_by(campaign_id=campaign_id, session_id=None)\
         .order_by(Encounter.name).all()
@@ -126,6 +128,9 @@ def create_session():
             sess.adventure_sites = [site] if site else []
         else:
             sess.adventure_sites = []
+
+        adv_id = request.form.get('adventure_id') or None
+        sess.adventure_id = int(adv_id) if adv_id else None
 
         sess.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         db.session.add(sess)
@@ -183,6 +188,7 @@ def create_session():
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
                            monsters=monsters, all_sites=all_sites,
+                           adventures=adventures,
                            encounters=encounters,
                            preselect_site_id=preselect_site_id,
                            arc_site=arc_site, arc_next_milestone=arc_next_milestone,
@@ -246,6 +252,7 @@ def create_next_session(session_id):
         .order_by(MonsterInstance.instance_name).all()
     all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
         .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
     encounters = Encounter.query.filter_by(campaign_id=campaign_id, session_id=None)\
         .order_by(Encounter.name).all()
 
@@ -253,6 +260,7 @@ def create_next_session(session_id):
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
                            monsters=monsters, all_sites=all_sites,
+                           adventures=adventures,
                            encounters=encounters,
                            preselect_site_id=None,
                            carryover=carryover,
@@ -277,6 +285,7 @@ def edit_session(session_id):
         .order_by(MonsterInstance.instance_name).all()
     all_sites = AdventureSite.query.filter_by(campaign_id=campaign_id)\
         .order_by(AdventureSite.sort_order, AdventureSite.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
     # Encounters available to plan: unassigned ones + ones already linked to this session
     encounters = Encounter.query.filter(
         Encounter.campaign_id == campaign_id,
@@ -332,6 +341,9 @@ def edit_session(session_id):
         else:
             sess.adventure_sites = []
 
+        adv_id = request.form.get('adventure_id') or None
+        sess.adventure_id = int(adv_id) if adv_id else None
+
         # Update encounter–session links: select new, deselect removed
         selected_enc_ids = {int(i) for i in request.form.getlist('encounters_planned')}
         for enc in encounters:
@@ -362,6 +374,7 @@ def edit_session(session_id):
                            npcs=npcs, locations=locations,
                            items=items, quests=quests, pcs=pcs,
                            monsters=monsters, all_sites=all_sites,
+                           adventures=adventures,
                            encounters=encounters,
                            arc_site=None, arc_next_milestone=None,
                            arc_npc_ids=set(), arc_location_ids=set(),

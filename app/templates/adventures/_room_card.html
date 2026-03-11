@@ -1,0 +1,245 @@
+{% set system = adventure.system_hint %}
+
+<!-- Room Header -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+        <span class="room-key me-2">{{ room.display_key() }}</span>
+        <span class="fw-bold fs-5">{{ room.title }}</span>
+    </div>
+    <small class="text-muted">{{ room.scene.title }} · {{ room.scene.act.title }}</small>
+</div>
+
+<!-- Read Aloud -->
+<div class="card border-info bg-dark mb-2">
+    <div class="card-header border-info d-flex justify-content-between align-items-center py-2">
+        <span class="small fw-bold text-info text-uppercase">Read Aloud</span>
+        <button class="btn btn-sm {% if is_revealed %}btn-info{% else %}btn-outline-info{% endif %} reveal-btn"
+                onclick="toggleReveal({{ room.id }}, this)"
+                data-room-id="{{ room.id }}">
+            {% if is_revealed %}
+            <i class="bi bi-eye me-1"></i>Revealed
+            {% else %}
+            <i class="bi bi-eye-slash me-1"></i>Reveal
+            {% endif %}
+        </button>
+    </div>
+    <div class="card-body py-2">
+        {% if room.read_aloud %}
+        <div class="read-aloud-text {% if not is_revealed %}blurred-text{% endif %}" id="read-aloud-{{ room.id }}">
+            {{ room.read_aloud }}
+        </div>
+        {% else %}
+        <span class="text-muted fst-italic small">No read-aloud text.</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- GM Notes -->
+{% if room.gm_notes %}
+<div class="card border-secondary bg-dark mb-2">
+    <div class="card-header border-secondary py-2">
+        <span class="small fw-bold text-muted text-uppercase">GM Notes</span>
+    </div>
+    <div class="card-body py-2">
+        <div class="gm-notes-text small">{{ room.gm_notes | replace(' | ', '\n- ') }}</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Creatures -->
+{% if room.creatures %}
+<div class="card border-danger bg-dark mb-2">
+    <div class="card-header border-danger py-2 d-flex justify-content-between align-items-center">
+        <span class="small fw-bold text-danger text-uppercase">Creatures</span>
+        <span class="badge bg-danger">{{ room.creatures | length }}</span>
+    </div>
+    <div class="card-body py-2 px-3">
+        {% for creature in room.creatures %}
+        <div class="d-flex justify-content-between align-items-start mb-2 pb-2 {% if not loop.last %}border-bottom border-secondary{% endif %}">
+            <div class="flex-grow-1">
+                <div class="fw-semibold">💀 {{ creature.name }}</div>
+                {% if system == 'icrpg' %}
+                <div class="small text-muted mt-1">
+                    {% if creature.hearts %}
+                    <span class="me-3">
+                        {% for i in range(creature.hearts) %}❤️{% endfor %}
+                        {{ creature.hearts }} Heart{% if creature.hearts != 1 %}s{% endif %}
+                    </span>
+                    {% endif %}
+                    {% if creature.effort_type %}
+                    <span class="badge bg-secondary me-2">⚔️ {{ creature.effort_type }}</span>
+                    {% endif %}
+                    {% if creature.timer_rounds %}
+                    <span class="badge bg-warning text-dark">⏱ {{ creature.timer_rounds }}r</span>
+                    {% endif %}
+                </div>
+                {% if creature.special_move %}
+                <div class="small text-warning mt-1">⚡ {{ creature.special_move }}</div>
+                {% endif %}
+                {% elif system == 'd20' %}
+                <div class="small text-muted mt-1">
+                    {% if creature.hp %}<span class="me-3">{{ creature.hp }} HP</span>{% endif %}
+                    {% if creature.ac %}<span class="me-3">AC {{ creature.ac }}</span>{% endif %}
+                    {% if creature.cr %}<span>CR {{ creature.cr }}</span>{% endif %}
+                </div>
+                {% if creature.special_move %}
+                <div class="small text-warning mt-1">⚡ {{ creature.special_move }}</div>
+                {% endif %}
+                {% if creature.actions %}
+                <div class="small text-muted mt-1 fst-italic">{{ creature.actions }}</div>
+                {% endif %}
+                {% else %}
+                {% if creature.hp %}<div class="small text-muted">{{ creature.hp }} HP</div>{% endif %}
+                {% if creature.special_move %}<div class="small text-warning">⚡ {{ creature.special_move }}</div>{% endif %}
+                {% endif %}
+            </div>
+            <button class="btn btn-sm btn-outline-danger ms-2 flex-shrink-0 add-to-combat-btn"
+                    onclick="addToCombat({{ creature.id }}, '{{ creature.name | replace("'", "\\'")|e }}', {{ creature.hearts or 0 }}, {{ creature.hp or 0 }}, {{ creature.ac or 0 }})">
+                <i class="bi bi-plus-circle me-1"></i>Combat
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- NPCs -->
+{% if room.room_npcs %}
+<div class="card bg-dark mb-2" style="border-color: #6f42c1 !important;">
+    <div class="card-header py-2 d-flex justify-content-between align-items-center" style="border-color: #6f42c1;">
+        <span class="small fw-bold text-uppercase" style="color: #a78bfa;">NPCs</span>
+        <span class="badge" style="background: #6f42c1;">{{ room.room_npcs | length }}</span>
+    </div>
+    <div class="card-body py-2 px-3">
+        {% for rn in room.room_npcs %}
+        <div class="mb-1 {% if not loop.last %}border-bottom border-secondary pb-1{% endif %}">
+            <span class="me-1">🧑</span>
+            <a href="{{ url_for('npcs.npc_detail', npc_id=rn.npc.id) }}" class="fw-semibold text-light">{{ rn.npc.name }}</a>
+            {% if rn.npc.role %}<span class="text-muted small ms-1">— {{ rn.npc.role }}</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Loot -->
+{% if room.loot %}
+<div class="card border-warning bg-dark mb-2">
+    <div class="card-header border-warning py-2 d-flex justify-content-between align-items-center">
+        <span class="small fw-bold text-warning text-uppercase">Loot</span>
+        <span class="badge bg-warning text-dark">{{ room.loot | length }}</span>
+    </div>
+    <div class="card-body py-2 px-3">
+        {% for loot in room.loot %}
+        <div class="mb-1 {% if not loop.last %}border-bottom border-secondary pb-1{% endif %}">
+            <span class="me-1">🗝</span>
+            <span class="fw-semibold">{{ loot.name }}</span>
+            {% if loot.description %}
+            <span class="text-muted small ms-1">— {{ loot.description }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Hazards -->
+{% if room.hazards %}
+<div class="card border-secondary bg-dark mb-2" style="border-color: #fd7e14 !important;">
+    <div class="card-header py-2 d-flex justify-content-between align-items-center" style="border-color: #fd7e14;">
+        <span class="small fw-bold text-uppercase" style="color: #fd7e14;">Hazards</span>
+        <span class="badge" style="background: #fd7e14;">{{ room.hazards | length }}</span>
+    </div>
+    <div class="card-body py-2 px-3">
+        {% for hazard in room.hazards %}
+        <div class="mb-1">
+            <span class="fw-semibold">⚠️ {{ hazard.name }}</span>
+            {% if hazard.dc_or_target %}<span class="badge bg-secondary ms-2 small">{{ hazard.dc_or_target }}</span>{% endif %}
+            {% if hazard.description %}<div class="small text-muted mt-1">{{ hazard.description }}</div>{% endif %}
+            {% if hazard.consequence %}<div class="small text-danger mt-1">Fail: {{ hazard.consequence }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Session Log Panel -->
+<div class="card border-secondary bg-dark mb-2">
+    <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
+        <span class="small fw-bold text-muted text-uppercase">
+            <i class="bi bi-journal-text me-1"></i>Session Log
+        </span>
+        <button class="btn btn-sm {% if room.is_cleared %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                id="clear-btn-{{ room.id }}"
+                onclick="toggleClear({{ room.id }})">
+            {% if room.is_cleared %}
+            <i class="bi bi-check2-square me-1"></i>Cleared
+            {% else %}
+            <i class="bi bi-square me-1"></i>Mark Cleared
+            {% endif %}
+        </button>
+    </div>
+    <div class="card-body py-2">
+        {% if active_game_session %}
+        <form id="room-log-form-{{ room.id }}">
+            <div class="d-flex gap-3 mb-2">
+                <div class="form-check form-check-sm">
+                    <input class="form-check-input" type="checkbox" name="creatures_defeated" value="1"
+                           id="creatures_cb_{{ room.id }}"
+                           {% if existing_log and existing_log.creatures_defeated %}checked{% endif %}>
+                    <label class="form-check-label small" for="creatures_cb_{{ room.id }}">Creatures defeated</label>
+                </div>
+                <div class="form-check form-check-sm">
+                    <input class="form-check-input" type="checkbox" name="loot_taken" value="1"
+                           id="loot_cb_{{ room.id }}"
+                           {% if existing_log and existing_log.loot_taken %}checked{% endif %}>
+                    <label class="form-check-label small" for="loot_cb_{{ room.id }}">Loot taken</label>
+                </div>
+            </div>
+            <textarea class="form-control form-control-sm bg-dark text-light border-secondary mb-2"
+                      name="gm_notes" rows="2"
+                      placeholder="What happened here this session...">{{ existing_log.gm_notes if existing_log else '' }}</textarea>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    id="save-log-btn-{{ room.id }}"
+                    onclick="saveRoomLog({{ room.id }})">
+                <i class="bi bi-floppy me-1"></i>Save to Session
+            </button>
+        </form>
+        {% else %}
+        <div class="text-muted small fst-italic">
+            <a href="#" onclick="startSession(); return false;" class="text-muted">Start a session</a> to log what happens in this room.
+        </div>
+        {% endif %}
+
+        {% if room.session_logs %}
+        <hr class="border-secondary my-2">
+        <div class="small text-muted fw-bold mb-1">History ({{ room.session_logs | length }} session{{ 's' if room.session_logs | length != 1 }})</div>
+        {% for log in room.session_logs | sort(attribute='session_id', reverse=True) %}
+        {% if log.session %}
+        <div class="mb-1 small">
+            <span class="text-info">Session {{ log.session.number }}:</span>
+            {% if log.gm_notes %}<span class="text-muted">{{ log.gm_notes | truncate(80) }}</span>{% endif %}
+            {% if log.creatures_defeated %}<span class="badge bg-danger ms-1">defeated</span>{% endif %}
+            {% if log.loot_taken %}<span class="badge bg-warning text-dark ms-1">looted</span>{% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Navigation -->
+<div class="d-flex justify-content-between mt-3">
+    {% if prev_room %}
+    <button class="btn btn-sm btn-outline-secondary" onclick="loadRoom({{ prev_room.id }})">
+        <i class="bi bi-arrow-left me-1"></i>{{ prev_room.display_key() }}: {{ prev_room.title | truncate(25) }}
+    </button>
+    {% else %}
+    <div></div>
+    {% endif %}
+    {% if next_room %}
+    <button class="btn btn-sm btn-outline-secondary" onclick="loadRoom({{ next_room.id }})">
+        {{ next_room.display_key() }}: {{ next_room.title | truncate(25) }}<i class="bi bi-arrow-right ms-1"></i>
+    </button>
+    {% endif %}
+</div>

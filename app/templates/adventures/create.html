@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}New Adventure — The War Table{% endblock %}
+
+{% block styles %}
+<style>
+#concept-input { min-height: 140px; resize: vertical; }
+#loading-spinner { display: none; }
+.system-card { cursor: pointer; transition: border-color .15s; }
+.system-card.selected { border-color: var(--bs-warning) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+<h2 class="mb-0"><i class="bi bi-book"></i> New Adventure</h2>
+<p class="text-muted small mt-1 mb-4">Describe your adventure concept in a paragraph. AI will generate a complete module skeleton — Acts, Scenes, and keyed Rooms — that you can review and edit before saving.</p>
+
+<form id="concept-form">
+    <!-- Concept Input -->
+    <div class="card border-secondary bg-dark mb-3">
+        <div class="card-header border-secondary">
+            <h6 class="mb-0"><i class="bi bi-lightbulb me-2 text-warning"></i>Adventure Concept</h6>
+        </div>
+        <div class="card-body">
+            <label for="concept-input" class="form-label">Describe your adventure in a paragraph or two</label>
+            <textarea id="concept-input" class="form-control bg-dark text-light border-secondary"
+                      placeholder="Example: An ancient dwarven vault sealed for 300 years has been breached by grave robbers, unleashing a curse that animates the dead. The players are hired by the local guild to recover a stolen artifact and seal the vault again. ICRPG system, dark and gritty tone, 2-3 sessions."></textarea>
+            <div class="form-text text-muted mt-1">Include: premise, villain or conflict, tone, system (ICRPG/D&D 5e/etc.), and approximate session count.</div>
+        </div>
+    </div>
+
+    <!-- System Hint -->
+    <div class="card border-secondary bg-dark mb-4">
+        <div class="card-header border-secondary">
+            <h6 class="mb-0"><i class="bi bi-controller me-2 text-info"></i>Game System — controls creature stat block format</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-sm-4">
+                    <div class="card border-secondary bg-dark system-card selected" data-value="icrpg" onclick="selectSystem(this)">
+                        <div class="card-body py-2 px-3">
+                            <div class="fw-bold">ICRPG</div>
+                            <div class="text-muted small">Hearts · Effort type · Special move · Timers</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card border-secondary bg-dark system-card" data-value="d20" onclick="selectSystem(this)">
+                        <div class="card-body py-2 px-3">
+                            <div class="fw-bold">D&amp;D 5e / d20</div>
+                            <div class="text-muted small">HP · AC · CR · Actions</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card border-secondary bg-dark system-card" data-value="generic" onclick="selectSystem(this)">
+                        <div class="card-body py-2 px-3">
+                            <div class="fw-bold">Generic</div>
+                            <div class="text-muted small">System-agnostic, flexible</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="system-hint" value="icrpg">
+        </div>
+    </div>
+
+    <!-- Generate Button -->
+    <div class="d-flex gap-2 align-items-center">
+        <button type="submit" class="btn btn-warning btn-lg px-4" id="generate-btn">
+            <i class="bi bi-stars me-2"></i>Generate Adventure Draft
+        </button>
+        <a href="{{ url_for('adventures.list_adventures') }}" class="btn btn-outline-secondary">Cancel</a>
+        <div id="loading-spinner" class="ms-3">
+            <div class="spinner-border spinner-border-sm text-warning me-2" role="status"></div>
+            <span class="text-muted small">AI is building your adventure...</span>
+        </div>
+    </div>
+    <div id="error-msg" class="alert alert-danger mt-3" style="display:none;"></div>
+</form>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pre-fill concept from ?seed= query parameter (e.g. from campaign page brainstorm)
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const seed = params.get('seed');
+    if (seed) {
+        document.getElementById('concept-input').value = seed;
+    }
+})();
+
+function selectSystem(card) {
+    document.querySelectorAll('.system-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    document.getElementById('system-hint').value = card.dataset.value;
+}
+
+document.getElementById('concept-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const concept = document.getElementById('concept-input').value.trim();
+    if (!concept) {
+        document.getElementById('error-msg').textContent = 'Please enter an adventure concept.';
+        document.getElementById('error-msg').style.display = '';
+        return;
+    }
+
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = true;
+    document.getElementById('loading-spinner').style.display = '';
+    document.getElementById('error-msg').style.display = 'none';
+
+    try {
+        const resp = await fetch('/api/ai/generate-adventure-draft', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                concept: concept,
+                system_hint: document.getElementById('system-hint').value,
+                world_context: ''  // could inject from campaign context later
+            })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error || 'AI request failed');
+        }
+
+        // Store draft in sessionStorage and redirect to review page
+        sessionStorage.setItem('adventure_draft', JSON.stringify(data));
+        window.location.href = "{{ url_for('adventures.draft_review') }}";
+
+    } catch (err) {
+        document.getElementById('error-msg').textContent = 'Error: ' + err.message;
+        document.getElementById('error-msg').style.display = '';
+        btn.disabled = false;
+        document.getElementById('loading-spinner').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

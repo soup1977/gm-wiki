@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from app import db
-from app.models import Quest, NPC, Location, Tag, quest_tags, get_or_create_tags, Faction, ActivityLog
+from app.models import Quest, NPC, Location, Tag, quest_tags, get_or_create_tags, Faction, ActivityLog, Adventure
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 quests_bp = Blueprint('quests', __name__)
@@ -66,6 +66,7 @@ def create_quest():
     npcs = NPC.query.filter_by(campaign_id=campaign_id).order_by(NPC.name).all()
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -73,9 +74,10 @@ def create_quest():
             flash('Quest name is required.', 'danger')
             return render_template('quests/form.html', quest=None,
                                    npcs=npcs, locations=locations,
-                                   statuses=QUEST_STATUSES, factions=factions)
+                                   statuses=QUEST_STATUSES, factions=factions, adventures=adventures)
 
         faction_id_val = request.form.get('faction_id')
+        adv_id = request.form.get('adventure_id')
         quest = Quest(
             campaign_id=campaign_id,
             name=name,
@@ -85,6 +87,7 @@ def create_quest():
             outcome=request.form.get('outcome', '').strip() or None,
             gm_notes=request.form.get('gm_notes', '').strip() or None,
             faction_id=int(faction_id_val) if faction_id_val else None,
+            adventure_id=int(adv_id) if adv_id else None,
         )
 
         # Many-to-many: involved NPCs
@@ -120,7 +123,7 @@ def create_quest():
 
     return render_template('quests/form.html', quest=None,
                            npcs=npcs, locations=locations,
-                           statuses=QUEST_STATUSES, factions=factions)
+                           statuses=QUEST_STATUSES, factions=factions, adventures=adventures)
 
 
 @quests_bp.route('/quests/<int:quest_id>')
@@ -147,6 +150,7 @@ def edit_quest(quest_id):
     npcs = NPC.query.filter_by(campaign_id=campaign_id).order_by(NPC.name).all()
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -154,7 +158,7 @@ def edit_quest(quest_id):
             flash('Quest name is required.', 'danger')
             return render_template('quests/form.html', quest=quest,
                                    npcs=npcs, locations=locations,
-                                   statuses=QUEST_STATUSES, factions=factions)
+                                   statuses=QUEST_STATUSES, factions=factions, adventures=adventures)
 
         quest.name = name
         quest.status = request.form.get('status', 'active')
@@ -164,6 +168,8 @@ def edit_quest(quest_id):
         quest.gm_notes = request.form.get('gm_notes', '').strip() or None
         faction_id_val = request.form.get('faction_id')
         quest.faction_id = int(faction_id_val) if faction_id_val else None
+        adv_id = request.form.get('adventure_id')
+        quest.adventure_id = int(adv_id) if adv_id else None
 
         selected_npc_ids = request.form.getlist('involved_npcs')
         quest.involved_npcs = NPC.query.filter(
@@ -194,7 +200,7 @@ def edit_quest(quest_id):
 
     return render_template('quests/form.html', quest=quest,
                            npcs=npcs, locations=locations,
-                           statuses=QUEST_STATUSES, factions=factions)
+                           statuses=QUEST_STATUSES, factions=factions, adventures=adventures)
 
 
 @quests_bp.route('/quests/<int:quest_id>/set-status', methods=['POST'])

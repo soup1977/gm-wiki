@@ -87,22 +87,30 @@
                         <div class="form-text">Comma-separated.</div>
                     </div>
 
-                    {% if all_sites %}
-                    <div>
-                        <label for="adventure_site_id" class="form-label">Story Arc</label>
-                        <select class="form-select" id="adventure_site_id" name="adventure_site_id">
-                            <option value="">— None —</option>
+                    {# Legacy Story Arc field — hidden, kept for old data only #}
+                    {% if all_sites and sess and sess.adventure_sites %}
+                    <div class="d-none">
+                        <select id="adventure_site_id" name="adventure_site_id">
                             {% for site in all_sites %}
-                            <option value="{{ site.id }}"
-                                {% if sess and sess.adventure_sites and site in sess.adventure_sites %}selected
-                                {% elif carryover and carryover.site_id == site.id %}selected
-                                {% elif preselect_site_id and preselect_site_id == site.id %}selected
-                                {% endif %}>
-                                {{ site.name }}{% if site.status %} ({{ site.status }}){% endif %}
+                            <option value="{{ site.id }}" {% if site in sess.adventure_sites %}selected{% endif %}>{{ site.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    {% if adventures is defined and adventures %}
+                    <div>
+                        <label for="adventure_id" class="form-label">Adventure</label>
+                        <select class="form-select" id="adventure_id" name="adventure_id">
+                            <option value="">— None —</option>
+                            {% for adv in adventures %}
+                            <option value="{{ adv.id }}"
+                                {% if sess and sess.adventure_id == adv.id %}selected{% endif %}>
+                                {{ adv.name }}{% if adv.status %} ({{ adv.status }}){% endif %}
                             </option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">Which story arc was this session part of?</div>
+                        <div class="form-text">Link this session to an adventure module.</div>
                     </div>
                     {% endif %}
 

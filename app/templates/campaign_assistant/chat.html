@@ -55,23 +55,7 @@
             </div>
         </div>
 
-        <!-- Story Arc link dropdown -->
-        {% if campaign and arcs %}
-        <div class="card bg-dark border-secondary mb-3">
-            <div class="card-header text-muted small">
-                <i class="bi bi-map-fill me-1"></i>Link to Story Arc
-            </div>
-            <div class="card-body">
-                <select id="assistant-arc-select" class="form-select form-select-sm bg-dark text-light border-secondary">
-                    <option value="">-- None --</option>
-                    {% for arc in arcs %}
-                    <option value="{{ arc.id }}">{{ arc.name }}</option>
-                    {% endfor %}
-                </select>
-                <div class="form-text mt-1">Saved entities will be linked to this arc.</div>
-            </div>
-        </div>
-        {% endif %}
+        {# Story Arc link panel removed — use Adventure linking on entity edit forms #}
 
         <!-- Tips card -->
         <div class="card bg-dark border-secondary">

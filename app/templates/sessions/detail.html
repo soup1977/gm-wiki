@@ -234,4 +234,48 @@
         {% endif %}
     </div>
 </div>
+
+{% if sess.adventure_id and sess.adventure %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-dark border-warning">
+            <div class="card-header border-warning d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-warning"><i class="bi bi-map me-2"></i>Adventure: {{ sess.adventure.name }}</span>
+                <a href="{{ url_for('adventures.run', adventure_id=sess.adventure.id) }}"
+                   class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-play-circle me-1"></i>Open Runner
+                </a>
+            </div>
+            <div class="card-body">
+                {% if sess.room_logs %}
+                <div class="small fw-bold text-muted text-uppercase mb-2">Rooms visited this session</div>
+                <ul class="list-unstyled mb-0">
+                    {% for log in sess.room_logs | sort(attribute='room.key') %}
+                    {% if log.room %}
+                    <li class="d-flex align-items-start gap-2 mb-2">
+                        <span class="font-monospace text-warning small">{{ log.room.key or '?' }}</span>
+                        <div>
+                            <span class="fw-semibold">{{ log.room.title }}</span>
+                            {% if log.creatures_defeated %}
+                            <span class="badge bg-danger ms-1 small">creatures defeated</span>
+                            {% endif %}
+                            {% if log.loot_taken %}
+                            <span class="badge bg-warning text-dark ms-1 small">looted</span>
+                            {% endif %}
+                            {% if log.gm_notes %}
+                            <div class="text-muted small">{{ log.gm_notes }}</div>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small mb-0">No rooms logged for this session yet. Use the Adventure Runner to record what happened.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

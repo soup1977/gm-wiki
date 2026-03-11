@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags, Faction, ActivityLog
+from app.models import NPC, Location, Item, Tag, npc_tags, get_or_create_tags, Faction, ActivityLog, Adventure
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 _NPC_TEXT_FIELDS = ['physical_description', 'personality', 'notes', 'secrets']
@@ -107,8 +107,9 @@ def create_npc():
     # GET — show the form
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
     return render_template('npcs/form.html', npc=None, locations=locations,
-                           status_choices=NPC_STATUS_CHOICES, factions=factions)
+                           status_choices=NPC_STATUS_CHOICES, factions=factions, adventures=adventures)
 
 
 @npcs_bp.route('/<int:npc_id>')
@@ -159,6 +160,8 @@ def edit_npc(npc_id):
         npc.secrets = request.form.get('secrets', '').strip()
         npc.notes = request.form.get('notes', '').strip()
         npc.home_location_id = home_id
+        adv_id = request.form.get('adventure_id')
+        npc.adventure_id = int(adv_id) if adv_id else None
 
         connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
         npc.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
@@ -191,8 +194,9 @@ def edit_npc(npc_id):
     # GET — show the form with current data
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
     return render_template('npcs/form.html', npc=npc, locations=locations,
-                           status_choices=NPC_STATUS_CHOICES, factions=factions)
+                           status_choices=NPC_STATUS_CHOICES, factions=factions, adventures=adventures)
 
 
 @npcs_bp.route('/<int:npc_id>/set-status', methods=['POST'])
