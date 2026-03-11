@@ -156,25 +156,64 @@ body { overflow: hidden; }
             <li class="nav-item" role="presentation">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rt-ai" title="AI Tools">🎲</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rt-tables" title="Tables">🎯</button>
+            </li>
         </ul>
 
         <div class="tab-content runner-tools-pane">
 
             <!-- Tab 1: Combat -->
             <div class="tab-pane fade show active" id="rt-combat" role="tabpanel">
-                <div class="small fw-bold text-uppercase text-muted mb-2">
-                    <i class="bi bi-swords me-1"></i>Combat
+                <!-- Round / Turn header -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-warning fw-bold" id="round-label">Round 1</span>
+                    <button class="btn btn-sm btn-outline-warning py-0" onclick="nextTurn()" id="next-turn-btn" style="font-size:.75rem">
+                        Next Turn ▶
+                    </button>
                 </div>
                 <div id="combat-list">
-                    <div class="text-muted small fst-italic">Add creatures with [+Combat]</div>
+                    <div class="text-muted small fst-italic">Add creatures with [+Combat] or add party below.</div>
+                </div>
+                <!-- Status picker (hidden until triggered) -->
+                <div id="status-picker" class="d-none mt-1 mb-1">
+                    <div class="small text-muted mb-1">Add status:</div>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for s in ['Prone','Poisoned','Stunned','Blinded','Invisible','Restrained','Frightened','Concentration'] %}
+                        <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:.7rem"
+                                onclick="addStatus('{{ s }}')" data-status="{{ s }}">{{ s }}</button>
+                        {% endfor %}
+                    </div>
                 </div>
                 <hr class="border-secondary my-2">
-                <div class="d-grid gap-1">
-                    <button class="btn btn-sm btn-outline-danger" onclick="clearCombat()">
+                <!-- Party roster -->
+                {% if campaign_pcs %}
+                <div class="mb-2">
+                    <div class="small text-muted text-uppercase fw-bold mb-1">Party</div>
+                    {% for pc in campaign_pcs %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <span class="small fw-semibold">{{ pc.name }}</span>
+                            {% if pc.class_or_role %}<span class="text-muted" style="font-size:.7rem;"> · {{ pc.class_or_role }}</span>{% endif %}
+                            {% if pc.hearts %}<span class="badge bg-danger ms-1" style="font-size:.6rem;">{{ pc.hearts }}♥</span>{% endif %}
+                            {% if pc.hp %}<span class="badge bg-success ms-1" style="font-size:.6rem;">{{ pc.hp }} HP</span>{% endif %}
+                            {% if pc.ac %}<span class="badge bg-secondary ms-1" style="font-size:.6rem;">AC{{ pc.ac }}</span>{% endif %}
+                        </div>
+                        <button class="btn btn-sm btn-outline-info py-0" style="font-size:.7rem;"
+                                onclick="addPcToCombat({{ pc.id }}, '{{ pc.name | replace("'", "\\'") }}', {{ pc.hearts or 'null' }}, {{ pc.hp or 'null' }}, {{ pc.ac or 0 }})">
+                            +
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr class="border-secondary my-2">
+                {% endif %}
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="clearCombat()">
                         <i class="bi bi-trash me-1"></i>Clear
                     </button>
-                    <a href="{{ url_for('combat.tracker') }}" class="btn btn-sm btn-danger" target="_blank">
-                        <i class="bi bi-swords me-1"></i>Full Tracker
+                    <a href="{{ url_for('combat.tracker') }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Full Tracker">
+                        <i class="bi bi-box-arrow-up-right"></i>
                     </a>
                 </div>
             </div>
@@ -226,7 +265,8 @@ body { overflow: hidden; }
                 </div>
 
                 <!-- Linked quests -->
-                {% if linked_quests %}
+                {% set all_quests = linked_quests + campaign_quests %}
+                {% if all_quests %}
                 <div>
                     <div class="small text-muted text-uppercase fw-bold mb-1">Quests</div>
                     {% for q in linked_quests %}
@@ -237,6 +277,20 @@ body { overflow: hidden; }
                             {% elif q.status == 'Failed' %}bg-danger
                             {% else %}bg-secondary{% endif %}"
                             style="font-size:.6rem;">{{ q.status or 'Open' }}</span>
+                        <span class="badge bg-primary mt-1" style="font-size:.55rem;">Adventure</span>
+                        <a href="{{ url_for('quests.quest_detail', quest_id=q.id) }}"
+                           class="small text-light text-decoration-none" target="_blank">{{ q.name }}</a>
+                    </div>
+                    {% endfor %}
+                    {% for q in campaign_quests %}
+                    <div class="d-flex align-items-start gap-1 mb-1">
+                        <span class="badge mt-1
+                            {% if q.status == 'Active' %}bg-success
+                            {% elif q.status == 'Complete' %}bg-secondary
+                            {% elif q.status == 'Failed' %}bg-danger
+                            {% else %}bg-secondary{% endif %}"
+                            style="font-size:.6rem;">{{ q.status or 'Open' }}</span>
+                        <span class="badge bg-warning text-dark mt-1" style="font-size:.55rem;">Campaign</span>
                         <a href="{{ url_for('quests.quest_detail', quest_id=q.id) }}"
                            class="small text-light text-decoration-none" target="_blank">{{ q.name }}</a>
                     </div>
@@ -355,6 +409,45 @@ body { overflow: hidden; }
                 </div>
             </div>
 
+            <!-- Tab 5: Tables -->
+            <div class="tab-pane fade" id="rt-tables" role="tabpanel">
+                <input type="text" id="rt-tables-search" class="form-control form-control-sm bg-dark text-light border-secondary mb-2"
+                       placeholder="Search tables..." oninput="filterTables(this.value)">
+
+                {% set builtin_tables = all_tables | selectattr('is_builtin') | list %}
+                {% set custom_tables  = all_tables | rejectattr('is_builtin') | list %}
+
+                {% if builtin_tables %}
+                <div class="small text-muted text-uppercase fw-bold mb-1">Built-in</div>
+                {% for t in builtin_tables %}
+                <div class="rt-table-item mb-1" data-name="{{ t.name | lower }}">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start py-1" style="font-size:.78rem"
+                            onclick="rollTable({{ t.id }})">
+                        🎲 {{ t.name }}
+                    </button>
+                    <div id="rt-table-result-{{ t.id }}" class="small text-info fst-italic px-1 mt-1" style="display:none"></div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if custom_tables %}
+                <div class="small text-muted text-uppercase fw-bold mt-2 mb-1">Custom</div>
+                {% for t in custom_tables %}
+                <div class="rt-table-item mb-1" data-name="{{ t.name | lower }}">
+                    <button class="btn btn-sm btn-outline-warning w-100 text-start py-1" style="font-size:.78rem"
+                            onclick="rollTable({{ t.id }})">
+                        🎲 {{ t.name }}
+                    </button>
+                    <div id="rt-table-result-{{ t.id }}" class="small text-info fst-italic px-1 mt-1" style="display:none"></div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if not all_tables %}
+                <div class="text-muted small fst-italic">No tables available for this campaign.</div>
+                {% endif %}
+            </div>
+
         </div>
     </div>
 </div><!-- /.runner-layout -->
@@ -377,7 +470,17 @@ body { overflow: hidden; }
 
 const ADVENTURE_ID = {{ adventure.id }};
 const SYSTEM_HINT = '{{ adventure.system_hint }}';
-let combatants = [];
+// Combat state — persisted in localStorage
+const COMBAT_KEY = 'gm_wiki_combat_runner';
+let _statusTargetId = null;  // combatant id awaiting status add
+
+function _loadCombat() {
+    try { return JSON.parse(localStorage.getItem(COMBAT_KEY)) || {round:1,currentTurnIndex:0,combatants:[]}; }
+    catch(e) { return {round:1,currentTurnIndex:0,combatants:[]}; }
+}
+function _saveCombat(state) {
+    localStorage.setItem(COMBAT_KEY, JSON.stringify(state));
+}
 let activeSessionId = {{ active_game_session.id if active_game_session else 'null' }};
 let activeSessionNumber = {{ active_game_session.number if active_game_session else 'null' }};
 let activeSessionUrl = {{ ('"' + url_for('sessions.session_detail', session_id=active_game_session.id) + '"') | safe if active_game_session else 'null' }};
@@ -440,48 +543,198 @@ async function toggleReveal(roomId, btn) {
     }
 }
 
-// Add creature to in-page combat panel
-function addToCombat(id, name, hearts, hp, ac) {
+// Add PC to combat panel (uses pc id prefixed with 'pc-' to avoid collision with creature IDs)
+function addPcToCombat(pcId, name, hearts, hp, ac) {
+    const state = _loadCombat();
+    const combatId = 'pc-' + pcId;
+    if (state.combatants.find(c => c.id === combatId)) return; // already in tracker
     const maxHp = hearts > 0 ? hearts * 10 : (hp || 10);
-    const combatant = { id: Date.now(), name, maxHp, currentHp: maxHp, hearts, ac };
-    combatants.push(combatant);
+    state.combatants.push({
+        id: combatId,
+        name,
+        initiative: 0,
+        currentHp: maxHp,
+        maxHp,
+        hearts,
+        ac: ac || 0,
+        statusEffects: [],
+        isPC: true
+    });
+    _saveCombat(state);
     renderCombat();
+    const tab = document.querySelector('[data-bs-target="#rt-combat"]');
+    if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+}
+
+// Add creature to combat panel
+function addToCombat(id, name, hearts, hp, ac) {
+    const state = _loadCombat();
+    const maxHp = hearts > 0 ? hearts * 10 : (hp || 10);
+    state.combatants.push({
+        id: Date.now(),
+        name,
+        initiative: 0,
+        currentHp: maxHp,
+        maxHp,
+        hearts,
+        ac,
+        statusEffects: []
+    });
+    _sortByInitiative(state);
+    _saveCombat(state);
+    renderCombat();
+    // Switch to combat tab
+    const tab = document.querySelector('[data-bs-target="#rt-combat"]');
+    if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+}
+
+function _sortByInitiative(state) {
+    state.combatants.sort((a, b) => b.initiative - a.initiative);
+    // clamp turn index
+    if (state.combatants.length > 0)
+        state.currentTurnIndex = Math.min(state.currentTurnIndex, state.combatants.length - 1);
 }
 
 function renderCombat() {
+    const state = _loadCombat();
     const list = document.getElementById('combat-list');
-    if (combatants.length === 0) {
-        list.innerHTML = '<div class="text-muted small fst-italic">Add creatures with [+Combat]</div>';
+    const roundLabel = document.getElementById('round-label');
+    if (roundLabel) roundLabel.textContent = 'Round ' + state.round;
+
+    if (state.combatants.length === 0) {
+        list.innerHTML = '<div class="text-muted small fst-italic">Add creatures with [+Combat] or add party below.</div>';
         return;
     }
-    list.innerHTML = combatants.map((c, i) => `
-        <div class="combatant-card" id="combatant-${c.id}">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="combatant-name">💀 ${c.name}</span>
-                <button class="btn btn-sm btn-link text-danger p-0" onclick="removeCombatant(${i})">✕</button>
+
+    list.innerHTML = state.combatants.map((c, i) => {
+        const isActive = i === state.currentTurnIndex;
+        const hpPct = Math.max(0, (c.currentHp / c.maxHp) * 100);
+        const hpColor = hpPct > 50 ? 'var(--bs-success)' : hpPct > 25 ? 'var(--bs-warning)' : 'var(--bs-danger)';
+        const statusHtml = (c.statusEffects || []).map(s =>
+            `<span class="badge bg-secondary me-1" style="font-size:.6rem;cursor:pointer"
+                   onclick="removeStatus('${c.id}','${s}')">${s} ✕</span>`
+        ).join('');
+        const pcStyle = c.isPC ? 'border-left:2px solid var(--bs-info);background:rgba(13,202,240,.04);' : '';
+        const pcBadge = c.isPC ? '<span class="badge bg-info text-dark ms-1" style="font-size:.55rem;">PC</span>' : '';
+        return `
+        <div class="combatant-card ${isActive ? 'border-warning' : ''}" id="combatant-${c.id}"
+             style="${isActive ? 'border-color:var(--bs-warning)!important;background:rgba(255,193,7,.06);' : ''}${pcStyle}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="combatant-name" style="font-size:.82rem">${isActive ? '▶ ' : ''}${c.name}${pcBadge}</div>
+                <button class="btn btn-sm btn-link text-danger p-0" style="font-size:.7rem;line-height:1"
+                        onclick="removeCombatant('${c.id}')">✕</button>
             </div>
             <div class="d-flex align-items-center gap-1 mt-1">
-                <button class="btn btn-sm btn-outline-secondary p-0 px-1" style="font-size:.7rem" onclick="adjustHp(${i}, -1)">-</button>
-                <span class="small">${c.currentHp}/${c.maxHp} HP</span>
-                <button class="btn btn-sm btn-outline-secondary p-0 px-1" style="font-size:.7rem" onclick="adjustHp(${i}, 1)">+</button>
+                <span class="text-muted" style="font-size:.65rem;min-width:18px" title="Initiative">⚡</span>
+                <input type="number" value="${c.initiative}" min="0" max="30"
+                       class="form-control form-control-sm bg-dark text-light border-secondary text-center p-0"
+                       style="width:38px;font-size:.75rem;height:20px"
+                       onchange="setInitiative('${c.id}', this.value)">
+                <span class="ms-1 text-muted" style="font-size:.65rem">Init</span>
+                <span class="ms-auto me-1 text-muted" style="font-size:.65rem">${c.ac ? 'AC'+c.ac : ''}</span>
             </div>
-            <div class="hp-bar" style="width:${Math.max(0,(c.currentHp/c.maxHp)*100)}%"></div>
-        </div>`).join('');
+            <div class="d-flex align-items-center gap-1 mt-1">
+                <button class="btn btn-sm btn-outline-secondary p-0 px-1" style="font-size:.7rem;line-height:1.4"
+                        onclick="adjustHp('${c.id}', -1)">−</button>
+                <span class="small" style="font-size:.75rem;min-width:44px;text-align:center">${c.currentHp}/${c.maxHp}</span>
+                <button class="btn btn-sm btn-outline-secondary p-0 px-1" style="font-size:.7rem;line-height:1.4"
+                        onclick="adjustHp('${c.id}', 1)">+</button>
+                <button class="btn btn-sm btn-outline-info p-0 px-1 ms-1" style="font-size:.65rem;line-height:1.4"
+                        onclick="showStatusPicker('${c.id}')">+Status</button>
+            </div>
+            <div class="hp-bar mt-1" style="width:${hpPct}%;background:${hpColor}"></div>
+            ${statusHtml ? `<div class="mt-1">${statusHtml}</div>` : ''}
+        </div>`;
+    }).join('');
 }
 
-function adjustHp(i, delta) {
-    combatants[i].currentHp = Math.max(0, Math.min(combatants[i].maxHp, combatants[i].currentHp + delta));
+function nextTurn() {
+    const state = _loadCombat();
+    if (state.combatants.length === 0) return;
+    state.currentTurnIndex++;
+    if (state.currentTurnIndex >= state.combatants.length) {
+        state.currentTurnIndex = 0;
+        state.round++;
+    }
+    _saveCombat(state);
     renderCombat();
 }
 
-function removeCombatant(i) {
-    combatants.splice(i, 1);
-    renderCombat();
+function setInitiative(cid, val) {
+    const state = _loadCombat();
+    const c = state.combatants.find(x => x.id == cid);
+    if (c) { c.initiative = parseInt(val) || 0; _sortByInitiative(state); _saveCombat(state); renderCombat(); }
+}
+
+function adjustHp(cid, delta) {
+    const state = _loadCombat();
+    const c = state.combatants.find(x => x.id == cid);
+    if (c) { c.currentHp = Math.max(0, Math.min(c.maxHp, c.currentHp + delta)); _saveCombat(state); renderCombat(); }
+}
+
+function removeCombatant(cid) {
+    const state = _loadCombat();
+    const idx = state.combatants.findIndex(x => x.id == cid);
+    if (idx !== -1) {
+        state.combatants.splice(idx, 1);
+        if (state.currentTurnIndex >= state.combatants.length) state.currentTurnIndex = 0;
+        _saveCombat(state); renderCombat();
+    }
 }
 
 function clearCombat() {
-    combatants = [];
+    _saveCombat({round:1, currentTurnIndex:0, combatants:[]});
     renderCombat();
+}
+
+function showStatusPicker(cid) {
+    _statusTargetId = cid;
+    const picker = document.getElementById('status-picker');
+    if (picker) picker.classList.toggle('d-none');
+}
+
+function addStatus(statusName) {
+    if (!_statusTargetId) return;
+    const state = _loadCombat();
+    const c = state.combatants.find(x => x.id == _statusTargetId);
+    if (c && !c.statusEffects.includes(statusName)) {
+        c.statusEffects.push(statusName);
+        _saveCombat(state);
+    }
+    document.getElementById('status-picker').classList.add('d-none');
+    _statusTargetId = null;
+    renderCombat();
+}
+
+function removeStatus(cid, statusName) {
+    const state = _loadCombat();
+    const c = state.combatants.find(x => x.id == cid);
+    if (c) { c.statusEffects = c.statusEffects.filter(s => s !== statusName); _saveCombat(state); renderCombat(); }
+}
+
+// Render combat on page load (restores persisted state)
+renderCombat();
+
+// Random Tables tab
+async function rollTable(tableId) {
+    const resultEl = document.getElementById('rt-table-result-' + tableId);
+    if (!resultEl) return;
+    resultEl.style.display = 'block';
+    resultEl.textContent = 'Rolling...';
+    try {
+        const resp = await fetch(`/random-tables/${tableId}/roll`);
+        const data = await resp.json();
+        resultEl.textContent = data.result || 'No result.';
+    } catch(e) {
+        resultEl.textContent = 'Error rolling table.';
+    }
+}
+
+function filterTables(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.rt-table-item').forEach(el => {
+        el.style.display = (!q || el.dataset.name.includes(q)) ? '' : 'none';
+    });
 }
 
 // Toggle act sections collapsed
@@ -558,6 +811,34 @@ async function toggleClear(roomId) {
     }
 }
 
+// Give loot item to a PC
+async function giveLootToPc(lootId, btnEl) {
+    const select = document.getElementById('give-select-' + lootId);
+    const feedback = document.getElementById('give-feedback-' + lootId);
+    const pcId = select ? select.value : '';
+    if (!pcId) { alert('Select a PC first.'); return; }
+    try {
+        const resp = await fetch(`/adventures/loot/${lootId}/give-to-pc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ pc_id: pcId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            if (feedback) { feedback.textContent = `Given to ${data.pc_name}`; feedback.style.display = 'block'; }
+            btnEl.disabled = true;
+            select.disabled = true;
+        } else {
+            alert(data.error || 'Failed to give loot.');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
 // Save room log to active session
 async function saveRoomLog(roomId) {
     const form = document.getElementById('room-log-form-' + roomId);
@@ -612,7 +893,7 @@ async function runNpcChat() {
     resultEl.style.display = '';
     resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
     try {
-        const resp = await fetch('/session-mode/npc-chat', {
+        const resp = await fetch('/adventures/ai/npc-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json',
                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
@@ -706,7 +987,7 @@ async function runHazardFlavor() {
     resultEl.textContent = 'Generating...';
     resultEl.style.display = '';
     try {
-        const resp = await fetch('/session-mode/hazard-flavor', {
+        const resp = await fetch('/adventures/ai/hazard-flavor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json',
                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
@@ -725,7 +1006,7 @@ async function runConsequences() {
     resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
     resultEl.style.display = '';
     try {
-        const resp = await fetch('/session-mode/suggest-consequences', {
+        const resp = await fetch('/adventures/ai/suggest-consequences', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json',
                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },

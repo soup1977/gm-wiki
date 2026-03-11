@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit Room — {{ adventure.name }}{% endblock %}
+{% block title %}Edit Location — {{ adventure.name }}{% endblock %}
 
 {% block styles %}
 <style>
@@ -12,7 +12,7 @@
     <ol class="breadcrumb mb-0 small">
         <li class="breadcrumb-item"><a href="{{ url_for('adventures.list_adventures') }}">Adventures</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('adventures.detail', adventure_id=adventure.id) }}">{{ adventure.name }}</a></li>
-        <li class="breadcrumb-item active">Edit Room</li>
+        <li class="breadcrumb-item active">Edit Location</li>
     </ol>
 </nav>
 
@@ -21,10 +21,10 @@
         <span class="text-warning me-2" style="font-family:monospace">{{ room.key or '—' }}</span>{{ room.title }}
     </h2>
     <form method="POST" action="{{ url_for('adventures.delete_room', room_id=room.id) }}"
-          onsubmit="return confirm('Delete this room?')">
+          onsubmit="return confirm('Delete this location?')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-trash me-1"></i>Delete Room
+            <i class="bi bi-trash me-1"></i>Delete Location
         </button>
     </form>
 </div>
@@ -37,7 +37,7 @@
     <div class="col-lg-7">
         <div class="row g-2 mb-3">
             <div class="col-3">
-                <label class="form-label fw-bold small">Room Key</label>
+                <label class="form-label fw-bold small">Location Key</label>
                 <input type="text" name="key" class="form-control bg-dark text-light border-secondary"
                        value="{{ room.key or '' }}" placeholder="A1">
             </div>
@@ -62,6 +62,17 @@
             </label>
             <textarea name="gm_notes" class="form-control bg-dark text-light border-secondary" rows="5"
                       placeholder="- Gate can be forced STR 15&#10;- Groaning sounds from beyond&#10;- Secret door behind the tapestry">{{ room.gm_notes or '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold small">
+                Link to Campaign Location <span class="text-muted fw-normal">(optional — ties this adventure location to a world record)</span>
+            </label>
+            <select name="location_id" class="form-select bg-dark text-light border-secondary">
+                <option value="">— None —</option>
+                {% for loc in all_locations %}
+                <option value="{{ loc.id }}" {% if room.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -169,7 +180,7 @@
 
 <div class="d-flex gap-2 mt-2 mb-4">
     <button type="submit" class="btn btn-success">
-        <i class="bi bi-floppy me-1"></i>Save Room
+        <i class="bi bi-floppy me-1"></i>Save Location
     </button>
     <a href="{{ url_for('adventures.detail', adventure_id=adventure.id) }}" class="btn btn-outline-secondary">
         Cancel

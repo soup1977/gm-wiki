@@ -238,7 +238,7 @@ def create_app():
     from app.routes.pcs import pcs_bp
     from app.routes.combat import combat_bp
     from app.routes.tables import tables_bp
-    from app.routes.session_mode import session_mode_bp
+    # session_mode blueprint removed — features merged into Adventure Runner (Phase 20f)
     from app.routes.bestiary import bestiary_bp
     from app.routes.bestiary_import import bestiary_import_bp
     from app.routes.monsters import monsters_bp
@@ -273,7 +273,7 @@ def create_app():
     app.register_blueprint(tags_bp)
     app.register_blueprint(combat_bp)
     app.register_blueprint(tables_bp)
-    app.register_blueprint(session_mode_bp)
+    # session_mode_bp removed
     app.register_blueprint(bestiary_bp)
     app.register_blueprint(bestiary_import_bp)
     app.register_blueprint(monsters_bp)

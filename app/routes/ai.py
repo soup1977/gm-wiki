@@ -1305,6 +1305,14 @@ JSON structure:
       "disposition": "hostile",
       "notes": "1-2 sentence description"
     }}
+  ],
+  "quests": [
+    {{
+      "name": "Quest Title",
+      "hook": "One sentence — how players get involved.",
+      "scope": "adventure",
+      "status": "Active"
+    }}
   ]
 }}
 
@@ -1315,7 +1323,8 @@ Scope guidelines (keep response size manageable):
 - read_aloud: 2 sentences MAX
 - gm_notes: 2-4 bullet points separated by |
 - 0-2 creatures per room, 0-1 loot per room
-- Include 2-3 key NPCs and 1-2 factions"""
+- Include 2-3 key NPCs and 1-2 factions
+- Include 2-4 quests: scope must be either "adventure" (specific to this adventure) or "campaign" (could span beyond this adventure)"""
 
     messages = [{'role': 'user', 'content': f'Generate an adventure from this concept:\n\n{concept}'}]
 

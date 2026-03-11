@@ -22,6 +22,13 @@
         <p class="text-muted small mb-0">
             Campaign: <a href="{{ url_for('campaigns.campaign_detail', campaign_id=sess.campaign.id) }}">{{ sess.campaign.name }}</a>
         </p>
+        {% if sess.adventure_id %}
+        <p class="text-muted small mb-0">
+            Adventure: <a href="{{ url_for('adventures.detail', adventure_id=sess.adventure_id) }}" class="text-info">
+                {{ sess.adventure.name if sess.adventure else 'Unknown Adventure' }}
+            </a>
+        </p>
+        {% endif %}
         {% if sess.date_played %}
             <p class="text-muted mb-0">{{ sess.date_played.strftime('%B %d, %Y') }}</p>
         {% endif %}
@@ -35,13 +42,11 @@
         {% else %}
         <span class="badge bg-secondary"><i class="bi bi-eye-slash"></i> Hidden from players</span>
         {% endif %}
-        <form method="POST" action="{{ url_for('session_mode.set_session') }}" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="session_id" value="{{ sess.id }}">
-            <button type="submit" class="btn btn-sm btn-success">
-                <i class="bi bi-broadcast me-1"></i> Go Live
-            </button>
-        </form>
+        {% if sess.adventure_id %}
+        <a href="{{ url_for('adventures.run', adventure_id=sess.adventure_id) }}" class="btn btn-sm btn-success">
+            <i class="bi bi-play me-1"></i> Run Adventure
+        </a>
+        {% endif %}
         <a href="{{ url_for('sessions.edit_session', session_id=sess.id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil"></i> Edit
         </a>

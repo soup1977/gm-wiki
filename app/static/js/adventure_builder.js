@@ -45,6 +45,7 @@ function renderDraft() {
     renderActs();
     renderNpcs();
     renderFactions();
+    renderQuests();
 }
 
 function renderActs() {
@@ -160,6 +161,22 @@ function renderFactions() {
             <span class="fw-semibold">${escHtml(f.name || '')}</span>
             ${f.disposition ? `<span class="badge ms-1 ${f.disposition==='hostile'?'bg-danger':f.disposition==='friendly'?'bg-success':'bg-secondary'}" style="font-size:.7em">${escHtml(f.disposition)}</span>` : ''}
             ${f.notes ? `<div class="text-muted" style="font-size:.8em">${escHtml(f.notes)}</div>` : ''}
+        </div>`).join('');
+}
+
+function renderQuests() {
+    const el = document.getElementById('quests-list');
+    if (!el) return;
+    const quests = draft.quests || [];
+    if (!quests.length) { el.innerHTML = '<small class="text-muted">No quests generated</small>'; return; }
+    el.innerHTML = quests.map((q, i) => `
+        <div class="d-flex align-items-start gap-2 mb-2 small">
+            <input type="checkbox" class="form-check-input mt-1 quest-include" id="q-include-${i}" checked>
+            <div>
+                <label for="q-include-${i}" class="fw-semibold" style="cursor:pointer;">${escHtml(q.name || '')}</label>
+                <span class="badge ms-1 ${q.scope === 'campaign' ? 'bg-warning text-dark' : 'bg-primary'}" style="font-size:.6rem;">${q.scope === 'campaign' ? 'Campaign' : 'Adventure'}</span>
+                ${q.hook ? `<div class="text-muted" style="font-size:.85em">${escHtml(q.hook)}</div>` : ''}
+            </div>
         </div>`).join('');
 }
 
@@ -354,13 +371,22 @@ async function saveDraft() {
     document.getElementById('save-spinner').classList.remove('d-none');
 
     try {
+        // Filter quests to only those the GM checked
+        const checkedQuests = [];
+        document.querySelectorAll('.quest-include').forEach((cb, i) => {
+            if (cb.checked && draft.quests && draft.quests[i]) {
+                checkedQuests.push(draft.quests[i]);
+            }
+        });
+        const payload = Object.assign({}, draft, { quests: checkedQuests });
+
         const resp = await fetch('/adventures/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify(draft)
+            body: JSON.stringify(payload)
         });
 
         const data = await resp.json();
