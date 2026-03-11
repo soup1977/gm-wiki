@@ -7,7 +7,7 @@ from app.models import (Campaign, Adventure, AdventureAct, AdventureScene,
                         AdventureRoom, RoomCreature, RoomLoot, RoomHazard,
                         AdventureRoomLog, RoomNPC, NPC, Faction, BestiaryEntry,
                         Location, Quest, Item, Encounter, Session as GameSession,
-                        RandomTable, PlayerCharacter)
+                        RandomTable, PlayerCharacter, ICRPGCharacterSheet, ICRPGCharLoot)
 
 adventures_bp = Blueprint('adventures', __name__, url_prefix='/adventures')
 
@@ -218,6 +218,11 @@ def detail(adventure_id):
     # Campaign-wide quests (no adventure_id) available for M-to-M linking
     all_campaign_quests = Quest.query.filter_by(campaign_id=campaign.id, adventure_id=None).order_by(Quest.name).all() if campaign else []
     all_items     = Item.query.filter_by(campaign_id=campaign.id).order_by(Item.name).all() if campaign else []
+    # Party PCs for this adventure
+    party_pcs     = adventure.party_pcs
+    all_campaign_pcs = PlayerCharacter.query.filter_by(
+        campaign_id=campaign.id, status='active'
+    ).order_by(PlayerCharacter.character_name).all() if campaign else []
     return render_template('adventures/detail.html',
                            adventure=adventure,
                            campaign=campaign,
@@ -231,7 +236,9 @@ def detail(adventure_id):
                            all_locations=all_locations,
                            all_quests=all_quests,
                            all_campaign_quests=all_campaign_quests,
-                           all_items=all_items)
+                           all_items=all_items,
+                           party_pcs=party_pcs,
+                           all_campaign_pcs=all_campaign_pcs)
 
 
 # ---------------------------------------------------------------------------
@@ -492,6 +499,7 @@ def give_loot_to_pc(loot_id):
     if pc.campaign_id != campaign.id:
         return jsonify({'error': 'PC not in active campaign'}), 403
 
+    # Always create a campaign Item record for ownership tracking
     item = Item(
         campaign_id=campaign.id,
         name=loot.name,
@@ -500,8 +508,30 @@ def give_loot_to_pc(loot_id):
         is_player_visible=True,
     )
     db.session.add(item)
+
+    # For ICRPG campaigns: also add to the PC's carried loot on their character sheet
+    icrpg_added = False
+    if 'icrpg' in (campaign.system or '').lower():
+        sheet = ICRPGCharacterSheet.query.filter_by(pc_id=pc.id).first()
+        if sheet:
+            char_loot = ICRPGCharLoot(
+                sheet_id=sheet.id,
+                loot_def_id=loot.loot_def_id or None,
+                custom_name=loot.name if not loot.loot_def_id else None,
+                custom_desc=loot.description if not loot.loot_def_id else None,
+                slot='carried',
+                display_order=len(sheet.loot_items),
+            )
+            db.session.add(char_loot)
+            icrpg_added = True
+
     db.session.commit()
-    return jsonify({'success': True, 'item_id': item.id, 'pc_name': pc.character_name})
+    return jsonify({
+        'success': True,
+        'item_id': item.id,
+        'pc_name': pc.character_name,
+        'icrpg_added': icrpg_added,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -546,9 +576,11 @@ def run(adventure_id):
 
     campaign_quests = adventure.campaign_quests
 
-    # PCs for combat tab — active PCs with their stats serialized
-    raw_pcs = PlayerCharacter.query.filter_by(campaign_id=campaign.id, status='active').order_by(
-        PlayerCharacter.character_name).all() if campaign else []
+    # PCs for combat tab — use adventure party if linked, otherwise all active campaign PCs
+    raw_pcs = adventure.party_pcs if adventure.party_pcs else (
+        PlayerCharacter.query.filter_by(campaign_id=campaign.id, status='active').order_by(
+            PlayerCharacter.character_name).all() if campaign else []
+    )
 
     def _pc_stat(pc, *keywords):
         """Return the first stat value whose template field name contains any keyword (case-insensitive)."""
@@ -726,6 +758,11 @@ def link_entity(adventure_id):
         if quest and quest not in adventure.campaign_quests:
             adventure.campaign_quests.append(quest)
             db.session.commit()
+    elif entity_type == 'pc' and entity_id:
+        pc = PlayerCharacter.query.get(entity_id)
+        if pc and pc not in adventure.party_pcs:
+            adventure.party_pcs.append(pc)
+            db.session.commit()
     else:
         model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}
         model = model_map.get(entity_type)
@@ -749,6 +786,11 @@ def unlink_entity(adventure_id):
         quest = Quest.query.get(entity_id)
         if quest and quest in adventure.campaign_quests:
             adventure.campaign_quests.remove(quest)
+            db.session.commit()
+    elif entity_type == 'pc' and entity_id:
+        pc = PlayerCharacter.query.get(entity_id)
+        if pc and pc in adventure.party_pcs:
+            adventure.party_pcs.remove(pc)
             db.session.commit()
     else:
         model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}

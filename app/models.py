@@ -1258,6 +1258,12 @@ adventure_quest_link = db.Table('adventure_quest_link',
     db.Column('quest_id',     db.Integer, db.ForeignKey('quests.id'),    primary_key=True)
 )
 
+# Association: Adventure ↔ PlayerCharacter (PCs active in this adventure)
+adventure_pc_link = db.Table('adventure_pc_link',
+    db.Column('adventure_id', db.Integer, db.ForeignKey('adventure.id'), primary_key=True),
+    db.Column('pc_id',        db.Integer, db.ForeignKey('player_characters.id'), primary_key=True)
+)
+
 
 class Adventure(db.Model):
     """Top-level structured adventure module.
@@ -1286,9 +1292,10 @@ class Adventure(db.Model):
     # Relationships
     acts     = db.relationship('AdventureAct', backref='adventure', cascade='all, delete-orphan',
                                order_by='AdventureAct.sort_order')
-    key_npcs        = db.relationship('NPC',     secondary=adventure_npc_link,     backref='adventures')
-    factions        = db.relationship('Faction', secondary=adventure_faction_link, backref='adventures')
-    campaign_quests = db.relationship('Quest',   secondary=adventure_quest_link,   backref='linked_adventures')
+    key_npcs        = db.relationship('NPC',             secondary=adventure_npc_link,  backref='adventures')
+    factions        = db.relationship('Faction',         secondary=adventure_faction_link, backref='adventures')
+    campaign_quests = db.relationship('Quest',           secondary=adventure_quest_link,  backref='linked_adventures')
+    party_pcs       = db.relationship('PlayerCharacter', secondary=adventure_pc_link,     backref='adventures')
 
     def __repr__(self):
         return f'<Adventure {self.name}>'
