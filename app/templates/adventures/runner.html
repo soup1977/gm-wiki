@@ -173,7 +173,7 @@ body { overflow: hidden; }
                     </button>
                 </div>
                 <div id="combat-list">
-                    <div class="text-muted small fst-italic">Add creatures with [+Combat]</div>
+                    <div class="text-muted small fst-italic">Add creatures with [+Combat] or add party below.</div>
                 </div>
                 <!-- Status picker (hidden until triggered) -->
                 <div id="status-picker" class="d-none mt-1 mb-1">
@@ -186,6 +186,28 @@ body { overflow: hidden; }
                     </div>
                 </div>
                 <hr class="border-secondary my-2">
+                <!-- Party roster -->
+                {% if campaign_pcs %}
+                <div class="mb-2">
+                    <div class="small text-muted text-uppercase fw-bold mb-1">Party</div>
+                    {% for pc in campaign_pcs %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <span class="small fw-semibold">{{ pc.name }}</span>
+                            {% if pc.class_or_role %}<span class="text-muted" style="font-size:.7rem;"> · {{ pc.class_or_role }}</span>{% endif %}
+                            {% if pc.hearts %}<span class="badge bg-danger ms-1" style="font-size:.6rem;">{{ pc.hearts }}♥</span>{% endif %}
+                            {% if pc.hp %}<span class="badge bg-success ms-1" style="font-size:.6rem;">{{ pc.hp }} HP</span>{% endif %}
+                            {% if pc.ac %}<span class="badge bg-secondary ms-1" style="font-size:.6rem;">AC{{ pc.ac }}</span>{% endif %}
+                        </div>
+                        <button class="btn btn-sm btn-outline-info py-0" style="font-size:.7rem;"
+                                onclick="addPcToCombat({{ pc.id }}, '{{ pc.name | replace("'", "\\'") }}', {{ pc.hearts or 'null' }}, {{ pc.hp or 'null' }}, {{ pc.ac or 0 }})">
+                            +
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr class="border-secondary my-2">
+                {% endif %}
                 <div class="d-flex gap-1">
                     <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="clearCombat()">
                         <i class="bi bi-trash me-1"></i>Clear
@@ -521,6 +543,29 @@ async function toggleReveal(roomId, btn) {
     }
 }
 
+// Add PC to combat panel (uses pc id prefixed with 'pc-' to avoid collision with creature IDs)
+function addPcToCombat(pcId, name, hearts, hp, ac) {
+    const state = _loadCombat();
+    const combatId = 'pc-' + pcId;
+    if (state.combatants.find(c => c.id === combatId)) return; // already in tracker
+    const maxHp = hearts > 0 ? hearts * 10 : (hp || 10);
+    state.combatants.push({
+        id: combatId,
+        name,
+        initiative: 0,
+        currentHp: maxHp,
+        maxHp,
+        hearts,
+        ac: ac || 0,
+        statusEffects: [],
+        isPC: true
+    });
+    _saveCombat(state);
+    renderCombat();
+    const tab = document.querySelector('[data-bs-target="#rt-combat"]');
+    if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+}
+
 // Add creature to combat panel
 function addToCombat(id, name, hearts, hp, ac) {
     const state = _loadCombat();
@@ -557,7 +602,7 @@ function renderCombat() {
     if (roundLabel) roundLabel.textContent = 'Round ' + state.round;
 
     if (state.combatants.length === 0) {
-        list.innerHTML = '<div class="text-muted small fst-italic">Add creatures with [+Combat]</div>';
+        list.innerHTML = '<div class="text-muted small fst-italic">Add creatures with [+Combat] or add party below.</div>';
         return;
     }
 
@@ -569,11 +614,13 @@ function renderCombat() {
             `<span class="badge bg-secondary me-1" style="font-size:.6rem;cursor:pointer"
                    onclick="removeStatus('${c.id}','${s}')">${s} ✕</span>`
         ).join('');
+        const pcStyle = c.isPC ? 'border-left:2px solid var(--bs-info);background:rgba(13,202,240,.04);' : '';
+        const pcBadge = c.isPC ? '<span class="badge bg-info text-dark ms-1" style="font-size:.55rem;">PC</span>' : '';
         return `
         <div class="combatant-card ${isActive ? 'border-warning' : ''}" id="combatant-${c.id}"
-             style="${isActive ? 'border-color:var(--bs-warning)!important;background:rgba(255,193,7,.06)' : ''}">
+             style="${isActive ? 'border-color:var(--bs-warning)!important;background:rgba(255,193,7,.06);' : ''}${pcStyle}">
             <div class="d-flex justify-content-between align-items-start">
-                <div class="combatant-name" style="font-size:.82rem">${isActive ? '▶ ' : ''}${c.name}</div>
+                <div class="combatant-name" style="font-size:.82rem">${isActive ? '▶ ' : ''}${c.name}${pcBadge}</div>
                 <button class="btn btn-sm btn-link text-danger p-0" style="font-size:.7rem;line-height:1"
                         onclick="removeCombatant('${c.id}')">✕</button>
             </div>
@@ -761,6 +808,34 @@ async function toggleClear(roomId) {
             clearBtn.classList.replace('btn-secondary', 'btn-outline-secondary');
             clearBtn.innerHTML = '<i class="bi bi-square me-1"></i>Mark Cleared';
         }
+    }
+}
+
+// Give loot item to a PC
+async function giveLootToPc(lootId, btnEl) {
+    const select = document.getElementById('give-select-' + lootId);
+    const feedback = document.getElementById('give-feedback-' + lootId);
+    const pcId = select ? select.value : '';
+    if (!pcId) { alert('Select a PC first.'); return; }
+    try {
+        const resp = await fetch(`/adventures/loot/${lootId}/give-to-pc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ pc_id: pcId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            if (feedback) { feedback.textContent = `Given to ${data.pc_name}`; feedback.style.display = 'block'; }
+            btnEl.disabled = true;
+            select.disabled = true;
+        } else {
+            alert(data.error || 'Failed to give loot.');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
     }
 }
 

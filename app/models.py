@@ -354,6 +354,7 @@ class Item(db.Model):
 
     # Who owns it — null means the party owns it
     owner_npc_id = db.Column(db.Integer, db.ForeignKey('npcs.id'), nullable=True)
+    owner_pc_id  = db.Column(db.Integer, db.ForeignKey('player_characters.id'), nullable=True)
     # Where it came from — null means unknown
     origin_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
 
@@ -365,6 +366,7 @@ class Item(db.Model):
     story_arc = db.relationship('AdventureSite', backref='arc_items', foreign_keys=[story_arc_id])
     adventure = db.relationship('Adventure', backref='linked_items', foreign_keys=[adventure_id])
     owner_npc = db.relationship('NPC', backref='items_owned', foreign_keys=[owner_npc_id])
+    owner_pc  = db.relationship('PlayerCharacter', backref='items_owned', foreign_keys=[owner_pc_id])
     origin_location = db.relationship('Location', backref='items_found_here', foreign_keys=[origin_location_id])
     tags = db.relationship('Tag', secondary=item_tags)
 

@@ -7,7 +7,7 @@ from app.models import (Campaign, Adventure, AdventureAct, AdventureScene,
                         AdventureRoom, RoomCreature, RoomLoot, RoomHazard,
                         AdventureRoomLog, RoomNPC, NPC, Faction, BestiaryEntry,
                         Location, Quest, Item, Encounter, Session as GameSession,
-                        RandomTable)
+                        RandomTable, PlayerCharacter)
 
 adventures_bp = Blueprint('adventures', __name__, url_prefix='/adventures')
 
@@ -465,6 +465,10 @@ def room_card(room_id):
         existing_log = AdventureRoomLog.query.filter_by(
             session_id=active_game_session.id, room_id=room_id).first()
 
+    campaign_pcs = PlayerCharacter.query.filter_by(
+        campaign_id=adventure.campaign_id, status='active'
+    ).order_by(PlayerCharacter.character_name).all()
+
     return render_template('adventures/_room_card.html',
                            room=room,
                            adventure=adventure,
@@ -472,7 +476,38 @@ def room_card(room_id):
                            prev_room=prev_room,
                            next_room=next_room,
                            active_game_session=active_game_session,
-                           existing_log=existing_log)
+                           existing_log=existing_log,
+                           campaign_pcs=campaign_pcs)
+
+
+# ---------------------------------------------------------------------------
+# Give room loot to a PC (creates a campaign Item record)
+# ---------------------------------------------------------------------------
+
+@adventures_bp.route('/loot/<int:loot_id>/give-to-pc', methods=['POST'])
+@login_required
+def give_loot_to_pc(loot_id):
+    loot = RoomLoot.query.get_or_404(loot_id)
+    campaign = _get_active_campaign()
+    if not campaign:
+        return jsonify({'error': 'No active campaign'}), 400
+    pc_id = request.json.get('pc_id') if request.is_json else request.form.get('pc_id')
+    if not pc_id:
+        return jsonify({'error': 'No PC specified'}), 400
+    pc = PlayerCharacter.query.get_or_404(int(pc_id))
+    if pc.campaign_id != campaign.id:
+        return jsonify({'error': 'PC not in active campaign'}), 403
+
+    item = Item(
+        campaign_id=campaign.id,
+        name=loot.name,
+        description=loot.description or '',
+        owner_pc_id=pc.id,
+        is_player_visible=True,
+    )
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'success': True, 'item_id': item.id, 'pc_name': pc.character_name})
 
 
 # ---------------------------------------------------------------------------
@@ -519,6 +554,42 @@ def run(adventure_id):
 
     campaign_quests = adventure.campaign_quests
 
+    # PCs for combat tab — active PCs with their stats serialized
+    raw_pcs = PlayerCharacter.query.filter_by(campaign_id=campaign.id, status='active').order_by(
+        PlayerCharacter.character_name).all() if campaign else []
+
+    def _pc_stat(pc, *keywords):
+        """Return the first stat value whose template field name contains any keyword (case-insensitive)."""
+        for stat in pc.stats:
+            fname = (stat.template_field.stat_name or '').lower()
+            if any(k in fname for k in keywords):
+                try:
+                    return int(stat.stat_value)
+                except (TypeError, ValueError):
+                    pass
+        return None
+
+    system = adventure.system_hint or 'generic'
+    campaign_pcs = []
+    for pc in raw_pcs:
+        if system == 'icrpg':
+            hearts = _pc_stat(pc, 'heart') or 1
+            hp = None
+            ac = _pc_stat(pc, 'armor', 'defense') or 0
+        else:
+            hearts = None
+            hp = _pc_stat(pc, 'hp', 'hit point', 'health', 'max hp') or 10
+            ac = _pc_stat(pc, 'ac', 'armor class', 'defense') or 10
+        campaign_pcs.append({
+            'id': pc.id,
+            'name': pc.character_name,
+            'player': pc.player_name,
+            'class_or_role': pc.class_or_role or '',
+            'hearts': hearts,
+            'hp': hp,
+            'ac': ac,
+        })
+
     return render_template('adventures/runner.html',
                            adventure=adventure,
                            campaign=campaign,
@@ -531,7 +602,8 @@ def run(adventure_id):
                            campaign_quests=campaign_quests,
                            active_location=active_location,
                            all_locations=all_locations,
-                           all_tables=all_tables)
+                           all_tables=all_tables,
+                           campaign_pcs=campaign_pcs)
 
 
 # ---------------------------------------------------------------------------
