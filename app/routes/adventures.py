@@ -419,17 +419,12 @@ def delete_room(room_id):
 @login_required
 def toggle_reveal(room_id):
     """Toggle the revealed state of a room's read-aloud text.
-    State is stored in the Flask session (per-browser visit, not permanent).
+    State persists in the DB so players see it immediately and it survives page refreshes.
     """
-    revealed_rooms = session.get('revealed_rooms', [])
-    if room_id in revealed_rooms:
-        revealed_rooms.remove(room_id)
-        is_revealed = False
-    else:
-        revealed_rooms.append(room_id)
-        is_revealed = True
-    session['revealed_rooms'] = revealed_rooms
-    return jsonify({'revealed': is_revealed})
+    room = AdventureRoom.query.get_or_404(room_id)
+    room.is_revealed = not room.is_revealed
+    db.session.commit()
+    return jsonify({'revealed': room.is_revealed})
 
 
 # ---------------------------------------------------------------------------
@@ -442,8 +437,7 @@ def room_card(room_id):
     """Return the room card HTML fragment for AJAX loading in the runner."""
     room = AdventureRoom.query.get_or_404(room_id)
     adventure = room.scene.act.adventure
-    revealed_rooms = session.get('revealed_rooms', [])
-    is_revealed = room_id in revealed_rooms
+    is_revealed = room.is_revealed
 
     # Build prev/next room for navigation
     all_rooms = []
@@ -519,8 +513,6 @@ def give_loot_to_pc(loot_id):
 def run(adventure_id):
     adventure = Adventure.query.get_or_404(adventure_id)
     campaign = _get_active_campaign()
-    revealed_rooms = session.get('revealed_rooms', [])
-
     # Default to first room if none selected
     first_room = None
     if adventure.acts and adventure.acts[0].scenes and adventure.acts[0].scenes[0].rooms:
@@ -593,7 +585,6 @@ def run(adventure_id):
     return render_template('adventures/runner.html',
                            adventure=adventure,
                            campaign=campaign,
-                           revealed_rooms=revealed_rooms,
                            first_room=first_room,
                            active_game_session=active_game_session,
                            existing_log=first_room_log,

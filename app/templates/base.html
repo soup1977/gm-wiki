@@ -23,7 +23,17 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             {% if current_user.is_authenticated %}
-            <!-- Left side: Campaign + Reference dropdowns -->
+            {% if current_user.role == 'player' and not current_user.is_admin %}
+            <!-- Player simplified nav -->
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('player.dashboard') }}">
+                        <i class="bi bi-house me-1"></i>My Dashboard
+                    </a>
+                </li>
+            </ul>
+            {% else %}
+            <!-- Left side: Campaign + Reference dropdowns (GM/Asst GM) -->
             <ul class="navbar-nav me-auto">
                 {% if active_campaign %}
                 <!-- Campaign dropdown -->
@@ -106,6 +116,7 @@
                     </ul>
                 </li>
             </ul>
+            {% endif %}{# end player/gm nav split #}
 
             <!-- Right side: search, dice, session mode, combat, wiki, user menu -->
             <ul class="navbar-nav align-items-center gap-1">

@@ -30,10 +30,19 @@
                         <div class="form-text">At least 4 characters.</div>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label" for="role">Role</label>
+                        <select class="form-select bg-dark text-light border-secondary" id="role" name="role">
+                            <option value="player">Player — sees only their own PCs and revealed content</option>
+                            <option value="gm">GM — full access to campaign content</option>
+                            <option value="asst_gm">Asst GM — same as GM, no user management</option>
+                        </select>
+                    </div>
+
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin">
                         <label class="form-check-label" for="is_admin">
-                            <i class="bi bi-shield-lock me-1"></i> Admin privileges
+                            <i class="bi bi-shield-lock me-1"></i> Admin privileges (site management)
                         </label>
                     </div>
 

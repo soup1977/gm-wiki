@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — Player View{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="{{ url_for('player.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="mb-0">{{ campaign.name }}</h2>
+            {% if campaign.system %}<div class="text-muted small">{{ campaign.system }}</div>{% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left column -->
+        <div class="col-md-6">
+
+            <!-- My Characters in this campaign -->
+            {% if my_pcs %}
+            <div class="card bg-dark border-primary mb-4">
+                <div class="card-header border-primary">
+                    <span class="fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>My Characters</span>
+                </div>
+                <div class="card-body p-2">
+                    {% for pc in my_pcs %}
+                    <a href="{{ url_for('player.pc_sheet', pc_id=pc.id) }}"
+                       class="d-flex justify-content-between align-items-center p-2 rounded mb-1 text-decoration-none text-light hover-highlight">
+                        <div>
+                            <div class="fw-semibold">{{ pc.character_name }}</div>
+                            <div class="text-muted small">
+                                {% if pc.class_or_role %}{{ pc.class_or_role }}{% endif %}
+                                {% if pc.level_or_rank %} · {{ pc.level_or_rank }}{% endif %}
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Locations -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-geo-alt me-2"></i>Locations</span>
+                    <span class="badge bg-secondary">{{ locations | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if locations %}
+                    <div class="list-group list-group-flush">
+                        {% for loc in locations %}
+                        <div class="list-group-item bg-dark border-secondary text-light">
+                            <div class="fw-semibold">
+                                {{ loc.name }}
+                                {% if loc.id in revealed_loc_ids %}
+                                <span class="badge bg-info ms-1" style="font-size:.6rem;">Visited</span>
+                                {% endif %}
+                            </div>
+                            {% if loc.type %}<div class="text-muted small">{{ loc.type }}</div>{% endif %}
+                            {% if loc.description %}<div class="small mt-1">{{ loc.description | truncate(120) }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No locations revealed yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quests -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-journal-check me-2"></i>Quests</span>
+                    <span class="badge bg-secondary">{{ quests | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if quests %}
+                    <div class="list-group list-group-flush">
+                        {% for q in quests %}
+                        <div class="list-group-item bg-dark border-secondary text-light">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="badge bg-{{ 'success' if q.status == 'Complete' else 'warning text-dark' if q.status == 'Active' else 'secondary' }} mt-1">
+                                    {{ q.status or 'Open' }}
+                                </span>
+                                <div>
+                                    <div class="fw-semibold">{{ q.name }}</div>
+                                    {% if q.hook %}<div class="small text-muted mt-1">{{ q.hook | truncate(100) }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No quests shared yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right column -->
+        <div class="col-md-6">
+
+            <!-- NPCs -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-people me-2"></i>People</span>
+                    <span class="badge bg-secondary">{{ npcs | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if npcs %}
+                    <div class="list-group list-group-flush">
+                        {% for npc in npcs %}
+                        <div class="list-group-item bg-dark border-secondary text-light">
+                            <div class="fw-semibold">{{ npc.name }}</div>
+                            {% if npc.role %}<div class="text-muted small">{{ npc.role }}</div>{% endif %}
+                            {% if npc.description %}<div class="small mt-1">{{ npc.description | truncate(100) }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No people shared yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Items / Loot -->
+            <div class="card bg-dark border-warning mb-4">
+                <div class="card-header border-warning d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-warning"><i class="bi bi-bag me-2"></i>Items &amp; Loot</span>
+                    <span class="badge bg-warning text-dark">{{ items | length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if items %}
+                    <div class="list-group list-group-flush">
+                        {% for item in items %}
+                        <div class="list-group-item bg-dark border-secondary text-light">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="fw-semibold">{{ item.name }}</span>
+                                    {% if item.rarity %}<span class="badge bg-secondary ms-1 small">{{ item.rarity }}</span>{% endif %}
+                                    {% if item.owner_pc %}<span class="badge bg-primary ms-1 small">{{ item.owner_pc.character_name }}</span>{% endif %}
+                                    {% if item.description %}<div class="small text-muted mt-1">{{ item.description | truncate(100) }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-muted fst-italic small">No items shared yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -107,12 +107,12 @@ body { overflow: hidden; }
             <div class="scene-heading">{{ scene.title }}</div>
             {% for room in scene.rooms %}
             <div class="nav-room {% if first_room and first_room.id == room.id %}active{% endif %}
-                         {% if room.id in revealed_rooms %}visited{% endif %}
+                         {% if room.is_revealed %}visited{% endif %}
                          {% if room.is_cleared %}cleared{% endif %}"
                  id="nav-room-{{ room.id }}"
                  onclick="loadRoom({{ room.id }})">
                 <span class="room-check">
-                    {%- if room.is_cleared -%}☑{%- elif room.id in revealed_rooms -%}✓{%- else -%}○{%- endif -%}
+                    {%- if room.is_cleared -%}☑{%- elif room.is_revealed -%}✓{%- else -%}○{%- endif -%}
                 </span>
                 <span class="room-key">{{ room.key or '' }}</span>
                 <span class="text-truncate {% if room.is_cleared %}text-decoration-line-through text-muted{% endif %}">{{ room.title }}</span>
@@ -127,7 +127,7 @@ body { overflow: hidden; }
     <div class="runner-content" id="room-content">
         {% if first_room %}
         {% set room = first_room %}
-        {% set is_revealed = first_room.id in revealed_rooms %}
+        {% set is_revealed = first_room.is_revealed %}
         {% set prev_room = None %}
         {% set next_room = None %}
         <div id="room-card-area" data-room-id="{{ first_room.id }}">

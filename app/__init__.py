@@ -257,6 +257,7 @@ def create_app():
     from app.routes.campaign_assistant import campaign_assistant_bp
     from app.routes.icrpg_catalog import icrpg_catalog_bp
     from app.routes.copy_entity import copy_entity_bp
+    from app.routes.player import player_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -292,6 +293,7 @@ def create_app():
     app.register_blueprint(campaign_assistant_bp)
     app.register_blueprint(icrpg_catalog_bp)
     app.register_blueprint(copy_entity_bp)
+    app.register_blueprint(player_bp)
 
     # Exempt AJAX-only blueprints from CSRF — these are called from JavaScript
     # using fetch() and are already protected by same-origin policy + login_required
