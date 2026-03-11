@@ -36,7 +36,7 @@ def index():
         AppSetting.set('allow_signup', 'true' if request.form.get('allow_signup') else 'false')
         # Editable AI prompts (empty string means "use hardcoded default")
         for key in ('ai_prompt_smart_fill', 'ai_prompt_generate', 'ai_prompt_brainstorm_arcs',
-                    'ai_prompt_site_ideas', 'ai_prompt_session_prep', 'ai_prompt_generate_adventure'):
+                    'ai_prompt_session_prep', 'ai_prompt_generate_adventure'):
             AppSetting.set(key, request.form.get(key, '').strip())
         # AI token limits
         AppSetting.set('ai_max_tokens_standard',
@@ -90,7 +90,7 @@ def index():
     ai_prompts = {
         key: AppSetting.get(f'ai_prompt_{key}') or DEFAULT_PROMPTS[key]
         for key in ('smart_fill', 'generate', 'brainstorm_arcs',
-                    'site_ideas', 'session_prep', 'generate_adventure')
+                    'session_prep', 'generate_adventure')
     }
 
     return render_template('settings/index.html', ai_config=config, stats=stats,
