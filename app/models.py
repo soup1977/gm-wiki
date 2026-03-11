@@ -1224,6 +1224,12 @@ adventure_faction_link = db.Table('adventure_faction_link',
     db.Column('faction_id', db.Integer, db.ForeignKey('factions.id'), primary_key=True)
 )
 
+# Association: Adventure ↔ Quest (campaign-spanning quests linked to this adventure)
+adventure_quest_link = db.Table('adventure_quest_link',
+    db.Column('adventure_id', db.Integer, db.ForeignKey('adventure.id'), primary_key=True),
+    db.Column('quest_id',     db.Integer, db.ForeignKey('quests.id'),    primary_key=True)
+)
+
 
 class Adventure(db.Model):
     """Top-level structured adventure module.
@@ -1252,8 +1258,9 @@ class Adventure(db.Model):
     # Relationships
     acts     = db.relationship('AdventureAct', backref='adventure', cascade='all, delete-orphan',
                                order_by='AdventureAct.sort_order')
-    key_npcs = db.relationship('NPC', secondary=adventure_npc_link, backref='adventures')
-    factions = db.relationship('Faction', secondary=adventure_faction_link, backref='adventures')
+    key_npcs        = db.relationship('NPC',     secondary=adventure_npc_link,     backref='adventures')
+    factions        = db.relationship('Faction', secondary=adventure_faction_link, backref='adventures')
+    campaign_quests = db.relationship('Quest',   secondary=adventure_quest_link,   backref='linked_adventures')
 
     def __repr__(self):
         return f'<Adventure {self.name}>'
@@ -1319,6 +1326,7 @@ class AdventureRoom(db.Model):
 
     id          = db.Column(db.Integer, primary_key=True)
     scene_id    = db.Column(db.Integer, db.ForeignKey('adventure_scene.id'), nullable=False)
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)  # optional link to campaign Location
     key         = db.Column(db.String(10))      # e.g. "A1", "B3", "BOSS"
     title       = db.Column(db.String(200), nullable=False)
     read_aloud    = db.Column(db.Text)            # 2-3 sentences for players
@@ -1335,6 +1343,7 @@ class AdventureRoom(db.Model):
                                 order_by='RoomHazard.id')
     room_npcs = db.relationship('RoomNPC', backref='room', cascade='all, delete-orphan',
                                 order_by='RoomNPC.id')
+    campaign_location = db.relationship('Location', backref='adventure_rooms')
 
     def display_key(self):
         """Return 'A1' or fall back to room title if no key set."""

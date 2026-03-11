@@ -6,7 +6,8 @@ from app import db
 from app.models import (Campaign, Adventure, AdventureAct, AdventureScene,
                         AdventureRoom, RoomCreature, RoomLoot, RoomHazard,
                         AdventureRoomLog, RoomNPC, NPC, Faction, BestiaryEntry,
-                        Location, Quest, Item, Encounter, Session as GameSession)
+                        Location, Quest, Item, Encounter, Session as GameSession,
+                        RandomTable)
 
 adventures_bp = Blueprint('adventures', __name__, url_prefix='/adventures')
 
@@ -170,6 +171,21 @@ def save():
                         )
                         db.session.add(hazard)
 
+        # Create quests from AI-generated stubs (only those the GM chose to include)
+        for q_data in data.get('quests', []):
+            scope = q_data.get('scope', 'adventure')
+            quest = Quest(
+                campaign_id=campaign.id,
+                name=q_data.get('name', 'Unnamed Quest'),
+                hook=q_data.get('hook', ''),
+                status=q_data.get('status', 'Active'),
+                adventure_id=adventure.id if scope == 'adventure' else None,
+            )
+            db.session.add(quest)
+            db.session.flush()
+            if scope == 'campaign':
+                adventure.campaign_quests.append(quest)
+
         db.session.commit()
         return jsonify({'success': True, 'adventure_id': adventure.id,
                         'redirect': url_for('adventures.detail', adventure_id=adventure.id) + '#tab-structure'})
@@ -190,24 +206,31 @@ def detail(adventure_id):
     campaign = _get_active_campaign()
     # Linked entities for Entities tab
     linked_npcs      = NPC.query.filter_by(adventure_id=adventure_id).all()
+    featured_npcs    = adventure.key_npcs  # M-to-M campaign NPCs featured in this adventure
     linked_locations = Location.query.filter_by(adventure_id=adventure_id).all()
     linked_quests    = Quest.query.filter_by(adventure_id=adventure_id).all()
     linked_items     = Item.query.filter_by(adventure_id=adventure_id).all()
+    campaign_quests  = adventure.campaign_quests
     # All campaign entities for "link existing" dropdowns
     all_npcs      = NPC.query.filter_by(campaign_id=campaign.id).order_by(NPC.name).all() if campaign else []
     all_locations = Location.query.filter_by(campaign_id=campaign.id).order_by(Location.name).all() if campaign else []
     all_quests    = Quest.query.filter_by(campaign_id=campaign.id).order_by(Quest.name).all() if campaign else []
+    # Campaign-wide quests (no adventure_id) available for M-to-M linking
+    all_campaign_quests = Quest.query.filter_by(campaign_id=campaign.id, adventure_id=None).order_by(Quest.name).all() if campaign else []
     all_items     = Item.query.filter_by(campaign_id=campaign.id).order_by(Item.name).all() if campaign else []
     return render_template('adventures/detail.html',
                            adventure=adventure,
                            campaign=campaign,
                            linked_npcs=linked_npcs,
+                           featured_npcs=featured_npcs,
                            linked_locations=linked_locations,
                            linked_quests=linked_quests,
+                           campaign_quests=campaign_quests,
                            linked_items=linked_items,
                            all_npcs=all_npcs,
                            all_locations=all_locations,
                            all_quests=all_quests,
+                           all_campaign_quests=all_campaign_quests,
                            all_items=all_items)
 
 
@@ -330,14 +353,20 @@ def edit_room(room_id):
             )
             db.session.add(h)
 
+        # Optional campaign Location link
+        loc_id = request.form.get('location_id', '').strip()
+        room.location_id = int(loc_id) if loc_id else None
+
         db.session.commit()
-        flash(f'Room "{room.title}" saved.', 'success')
+        flash(f'Location "{room.title}" saved.', 'success')
         return redirect(url_for('adventures.detail', adventure_id=adventure.id) + f'#room-{room.id}')
 
+    all_locations = Location.query.filter_by(campaign_id=adventure.campaign_id).order_by(Location.name).all()
     return render_template('adventures/edit_room.html',
                            room=room,
                            adventure=adventure,
-                           campaign=campaign)
+                           campaign=campaign,
+                           all_locations=all_locations)
 
 
 # ---------------------------------------------------------------------------
@@ -480,6 +509,16 @@ def run(adventure_id):
         active_location = Location.query.get(active_game_session.active_location_id)
     all_locations = Location.query.filter_by(campaign_id=campaign.id).order_by(Location.name).all() if campaign else []
 
+    # Random tables: built-in (campaign_id=NULL) + campaign-specific
+    if campaign:
+        all_tables = RandomTable.query.filter(
+            db.or_(RandomTable.campaign_id == campaign.id, RandomTable.campaign_id == None)
+        ).order_by(RandomTable.is_builtin.desc(), RandomTable.name).all()
+    else:
+        all_tables = []
+
+    campaign_quests = adventure.campaign_quests
+
     return render_template('adventures/runner.html',
                            adventure=adventure,
                            campaign=campaign,
@@ -489,8 +528,10 @@ def run(adventure_id):
                            existing_log=first_room_log,
                            linked_npcs=linked_npcs,
                            linked_quests=linked_quests,
+                           campaign_quests=campaign_quests,
                            active_location=active_location,
-                           all_locations=all_locations)
+                           all_locations=all_locations,
+                           all_tables=all_tables)
 
 
 # ---------------------------------------------------------------------------
@@ -609,18 +650,27 @@ def save_planning_notes(adventure_id):
 @adventures_bp.route('/<int:adventure_id>/link-entity', methods=['POST'])
 @login_required
 def link_entity(adventure_id):
-    """Link an existing NPC/Location/Quest/Item to this adventure."""
+    """Link an existing NPC/Location/Quest/Item to this adventure.
+    entity_type='campaign_quest' links via adventure_quest_link M-to-M (campaign-spanning quests).
+    All other types set entity.adventure_id directly.
+    """
     adventure = Adventure.query.get_or_404(adventure_id)
     entity_type = request.form.get('entity_type')
     entity_id = request.form.get('entity_id', type=int)
 
-    model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}
-    model = model_map.get(entity_type)
-    if model and entity_id:
-        entity = model.query.get(entity_id)
-        if entity:
-            entity.adventure_id = adventure_id
+    if entity_type == 'campaign_quest' and entity_id:
+        quest = Quest.query.get(entity_id)
+        if quest and quest not in adventure.campaign_quests:
+            adventure.campaign_quests.append(quest)
             db.session.commit()
+    else:
+        model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}
+        model = model_map.get(entity_type)
+        if model and entity_id:
+            entity = model.query.get(entity_id)
+            if entity:
+                entity.adventure_id = adventure_id
+                db.session.commit()
     return redirect(url_for('adventures.detail', adventure_id=adventure_id) + '#tab-entities')
 
 
@@ -628,15 +678,23 @@ def link_entity(adventure_id):
 @login_required
 def unlink_entity(adventure_id):
     """Unlink an NPC/Location/Quest/Item from this adventure."""
+    adventure = Adventure.query.get_or_404(adventure_id)
     entity_type = request.form.get('entity_type')
     entity_id = request.form.get('entity_id', type=int)
-    model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}
-    model = model_map.get(entity_type)
-    if model and entity_id:
-        entity = model.query.get(entity_id)
-        if entity and entity.adventure_id == adventure_id:
-            entity.adventure_id = None
+
+    if entity_type == 'campaign_quest' and entity_id:
+        quest = Quest.query.get(entity_id)
+        if quest and quest in adventure.campaign_quests:
+            adventure.campaign_quests.remove(quest)
             db.session.commit()
+    else:
+        model_map = {'npc': NPC, 'location': Location, 'quest': Quest, 'item': Item}
+        model = model_map.get(entity_type)
+        if model and entity_id:
+            entity = model.query.get(entity_id)
+            if entity and entity.adventure_id == adventure_id:
+                entity.adventure_id = None
+                db.session.commit()
     return redirect(url_for('adventures.detail', adventure_id=adventure_id) + '#tab-entities')
 
 
@@ -848,3 +906,156 @@ def runner_location(adventure_id):
     game_session.active_location_id = int(loc_id) if loc_id else None
     db.session.commit()
     return jsonify({'success': True})
+
+
+# ---------------------------------------------------------------------------
+# Adventure AI endpoints (migrated from session_mode)
+# ---------------------------------------------------------------------------
+
+@adventures_bp.route('/ai/npc-chat', methods=['POST'])
+@login_required
+def ai_npc_chat():
+    """NPC dialogue generator — takes npc_id + situation, returns in-character lines."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+    from app.models import Campaign as _Campaign
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Go to Settings to set up a provider.'}), 403
+    campaign_id = session.get('active_campaign_id')
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+    data = request.get_json(silent=True) or {}
+    npc_id   = data.get('npc_id')
+    situation = (data.get('situation') or '').strip()
+    requested_provider = data.get('provider')
+    if requested_provider not in ('ollama', 'anthropic', None):
+        requested_provider = None
+    if not npc_id or not situation:
+        return jsonify({'error': 'NPC and situation are required.'}), 400
+    npc = NPC.query.filter_by(id=npc_id, campaign_id=campaign_id).first()
+    if not npc:
+        return jsonify({'error': 'NPC not found in this campaign.'}), 404
+    campaign = _Campaign.query.get(campaign_id)
+    active_session_id = session.get('current_session_id')
+    game_session = GameSession.query.get(active_session_id) if active_session_id else None
+    parts = [f'You are roleplaying as {npc.name}']
+    if npc.role:
+        parts[0] += f', a {npc.role}'
+    parts[0] += ' in a tabletop RPG.'
+    if npc.personality:
+        parts.append(f'Personality: {npc.personality}')
+    if npc.physical_description:
+        parts.append(f'Physical appearance: {npc.physical_description}')
+    if npc.faction_rel:
+        faction_info = npc.faction_rel.name
+        if npc.faction_rel.disposition:
+            faction_info += f' ({npc.faction_rel.disposition})'
+        parts.append(f'Faction: {faction_info}')
+    if npc.secrets:
+        parts.append(f'Secrets you know (use subtly, do not reveal directly): {npc.secrets}')
+    if npc.notes:
+        parts.append(f'Additional background: {npc.notes}')
+    if game_session and getattr(game_session, 'active_location', None):
+        parts.append(f'Current location: {game_session.active_location.name}')
+    if campaign and campaign.ai_world_context:
+        parts.append(f'World context: {campaign.ai_world_context}')
+    parts.append(
+        '\nWhen the GM describes a situation, respond with 3-4 short lines of dialogue '
+        'that this character would say. Stay in character. Be concise — this is for '
+        'quick reference at the game table, not prose. Include mannerisms or speech '
+        'patterns that fit the personality. Each line should be a separate thing the '
+        'NPC might say, giving the GM options to choose from.'
+    )
+    system_prompt = '\n\n'.join(parts)
+    messages = [{'role': 'user', 'content': situation}]
+    try:
+        effective_provider = requested_provider or get_feature_provider('npc_chat')
+        response = ai_chat(system_prompt, messages, max_tokens=512, provider=effective_provider)
+        return jsonify({'response': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@adventures_bp.route('/ai/hazard-flavor', methods=['POST'])
+@login_required
+def ai_hazard_flavor():
+    """Generate vivid sensory flavor text for a hazard."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+    from app.models import Campaign as _Campaign
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Check Settings.'}), 403
+    campaign_id = session.get('active_campaign_id')
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+    data = request.get_json(silent=True) or {}
+    hazard = (data.get('hazard') or '').strip()
+    if not hazard:
+        return jsonify({'error': 'Describe the hazard first.'}), 400
+    campaign = _Campaign.query.get(campaign_id)
+    parts = [
+        'You are a tabletop RPG narrator. Write vivid, sensory flavor text for a GM to read '
+        'aloud when a hazard occurs at the table. '
+        'Focus on what the players see, hear, smell, and feel. '
+        'Keep it to 2-3 sentences — punchy and atmospheric, not a wall of text.'
+    ]
+    if campaign and campaign.ai_world_context:
+        parts.append(f'World context: {campaign.ai_world_context}')
+    system_prompt = '\n\n'.join(parts)
+    messages = [{'role': 'user', 'content': f'Write flavor text for this hazard: {hazard}'}]
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=256,
+                           provider=get_feature_provider('generate'))
+        return jsonify({'flavor': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@adventures_bp.route('/ai/suggest-consequences', methods=['POST'])
+@login_required
+def ai_suggest_consequences():
+    """Suggest narrative ripple effects based on what happened this session."""
+    from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
+    from app.models import Campaign as _Campaign
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI is not configured. Check Settings.'}), 403
+    campaign_id = session.get('active_campaign_id')
+    if not campaign_id:
+        return jsonify({'error': 'No active campaign.'}), 400
+    data = request.get_json(silent=True) or {}
+    session_id = data.get('session_id')
+    if not session_id:
+        return jsonify({'error': 'session_id required.'}), 400
+    game_session = GameSession.query.filter_by(id=session_id, campaign_id=campaign_id).first()
+    if not game_session:
+        return jsonify({'error': 'Session not found.'}), 404
+    campaign = _Campaign.query.get(campaign_id)
+    context_parts = []
+    if game_session.summary:
+        context_parts.append(f'Session summary:\n{game_session.summary[:2000]}')
+    if game_session.gm_notes:
+        context_parts.append(f'GM notes:\n{game_session.gm_notes[:1000]}')
+    quest_lines = [f'- {q.name} (status: {q.status})' for q in game_session.quests_touched]
+    if quest_lines:
+        context_parts.append('Quest statuses:\n' + '\n'.join(quest_lines))
+    npc_lines = [f'- {n.name} (status: {n.status})' for n in game_session.npcs_featured]
+    if npc_lines:
+        context_parts.append('NPC statuses:\n' + '\n'.join(npc_lines))
+    if not context_parts:
+        return jsonify({'error': 'Not enough session data to suggest consequences. Add a summary first.'}), 400
+    system_prompt = (
+        'You are a narrative consequence designer for tabletop RPGs. '
+        'Based on what happened in the last session, suggest 3-5 ripple effects '
+        'that could emerge in future sessions — new threats, changed relationships, '
+        'opened opportunities, or lingering complications. '
+        'Format as a Markdown bullet list. Each consequence should be 1-2 sentences. '
+        'Be specific to the events described, not generic.'
+    )
+    if campaign and campaign.ai_world_context:
+        system_prompt += f'\n\nWorld context: {campaign.ai_world_context}'
+    user_content = '\n\n'.join(context_parts)
+    messages = [{'role': 'user', 'content': user_content}]
+    try:
+        response = ai_chat(system_prompt, messages, max_tokens=512,
+                           provider=get_feature_provider('generate'))
+        return jsonify({'consequences': response})
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 502

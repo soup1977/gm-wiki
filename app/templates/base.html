@@ -11,7 +11,7 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     {% block styles %}{% endblock %}
 </head>
-<body class="{% if session.get('in_session_mode') %}session-mode-active{% endif %}">
+<body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
     <div class="container-fluid">
@@ -127,23 +127,7 @@
                     </a>
                 </li>
 
-                <!-- Session Mode — always visible when a campaign is active -->
-                {% if active_campaign %}
-                <li class="nav-item">
-                    {% if session.get('in_session_mode') %}
-                    <a class="nav-link session-mode-indicator text-success fw-semibold"
-                       href="{{ url_for('session_mode.dashboard') }}"
-                       title="Session Mode" data-bs-toggle="tooltip">
-                        <i class="bi bi-broadcast me-1"></i>{{ session.get('session_title', 'Active Session') }}
-                    </a>
-                    {% else %}
-                    <a class="nav-link" href="{{ url_for('session_mode.dashboard') }}"
-                       title="Session Mode" data-bs-toggle="tooltip">
-                        <i class="bi bi-broadcast"></i>
-                    </a>
-                    {% endif %}
-                </li>
-                {% endif %}
+                <!-- Session Mode removed — features merged into Adventure Runner -->
 
                 <!-- Combat Tracker -->
                 <li class="nav-item">

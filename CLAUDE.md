@@ -133,13 +133,13 @@ gm-wiki/
 ---
 
 ## Entity Types (Summary)
-Each entity type is its own page, cross-linked to others.
+Each entity type is its own page, cross-linked to others. See `docs/data-model.md` for the full hierarchy.
 
-1. **NPCs** — name, role, status, home location, faction, portrait, secrets (GM only)
+1. **NPCs** — name, role, status, home location, faction, portrait, secrets (GM only). Can be campaign-wide or adventure-specific (`adventure_id`). Campaign NPCs can be "featured" in an adventure via `adventure_npc_link` M-to-M without losing their campaign scope.
 2. **Player Characters** — name, class, stats from campaign template, player-claimed
-3. **Locations** — name, type, parent location (nestable), connected locations, map image, GM notes
-4. **Quests** — name, status, hook, involved NPCs/locations, GM notes
-5. **Sessions** — number, date, summary, linked NPCs/locations/items/quests, PC attendance
+3. **Locations** — campaign-wide world records (nestable, map images, GM notes). Adventure Scenes and adventure Locations (see #13) can link to these.
+4. **Quests** — Campaign quests (`adventure_id=NULL`, gold [Campaign] badge) span multiple adventures; Adventure quests (`adventure_id=X`, blue [Adventure] badge) are scoped to one adventure. Campaign quests are linked to specific adventures via `adventure_quest_link` M-to-M.
+5. **Sessions** — number, date, summary, linked NPCs/locations/items/quests, PC attendance. `adventure_id` FK links to the adventure being run.
 6. **Items** — name, type, rarity, owner (NPC or party), origin location
 7. **Factions** — name, disposition, linked NPCs/locations/quests
 8. **Compendium** — custom rules reference, per-campaign, GM-only toggle
@@ -147,6 +147,7 @@ Each entity type is its own page, cross-linked to others.
 10. **Encounters** — linked monsters, loot tables, tied to sessions
 11. **Random Tables** — weighted entries, one-click rolling, builtin + custom
 12. **Story Arcs** — one Markdown doc per adventure area; sticky ToC, run state, AI brainstorm/ideas/session-prep. UI label is "Story Arcs"; code/DB/URLs use `adventure_site`. Shortcode: `#site[Name]`
+13. **Adventures** — structured campaign modules: Acts → Scenes → Locations. UI calls them "Locations"; DB table is `adventure_room`, Python class `AdventureRoom`. Each location has read-aloud text, GM notes, creatures, loot, hazards, and an optional link to a campaign Location record. The Adventure Runner is the at-table play interface (right panel: Combat, Session, NPCs, AI Tools, Tables tabs).
 
 ---
 

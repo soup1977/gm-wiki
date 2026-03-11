@@ -5,6 +5,12 @@
     <div>
         <span class="room-key me-2">{{ room.display_key() }}</span>
         <span class="fw-bold fs-5">{{ room.title }}</span>
+        {% if room.campaign_location %}
+        <a href="{{ url_for('locations.location_detail', location_id=room.campaign_location.id) }}"
+           class="badge bg-secondary ms-2 text-decoration-none" target="_blank" title="Campaign Location">
+            <i class="bi bi-geo-alt me-1"></i>{{ room.campaign_location.name }}
+        </a>
+        {% endif %}
     </div>
     <small class="text-muted">{{ room.scene.title }} · {{ room.scene.act.title }}</small>
 </div>

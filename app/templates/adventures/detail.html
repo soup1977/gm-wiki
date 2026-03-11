@@ -43,7 +43,7 @@
         <i class="bi bi-list-ol me-1"></i>{{ adventure.acts | length }} Acts ·
         {% set total_rooms = namespace(count=0) %}
         {% for act in adventure.acts %}{% for scene in act.scenes %}{% set total_rooms.count = total_rooms.count + scene.rooms | length %}{% endfor %}{% endfor %}
-        {{ total_rooms.count }} Rooms
+        {{ total_rooms.count }} Locations
     </span>
 </div>
 
@@ -67,7 +67,7 @@
     <li class="nav-item">
         <a class="nav-link" id="tab-entities-btn" data-bs-toggle="tab" href="#tab-entities">
             <i class="bi bi-people me-1"></i>Entities
-            {% set entity_count = linked_npcs|length + linked_locations|length + linked_quests|length + linked_items|length %}
+            {% set entity_count = linked_npcs|length + featured_npcs|length + linked_locations|length + linked_quests|length + campaign_quests|length + linked_items|length %}
             {% if entity_count %}<span class="badge bg-secondary ms-1">{{ entity_count }}</span>{% endif %}
         </a>
     </li>
@@ -294,12 +294,12 @@
                     <form method="POST" action="{{ url_for('adventures.add_room', scene_id=scene.id) }}" class="flex-grow-1">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
-                            <i class="bi bi-plus me-1"></i>Add Room
+                            <i class="bi bi-plus me-1"></i>Add Location
                         </button>
                     </form>
-                    <button class="btn btn-sm btn-outline-warning" title="AI: Generate Rooms for this scene"
+                    <button class="btn btn-sm btn-outline-warning" title="AI: Generate Locations for this scene"
                             onclick="aiGenerateRooms({{ scene.id }})">
-                        <i class="bi bi-stars me-1"></i>AI Rooms
+                        <i class="bi bi-stars me-1"></i>AI Locations
                     </button>
                 </div>
             </div>
@@ -473,10 +473,10 @@
 
         <!-- Generate Entities from Rooms button -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <small class="text-muted">Entities linked to this adventure appear here. Use the button to promote room creatures and loot into campaign records.</small>
+            <small class="text-muted">Entities linked to this adventure appear here. Use the button to promote location creatures and loot into campaign records.</small>
             <button class="btn btn-sm btn-outline-warning flex-shrink-0 ms-2" id="gen-entities-btn"
                     onclick="generateEntitiesFromRooms(this)">
-                <i class="bi bi-stars me-1"></i>Generate Entities from Rooms
+                <i class="bi bi-stars me-1"></i>Generate Entities from Locations
             </button>
         </div>
 
@@ -486,7 +486,9 @@
             <div class="col-md-6">
                 <div class="card border-secondary bg-dark h-100">
                     <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
-                        <small class="fw-bold text-uppercase text-muted">NPCs <span class="badge bg-secondary">{{ linked_npcs|length }}</span></small>
+                        <small class="fw-bold text-uppercase text-muted">NPCs
+                            <span class="badge bg-secondary">{{ linked_npcs|length + featured_npcs|length }}</span>
+                        </small>
                         <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-npc-form">
                             <i class="bi bi-plus"></i> Link
                         </button>
@@ -510,6 +512,8 @@
                         </div>
                     </div>
                     <div class="card-body py-2">
+                        {% if linked_npcs %}
+                        <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size:.65rem;">Adventure-Specific</div>
                         {% for npc in linked_npcs %}
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <div>
@@ -523,9 +527,28 @@
                                 <button type="submit" class="btn btn-sm btn-link text-muted p-0" title="Unlink">✕</button>
                             </form>
                         </div>
-                        {% else %}
-                        <div class="text-muted small fst-italic">No NPCs linked yet.</div>
                         {% endfor %}
+                        {% endif %}
+                        {% if featured_npcs %}
+                        <div class="small text-muted text-uppercase fw-bold mb-1 {% if linked_npcs %}mt-2{% endif %}" style="font-size:.65rem;">Featured from Campaign</div>
+                        {% for npc in featured_npcs %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}" class="fw-semibold">{{ npc.name }}</a>
+                                {% if npc.role %}<span class="text-muted small ms-1">{{ npc.role }}</span>{% endif %}
+                            </div>
+                            <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="entity_type" value="npc">
+                                <input type="hidden" name="entity_id" value="{{ npc.id }}">
+                                <button type="submit" class="btn btn-sm btn-link text-muted p-0" title="Unlink">✕</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% if not linked_npcs and not featured_npcs %}
+                        <div class="text-muted small fst-italic">No NPCs linked yet.</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -577,12 +600,20 @@
             <div class="col-md-6">
                 <div class="card border-secondary bg-dark h-100">
                     <div class="card-header border-secondary py-2 d-flex justify-content-between align-items-center">
-                        <small class="fw-bold text-uppercase text-muted">Quests <span class="badge bg-secondary">{{ linked_quests|length }}</span></small>
-                        <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-quest-form">
-                            <i class="bi bi-plus"></i> Link
-                        </button>
+                        <small class="fw-bold text-uppercase text-muted">Quests
+                            <span class="badge bg-secondary">{{ linked_quests|length + campaign_quests|length }}</span>
+                        </small>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="collapse" data-bs-target="#link-quest-form">
+                                <i class="bi bi-plus"></i> Adventure Quest
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning py-0" data-bs-toggle="collapse" data-bs-target="#link-campaign-quest-form">
+                                <i class="bi bi-plus"></i> Campaign Quest
+                            </button>
+                        </div>
                     </div>
                     <div class="collapse px-3 pt-2" id="link-quest-form">
+                        <div class="small text-muted mb-1">Link an adventure-specific quest (sets adventure scope):</div>
                         <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="entity_type" value="quest">
@@ -595,10 +626,25 @@
                             <button type="submit" class="btn btn-sm btn-success">Link</button>
                         </form>
                     </div>
+                    <div class="collapse px-3 pt-2" id="link-campaign-quest-form">
+                        <div class="small text-muted mb-1">Link a campaign-spanning quest (M-to-M, keeps campaign scope):</div>
+                        <form method="POST" action="{{ url_for('adventures.link_entity', adventure_id=adventure.id) }}" class="d-flex gap-1 mb-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="entity_type" value="campaign_quest">
+                            <select name="entity_id" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                <option value="">— select Campaign Quest —</option>
+                                {% for q in all_campaign_quests %}{% if q not in campaign_quests %}
+                                <option value="{{ q.id }}">{{ q.name }}</option>
+                                {% endif %}{% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-warning">Link</button>
+                        </form>
+                    </div>
                     <div class="card-body py-2">
                         {% for q in linked_quests %}
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <div>
+                                <span class="badge bg-primary me-1" style="font-size:.6rem;">Adventure</span>
                                 <a href="{{ url_for('quests.quest_detail', quest_id=q.id) }}" class="fw-semibold">{{ q.name }}</a>
                                 <span class="badge bg-secondary ms-1 small">{{ q.status }}</span>
                             </div>
@@ -609,9 +655,25 @@
                                 <button type="submit" class="btn btn-sm btn-link text-muted p-0">✕</button>
                             </form>
                         </div>
-                        {% else %}
-                        <div class="text-muted small fst-italic">No quests linked yet.</div>
                         {% endfor %}
+                        {% for q in campaign_quests %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <span class="badge bg-warning text-dark me-1" style="font-size:.6rem;">Campaign</span>
+                                <a href="{{ url_for('quests.quest_detail', quest_id=q.id) }}" class="fw-semibold">{{ q.name }}</a>
+                                <span class="badge bg-secondary ms-1 small">{{ q.status }}</span>
+                            </div>
+                            <form method="POST" action="{{ url_for('adventures.unlink_entity', adventure_id=adventure.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="entity_type" value="campaign_quest">
+                                <input type="hidden" name="entity_id" value="{{ q.id }}">
+                                <button type="submit" class="btn btn-sm btn-link text-muted p-0">✕</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                        {% if not linked_quests and not campaign_quests %}
+                        <div class="text-muted small fst-italic">No quests linked yet.</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -922,12 +984,12 @@ async function generateEntitiesFromRooms(btn) {
             setTimeout(() => location.reload(), 1500);
         } else {
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate Entities from Rooms';
+            btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate Entities from Locations';
             alert('Error: ' + (data.error || 'Unknown error'));
         }
     } catch(e) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate Entities from Rooms';
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate Entities from Locations';
         alert('Error: ' + e.message);
     }
 }
