@@ -11,10 +11,10 @@ This guide walks through everything you need to know to use The War Table as a G
 3. [Adding Content](#adding-content)
 4. [Cross-Linking with Shortcodes](#cross-linking-with-shortcodes)
 5. [Tags and Filtering](#tags-and-filtering)
-6. [Session Mode](#session-mode)
+6. [Adventures & the Adventure Runner](#adventures--the-adventure-runner)
 7. [Combat Tracker](#combat-tracker)
 8. [Dice Roller](#dice-roller)
-9. [Player Wiki](#player-wiki)
+9. [Player Access](#player-access)
 10. [Import Tools](#import-tools)
 11. [AI Features](#ai-features)
 12. [Admin Features](#admin-features)
@@ -54,9 +54,7 @@ Campaigns are the top-level container for all your content. Each campaign is ind
    - **Status** — Active or Inactive
    - **Description** — overview of the campaign (supports Markdown)
    - **Stat Preset** — choose a preset to auto-create stat fields for player characters (STR, DEX, CON, etc.), or choose None/Custom
-4. Click **Create Campaign**
-
-Your new campaign is automatically set as the active campaign. You'll see its name in the banner below the navigation bar.
+4. Click **Create Campaign** — you'll land on the New Adventure page to create your first adventure.
 
 ### Switching Campaigns
 
@@ -85,10 +83,10 @@ NPCs are the characters your players interact with.
 - **Home Location** — where the NPC lives
 - **Connected Locations** — other places the NPC is associated with
 - **Physical Description, Personality, Notes** — all support Markdown
-- **Secrets** — GM-only field, never shown to players in the wiki
+- **Secrets** — GM-only field, never shown to players
 - **Portrait** — upload an image or generate one with Stable Diffusion
 - **Tags** — comma-separated or quick-add from existing campaign tags
-- **Player Visible** — toggle whether this NPC appears in the player wiki
+- **Player Visible** — toggle whether this NPC appears in the player campaign view
 
 ### Player Characters (PCs)
 
@@ -97,9 +95,31 @@ PCs represent the players' characters. They're separate from NPCs with different
 - **Character Name, Player Name** (required), Race/Ancestry, Class/Role, Level
 - **Status** — active, inactive, retired, dead, or NPC (for converted characters)
 - **Stats** — dynamic fields based on your campaign's stat template (e.g., STR 16, DEX 14)
-- **Description, Backstory** — visible to the player who claims the character
+- **Description, Backstory** — visible to the player who owns the character
 - **GM Hooks, Notes** — GM-only fields
 - **Claim/Unclaim** — players can claim unclaimed characters, linking their user account
+
+#### ICRPG Characters
+
+For ICRPG campaigns, character creation uses an **8-step Character Wizard** instead of the basic form. Players (or GMs) access it from the campaign home page.
+
+The wizard covers:
+1. **World** — Alfheim, Warp Shell, Ghost Mountain, etc.
+2. **Life Form** — race/ancestry for the chosen world
+3. **Type** — class equivalent, determines starting abilities and milestone options
+4. **Starting Abilities** — chosen from the type's ability list
+5. **Basic Loot** — starting gear picks from the world's loot table
+6. **Stats** — BODY, MIND, WILL, FORT, DEX, INT; Hearts and Hero Coins
+7. **Name & Bio** — character name, description, backstory
+8. **Review & Create**
+
+The **ICRPG Character Sheet** has five tabs:
+- **Loot** — Equipped (slotted) and Carried items with slot tracking
+- **Effects** — active bonuses and penalties from equipped loot and abilities
+- **Abilities** — Starting, Milestone, and Mastery abilities
+- **Bio** — Description and Backstory (readable by both GM and player)
+- **Notes** — freeform player notes (editable inline)
+- **Mastery Progress** — tracks Natural 20s toward Mastery stars (always visible below the tabs)
 
 ### Locations
 
@@ -125,7 +145,6 @@ Sessions are your game session logs.
 
 - **Session Number** — auto-increments if left blank
 - **Date Played** — date picker
-- **Story Arc** — which story arc this session took place in (optional but enables prep and summary AI features)
 - **Prep Notes** — GM-only, for pre-session planning
 - **Summary** — what happened during the session
 - **Linked Entities** — select NPCs, locations, items, quests, and monsters that appeared
@@ -165,13 +184,14 @@ Factions are organizations, guilds, or groups.
 - **Disposition** — Friendly, Neutral, Hostile, or Unknown
 - The list page groups by disposition
 - Linked to NPCs, Locations, and Quests throughout the app
+- **Adventures** — link factions to an adventure from its Entities tab. Linked factions appear in the Adventure Runner's Session tab with color-coded disposition badges (green=friendly, yellow=neutral, red=hostile).
 
 ### Compendium
 
 The Compendium stores custom rules, lore, and reference material.
 
 - **Category** — group entries (e.g., "House Rules", "World Lore", "Magic System")
-- **GM Only** — toggle to hide from the player wiki
+- **GM Only** — toggle to hide from players
 - Content supports full Markdown
 
 ### Bestiary
@@ -238,27 +258,52 @@ Tags help organize entities within a campaign.
 
 ---
 
-## Session Mode
+## Adventures & the Adventure Runner
 
-Session Mode is a dashboard designed for running a live game session.
+Adventures are the primary tool for planning and running your game sessions. Each Adventure is structured as a hierarchy: **Adventure → Acts → Scenes → Rooms**.
 
-### Starting a Session
+### Structure
 
-1. Click the **Session Mode** link in the navbar (or the green "Active Session" indicator)
-2. Select an existing session from the dropdown, or create a new one
-3. Click **Start Session**
+- **Adventure** — the top-level container (e.g., "The Sunken Temple of Kael"). Has a name, hook, status (Planned / Active / Complete), and linked entities.
+- **Acts** — major story phases within the adventure (e.g., "Act 1: The Approach")
+- **Scenes** — specific situations or areas within an act (e.g., "The Gatehouse")
+- **Rooms** — individual encounter spaces within a scene, each with a name, description, and optional monster/loot content
 
-### During the Session
+### Creating an Adventure
 
-The dashboard shows:
-- **Prep Notes** from the selected session
-- **Active Location** — set where the party currently is
-- **Timestamped Notes** — quick notepad that auto-timestamps each entry
-- **Active Quests** — quests in play for this campaign
+1. Click **Adventures** in the navbar
+2. Click **New Adventure**
+3. Fill in the name, hook (a one-sentence premise), and status
+4. Save — then add Acts from the detail page
+
+### The Adventure Detail Page
+
+The detail page has tabs:
+
+- **Overview** — summary, linked factions, status
+- **Entities** — link NPCs, Party PCs, and Factions to this adventure. Linked factions show their disposition badge.
+- **Structure** — manage Acts, Scenes, and Rooms
+
+### Launching the Runner
+
+From the Adventure detail page, click **Run** to open the **Adventure Runner** — a live game dashboard optimized for use at the table.
+
+The Runner has four panels:
+
+| Panel | Contents |
+|-------|----------|
+| **Session** | Active quests, linked factions (with disposition color), timestamped notes |
+| **Rooms** | All rooms in the adventure. Click a room to expand it; mark rooms as **Revealed** to share them with players. |
+| **NPCs** | All NPCs linked to this adventure. Shows name, role, and faction badge. |
+| **Party** | PCs attending this adventure with HP, Hero Coins, and quick-edit controls. |
+
+### Room Reveals
+
+Marking a room as **Revealed** makes it visible to players on their Campaign Home page under Locations (if the room is linked to a location). This is the primary way to share explored areas with players in real time.
 
 ### Post-Session Wrap-Up
 
-After your game, click **Post-Session Wrap-Up** to:
+From the Runner, click **Wrap Up Session** to:
 - Update quest statuses in bulk (completed, failed, on hold)
 - Update NPC statuses (alive, dead, missing)
 - Add notes to items
@@ -269,7 +314,7 @@ After your game, click **Post-Session Wrap-Up** to:
 
 The Combat Tracker helps manage combat encounters.
 
-1. Click the **sword icon** in the navbar
+1. Click the **shield icon** in the navbar
 2. Set a session for context
 3. Add combatants:
    - PCs from the active session's attendance list
@@ -289,21 +334,47 @@ Click the **dice icon** in the navbar to open the dice roller drawer.
 
 ---
 
-## Player Wiki
+## Player Access
 
-The Player Wiki is a read-only view of your campaign data, designed to share with your players.
+Players have their own login-based experience, separate from the GM interface.
 
-### URL
+### Setting Up Player Accounts
 
-```
-http://your-server:5001/wiki/
-```
+Admins create player accounts in **User Management > New User**. Set the **Role** to **Player**. Players can also self-register at `/signup` if that setting is enabled.
 
-Players select a campaign from the landing page, then browse NPCs, Locations, Quests, Items, Sessions, Compendium, Bestiary, and PCs.
+- **GM role** — full access to all content management tools, adventure builder, runner, and admin pages
+- **Player role** — sees only the player dashboard and their own campaign content; cannot access GM pages
 
-### What Players See
+### Player Dashboard
 
-Only entities where **Player Visible** is checked (or **GM Only** is unchecked for Compendium).
+When a player logs in, they land on the **Player Dashboard**, which shows:
+- Campaigns they belong to
+- Their characters across all campaigns
+
+### Joining a Campaign
+
+1. From the Player Dashboard, click **Browse Campaigns**
+2. Public campaigns are listed — click **Join** to become a member
+3. The campaign now appears on the Player Dashboard
+
+GMs can also add players directly by inviting them or giving them the campaign's public link.
+
+### Campaign Home
+
+Clicking a campaign on the Player Dashboard opens the **Campaign Home** — the player's view of that campaign. It shows only content the GM has marked as player-visible:
+
+- **Locations** — places the party has been to or that the GM has revealed
+- **People (NPCs)** — characters the GM has made visible
+- **Quests** — active and completed quests shared with the party
+- **Items & Loot** — party treasure and any items assigned to the player's characters
+
+### Creating a Character
+
+From the Campaign Home, click **New Character**:
+- **ICRPG campaigns** — launches the 8-step Character Wizard (see [ICRPG Characters](#icrpg-characters))
+- **Other campaigns** — opens the standard character form
+
+Characters appear on the Campaign Home under **My Characters** once created.
 
 ### What Players Never See
 
@@ -311,12 +382,9 @@ Only entities where **Player Visible** is checked (or **GM Only** is unchecked f
 - GM Notes (on any entity)
 - GM Hooks (on PCs)
 - Prep Notes (on Sessions)
-- Bestiary Stat Blocks (when marked not visible to players)
 - Compendium entries marked GM Only
-
-### No Login Required
-
-The wiki is accessible without logging in. It's intended for use on a local network or behind a private tunnel.
+- Other players' characters (only their own)
+- Adventure structure, room details, or runner tools
 
 ---
 
@@ -380,12 +448,12 @@ Story Arc detail pages have a toolbar with:
 | **Generate Prep** | Creates session prep notes from the arc content and the previous session's summary |
 | **Draft Summary** | Turns your post-session GM notes into a polished player-facing recap |
 
-### Session Mode AI
+### Adventure Runner AI
 
-During a live session (Session Mode dashboard):
+During a live session in the Runner:
 - **Improv Encounter** — generates a quick combat encounter on the fly
 - **Hazard Flavor** — generates sensory descriptions for timers or environmental events
-- **Suggest Consequences** — after the session wrap-up, suggests 2–3 narrative ripple effects
+- **Suggest Consequences** — after wrap-up, suggests 2–3 narrative ripple effects from the session
 - **NPC Chat** — in-character dialogue for any linked NPC
 
 ### Image Generation
@@ -410,7 +478,9 @@ Admin users have access to additional tools.
 
 **User Menu > User Management**
 - View all registered users
-- Create new users (with optional admin flag)
+- Create new users — set the **Role** to control their experience:
+  - **GM** — full access to all content management, adventures, runner, and settings
+  - **Player** — logs in to the player dashboard; can join campaigns, create characters, and view player-visible content only
 - Reset user passwords
 - Delete users (cannot delete yourself)
 
@@ -446,5 +516,5 @@ Admin users have access to additional tools.
 
 - **Global Search** — type in the search box in the navbar to search across all entity types. Use arrow keys to navigate results, Enter to select, Escape to close.
 - **Quick Create** — when filling out dropdowns (Faction, Location, etc.), click the **+** button to create a new entity without leaving the form.
-- **Breadcrumbs** — detail pages show breadcrumbs for navigation. In Session Mode, breadcrumbs link back to the session dashboard.
+- **Breadcrumbs** — detail pages show breadcrumbs for navigation. Players are always returned to their Campaign Home, never to GM list pages.
 - **Campaign Banner** — the colored banner below the navbar shows your active campaign name and system at all times.
