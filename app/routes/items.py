@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags, ActivityLog
+from app.models import Item, NPC, Location, Tag, item_tags, get_or_create_tags, ActivityLog, Adventure
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 items_bp = Blueprint('items', __name__)
@@ -60,6 +60,7 @@ def create_item():
 
     npcs = NPC.query.filter_by(campaign_id=campaign_id).order_by(NPC.name).all()
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -67,10 +68,11 @@ def create_item():
             flash('Item name is required.', 'danger')
             return render_template('items/form.html', item=None,
                                    npcs=npcs, locations=locations,
-                                   rarities=ITEM_RARITIES)
+                                   rarities=ITEM_RARITIES, adventures=adventures)
 
         owner_npc_id = request.form.get('owner_npc_id') or None
         origin_location_id = request.form.get('origin_location_id') or None
+        adv_id = request.form.get('adventure_id') or None
 
         item = Item(
             campaign_id=campaign_id,
@@ -81,6 +83,7 @@ def create_item():
             gm_notes=request.form.get('gm_notes', '').strip() or None,
             owner_npc_id=int(owner_npc_id) if owner_npc_id else None,
             origin_location_id=int(origin_location_id) if origin_location_id else None,
+            adventure_id=int(adv_id) if adv_id else None,
         )
         item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         item.is_player_visible = 'is_player_visible' in request.form
@@ -110,7 +113,7 @@ def create_item():
 
     return render_template('items/form.html', item=None,
                            npcs=npcs, locations=locations,
-                           rarities=ITEM_RARITIES)
+                           rarities=ITEM_RARITIES, adventures=adventures)
 
 
 @items_bp.route('/items/<int:item_id>')
@@ -136,6 +139,7 @@ def edit_item(item_id):
 
     npcs = NPC.query.filter_by(campaign_id=campaign_id).order_by(NPC.name).all()
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -143,7 +147,7 @@ def edit_item(item_id):
             flash('Item name is required.', 'danger')
             return render_template('items/form.html', item=item,
                                    npcs=npcs, locations=locations,
-                                   rarities=ITEM_RARITIES)
+                                   rarities=ITEM_RARITIES, adventures=adventures)
 
         owner_npc_id = request.form.get('owner_npc_id') or None
         origin_location_id = request.form.get('origin_location_id') or None
@@ -155,6 +159,8 @@ def edit_item(item_id):
         item.gm_notes = request.form.get('gm_notes', '').strip() or None
         item.owner_npc_id = int(owner_npc_id) if owner_npc_id else None
         item.origin_location_id = int(origin_location_id) if origin_location_id else None
+        adv_id = request.form.get('adventure_id') or None
+        item.adventure_id = int(adv_id) if adv_id else None
         item.tags = get_or_create_tags(campaign_id, request.form.get('tags', ''))
         item.is_player_visible = 'is_player_visible' in request.form
 
@@ -181,7 +187,7 @@ def edit_item(item_id):
 
     return render_template('items/form.html', item=item,
                            npcs=npcs, locations=locations,
-                           rarities=ITEM_RARITIES)
+                           rarities=ITEM_RARITIES, adventures=adventures)
 
 
 @items_bp.route('/items/<int:item_id>/delete', methods=['POST'])

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Adventures — The War Table{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-2">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-book"></i> Adventures</h2>
+        <p class="text-muted small mb-0 mt-1">
+            Structured module-style adventures: Acts → Scenes → Rooms. Each room is a card with read-aloud text, GM notes, creatures, and loot.
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-shrink-0 ms-3">
+        <a href="{{ url_for('adventures.create') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> New Adventure
+        </a>
+    </div>
+</div>
+<hr class="border-secondary mb-3">
+
+{% if adventures %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for adv in adventures %}
+    <div class="col">
+        <div class="card h-100 border-secondary bg-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <h5 class="card-title mb-0">
+                        <a href="{{ url_for('adventures.detail', adventure_id=adv.id) }}" class="text-decoration-none">
+                            {{ adv.name }}
+                        </a>
+                    </h5>
+                    <span class="badge ms-2 flex-shrink-0
+                        {% if adv.status == 'Active' %}bg-success
+                        {% elif adv.status == 'Complete' %}bg-secondary
+                        {% elif adv.status == 'Ready' %}bg-primary
+                        {% else %}bg-dark border border-secondary{% endif %}">
+                        {{ adv.status }}
+                    </span>
+                </div>
+                {% if adv.tagline %}
+                <p class="text-muted small mb-2 fst-italic">{{ adv.tagline }}</p>
+                {% endif %}
+                <div class="d-flex gap-3 text-muted small mb-2">
+                    <span><i class="bi bi-list-ol me-1"></i>{{ adv.acts | length }} Acts</span>
+                    <span><i class="bi bi-geo-alt me-1"></i>
+                        {% set total_scenes = namespace(n=0) %}
+                        {% for act in adv.acts %}{% set total_scenes.n = total_scenes.n + act.scenes|length %}{% endfor %}
+                        {{ total_scenes.n }} Scenes
+                    </span>
+                    <span class="badge bg-secondary">{{ adv.system_hint | upper }}</span>
+                </div>
+                {% if adv.synopsis %}
+                <p class="card-text small text-muted">{{ adv.synopsis | truncate(120) }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex gap-2 border-secondary">
+                <a href="{{ url_for('adventures.run', adventure_id=adv.id) }}" class="btn btn-sm btn-warning flex-grow-1">
+                    <i class="bi bi-play-fill"></i> Run
+                </a>
+                <a href="{{ url_for('adventures.detail', adventure_id=adv.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-eye"></i> View
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-book display-4 d-block mb-3"></i>
+    <h5>No adventures yet</h5>
+    <p class="mb-3">Create your first adventure — AI will generate a full module skeleton from a one-paragraph concept.</p>
+    <a href="{{ url_for('adventures.create') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Create Adventure
+    </a>
+</div>
+{% endif %}
+{% endblock %}

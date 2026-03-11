@@ -13,7 +13,9 @@ import re
 from flask import Blueprint, request, jsonify, session as flask_session
 from flask_login import login_required
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
-from app.models import ActivityLog, AppSetting
+from app.models import (ActivityLog, AppSetting, Adventure, AdventureRoom,
+                        AdventureScene, RoomCreature, RoomLoot, RoomNPC,
+                        NPC, Item, BestiaryEntry, ICRPGLootDef)
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -1184,3 +1186,809 @@ def genesis_create_entity():
         'entity_type': entity_type,
         'url':         url_pattern.format(id=entity.id),
     }), 201
+
+
+# ---------------------------------------------------------------------------
+# Phase 20: Adventure Draft Generation
+# ---------------------------------------------------------------------------
+
+@ai_bp.route('/generate-adventure-draft', methods=['POST'])
+@login_required
+def generate_adventure_draft():
+    """Generate a full adventure skeleton from a one-paragraph concept.
+
+    Expects JSON: { concept, system_hint, world_context }
+    Returns a structured adventure JSON ready for the draft review UI.
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI provider not configured'}), 403
+
+    data = request.get_json() or {}
+    concept = data.get('concept', '').strip()
+    system_hint = data.get('system_hint', 'generic')
+    world_context = data.get('world_context', '')
+
+    if not concept:
+        return jsonify({'error': 'No concept provided'}), 400
+
+    # Build system_hint-specific instructions
+    if system_hint == 'icrpg':
+        stat_instructions = (
+            "Use ICRPG stat blocks: hearts (integer, each heart = 10 HP), "
+            "effort_type (one of: BASIC, WEAPON, MAGIC, ULTIMATE), "
+            "special_move (one sentence), timer_rounds (optional integer for countdown timers). "
+            "Do NOT use hp, ac, or cr fields."
+        )
+    elif system_hint == 'd20':
+        stat_instructions = (
+            "Use d20 stat blocks: hp (integer), ac (integer), cr (string like '1/4' or '5'), "
+            "actions (free-text list of actions). "
+            "Do NOT use hearts, effort_type, or timer_rounds fields."
+        )
+    else:
+        stat_instructions = (
+            "Use generic stat blocks: describe creatures briefly with hp and a special_move. "
+            "Keep it system-agnostic."
+        )
+
+    system_prompt = f"""You are an expert tabletop RPG adventure designer.
+Generate a structured adventure module from the GM's concept.
+
+{f'Campaign world context: {world_context}' if world_context else ''}
+
+Creature stat instructions: {stat_instructions}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences, no explanation.
+- All string values must be on a single line — no literal newlines inside strings.
+- Use a pipe character | to separate bullet points in gm_notes (e.g. "- Gate is locked | - Groaning sounds beyond | - Secret door behind tapestry").
+- Apostrophes and quotes inside strings must be avoided or rephrased.
+
+JSON structure:
+{{
+  "title": "Adventure Title",
+  "tagline": "One evocative sentence",
+  "synopsis": "2-3 sentence GM overview",
+  "hook": "How players get involved. 1-2 sentences.",
+  "premise": "What is at stake. 1-2 sentences.",
+  "acts": [
+    {{
+      "number": 1,
+      "title": "Act Title",
+      "description": "1-2 sentence act overview",
+      "scenes": [
+        {{
+          "title": "Scene Location Name",
+          "description": "1-2 sentence area description",
+          "scene_type": "dungeon",
+          "rooms": [
+            {{
+              "key": "A1",
+              "title": "Room Name",
+              "read_aloud": "2 vivid sentences in present tense for players.",
+              "gm_notes": "- First note | - Second note | - Third note",
+              "creatures": [
+                {{
+                  "name": "Creature Name",
+                  "hearts": 1,
+                  "effort_type": "WEAPON",
+                  "special_move": "One sentence special ability",
+                  "timer_rounds": null,
+                  "hp": null,
+                  "ac": null,
+                  "cr": ""
+                }}
+              ],
+              "loot": [
+                {{
+                  "name": "Item Name",
+                  "description": "Brief description"
+                }}
+              ],
+              "hazards": []
+            }}
+          ]
+        }}
+      ]
+    }}
+  ],
+  "key_npcs": [
+    {{
+      "name": "NPC Name",
+      "role": "Villain",
+      "notes": "1-2 sentence personality and motivation"
+    }}
+  ],
+  "factions": [
+    {{
+      "name": "Faction Name",
+      "disposition": "hostile",
+      "notes": "1-2 sentence description"
+    }}
+  ]
+}}
+
+Scope guidelines (keep response size manageable):
+- 2-3 acts total
+- 1 scene per act
+- 3-4 rooms per scene (8-12 rooms total)
+- read_aloud: 2 sentences MAX
+- gm_notes: 2-4 bullet points separated by |
+- 0-2 creatures per room, 0-1 loot per room
+- Include 2-3 key NPCs and 1-2 factions"""
+
+    messages = [{'role': 'user', 'content': f'Generate an adventure from this concept:\n\n{concept}'}]
+
+    try:
+        provider = get_feature_provider('generate')
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=6000,
+                           json_mode=True,
+                           provider=provider)
+
+        adventure_data = _parse_ai_json(response)
+        if adventure_data is None:
+            return jsonify({'error': 'AI returned invalid JSON. Try again or simplify your concept.',
+                            'raw': response[:300]}), 500
+
+        # Inject system_hint so the draft review can use it
+        adventure_data['system_hint'] = system_hint
+        adventure_data['concept'] = concept
+
+        return jsonify(adventure_data)
+
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+def _parse_ai_json(response):
+    """Robustly parse a JSON response from an AI, handling common formatting issues."""
+    if not response:
+        return None
+
+    # Strip markdown code fences if present
+    text = response.strip()
+    if text.startswith('```'):
+        text = re.sub(r'^```(?:json)?\s*', '', text)
+        text = re.sub(r'\s*```$', '', text)
+        text = text.strip()
+
+    # Attempt 1: direct parse
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Attempt 2: extract the outermost { ... } block
+    match = re.search(r'\{[\s\S]*\}', text)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    # Attempt 3: strip trailing incomplete content after the last complete top-level key
+    # (handles truncated responses by removing the last incomplete key)
+    try:
+        # Find the last complete closing brace at the top level
+        depth = 0
+        last_good = -1
+        for i, ch in enumerate(text):
+            if ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    last_good = i
+        if last_good > 0:
+            return json.loads(text[:last_good + 1])
+    except (json.JSONDecodeError, Exception):
+        pass
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Phase 20c: Adventure AI endpoints
+# ---------------------------------------------------------------------------
+
+def _get_adventure_context(adventure):
+    """Build a short context string from an adventure for AI prompts."""
+    parts = []
+    if adventure.synopsis:
+        parts.append(f'Synopsis: {adventure.synopsis}')
+    if adventure.hook:
+        parts.append(f'Hook: {adventure.hook}')
+    if adventure.premise:
+        parts.append(f'Premise: {adventure.premise}')
+    return '\n'.join(parts) if parts else 'No adventure context available.'
+
+
+def _system_hint_instructions(system_hint):
+    """Return creature stat instructions based on system hint."""
+    if system_hint == 'icrpg':
+        return (
+            "Use ICRPG stat blocks: hearts (integer), effort_type (BASIC/WEAPON/MAGIC/ULTIMATE), "
+            "special_move (one sentence), timer_rounds (optional int). Do NOT use hp, ac, cr."
+        )
+    elif system_hint == 'd20':
+        return (
+            "Use d20 stat blocks: hp (integer), ac (integer), cr (string), actions (text). "
+            "Do NOT use hearts, effort_type, or timer_rounds."
+        )
+    return "Use generic stat blocks: hp (integer) and special_move (one sentence)."
+
+
+@ai_bp.route('/flesh-out-room', methods=['POST'])
+@login_required
+def flesh_out_room():
+    """Expand a room's read_aloud and gm_notes fields using AI.
+    Optionally suggests new creatures, loot, and NPCs if the room warrants them.
+
+    Expects JSON: { room_id }
+    Returns JSON: { read_aloud, gm_notes, new_creatures[], new_loot[], new_npcs[] }
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI provider not configured'}), 403
+
+    data = request.get_json() or {}
+    room_id = data.get('room_id')
+    if not room_id:
+        return jsonify({'error': 'room_id required'}), 400
+
+    room = AdventureRoom.query.get_or_404(room_id)
+    adventure = room.scene.act.adventure
+
+    adventure_ctx = _get_adventure_context(adventure)
+    stat_instructions = _system_hint_instructions(adventure.system_hint or 'generic')
+
+    # Describe what already exists so AI doesn't duplicate
+    existing_creatures = ', '.join(c.name for c in room.creatures) if room.creatures else 'none'
+    existing_loot = ', '.join(l.name for l in room.loot) if room.loot else 'none'
+    existing_npcs = ', '.join(rn.npc.name for rn in room.room_npcs) if room.room_npcs else 'none'
+
+    system_prompt = f"""You are an expert tabletop RPG adventure writer.
+Expand the read-aloud text and GM notes for a keyed dungeon/adventure room.
+Also suggest new creatures, loot, or key NPCs ONLY if the room clearly warrants them
+and they are not already present.
+
+Adventure context:
+{adventure_ctx}
+
+{stat_instructions}
+
+Currently in this room:
+- Creatures: {existing_creatures}
+- Loot: {existing_loot}
+- NPCs: {existing_npcs}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values must be on a single line — no literal newlines.
+- Use | to separate bullet points in gm_notes.
+- Leave new_creatures/new_loot/new_npcs as empty arrays [] if room is already populated or suggestions don't fit.
+- NPCs are named characters the players interact with (prisoners, merchants, informants, bosses with dialogue).
+  Do NOT put combat monsters in new_npcs — those go in new_creatures.
+
+Return:
+{{
+  "read_aloud": "2-3 vivid sentences in present tense for the players.",
+  "gm_notes": "- First GM note | - Second note | - Third note",
+  "new_creatures": [],
+  "new_loot": [],
+  "new_npcs": []
+}}
+
+If suggesting creatures, use this format per creature:
+{{ "name": "...", "hearts": 1, "effort_type": "WEAPON", "special_move": "...", "timer_rounds": null, "hp": null, "ac": null, "cr": null, "actions": null }}
+
+If suggesting loot, use: {{ "name": "...", "description": "..." }}
+If suggesting NPCs, use: {{ "name": "...", "role": "...", "notes": "..." }}"""
+
+    current_content = []
+    if room.title:
+        current_content.append(f'Room: {room.key} — {room.title}')
+    if room.read_aloud:
+        current_content.append(f'Current read-aloud: {room.read_aloud}')
+    if room.gm_notes:
+        current_content.append(f'Current GM notes: {room.gm_notes}')
+
+    user_msg = '\n'.join(current_content) if current_content else f'Room key: {room.key}, Room title: {room.title or "Untitled"}'
+
+    messages = [{'role': 'user', 'content': f'Flesh out this room:\n\n{user_msg}'}]
+
+    try:
+        provider = get_feature_provider('generate')
+        response = ai_chat(system_prompt, messages, max_tokens=900, json_mode=True, provider=provider)
+        result = _parse_ai_json(response)
+        if result is None:
+            return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
+        # Ensure arrays are present even if AI omitted them
+        result.setdefault('new_creatures', [])
+        result.setdefault('new_loot', [])
+        result.setdefault('new_npcs', [])
+        return jsonify(result)
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+@ai_bp.route('/apply-room-flesh-out/<int:room_id>', methods=['POST'])
+@login_required
+def apply_room_flesh_out(room_id):
+    """Save AI flesh-out result to a room: updates text and optionally creates
+    new creatures, loot items, and NPCs from the checked suggestions.
+
+    Expects JSON: {
+        read_aloud, gm_notes,
+        new_creatures: [...],  # only the ones the GM checked
+        new_loot: [...],
+        new_npcs: [...]
+    }
+    """
+    from app import db
+    import traceback
+    try:
+        room = AdventureRoom.query.get_or_404(room_id)
+        adventure = room.scene.act.adventure
+        from app.models import Campaign
+        campaign = Campaign.query.get(adventure.campaign_id)
+        if campaign is None:
+            return jsonify({'error': 'Adventure has no campaign attached.'}), 400
+        data = request.get_json() or {}
+    except Exception as e:
+        return jsonify({'error': f'Setup error: {str(e)}', 'trace': traceback.format_exc()}), 500
+
+    # Update text fields
+    if 'read_aloud' in data:
+        room.read_aloud = data['read_aloud']
+    if 'gm_notes' in data:
+        room.gm_notes = data['gm_notes']
+
+    creatures_added = 0
+    loot_added = 0
+    npcs_added = 0
+
+    try:
+        # Create checked creatures
+        for c_data in data.get('new_creatures', []):
+            name = c_data.get('name', '').strip()
+            if not name:
+                continue
+            creature = RoomCreature(
+                room_id=room.id,
+                name=name,
+                hearts=c_data.get('hearts') or 1,
+                effort_type=c_data.get('effort_type') or '',
+                special_move=c_data.get('special_move') or '',
+                timer_rounds=c_data.get('timer_rounds'),
+                hp=c_data.get('hp'),
+                ac=c_data.get('ac'),
+                cr=c_data.get('cr') or '',
+                actions=c_data.get('actions') or '',
+            )
+            # Bestiary lookup — case-insensitive name match
+            bestiary_match = BestiaryEntry.query.filter(
+                db.func.lower(BestiaryEntry.name) == name.lower()
+            ).first()
+            if bestiary_match:
+                creature.bestiary_entry_id = bestiary_match.id
+            db.session.add(creature)
+            creatures_added += 1
+
+        # Create checked loot
+        for l_data in data.get('new_loot', []):
+            name = l_data.get('name', '').strip()
+            if not name:
+                continue
+            room_loot = RoomLoot(
+                room_id=room.id,
+                name=name,
+                description=l_data.get('description') or '',
+            )
+            # Check ICRPGLootDef if ICRPG adventure
+            if adventure.system_hint == 'icrpg':
+                loot_def = ICRPGLootDef.query.filter(
+                    db.func.lower(ICRPGLootDef.name) == name.lower()
+                ).first()
+                if loot_def:
+                    room_loot.loot_def_id = loot_def.id
+            db.session.add(room_loot)
+            # Also create a campaign Item record linked to this adventure
+            item = Item(
+                campaign_id=campaign.id,
+                name=name,
+                type='loot',
+                description=l_data.get('description') or '',
+                adventure_id=adventure.id,
+            )
+            db.session.add(item)
+            loot_added += 1
+
+        # Create checked NPCs
+        for n_data in data.get('new_npcs', []):
+            name = n_data.get('name', '').strip()
+            if not name:
+                continue
+            npc = NPC(
+                campaign_id=campaign.id,
+                name=name,
+                role=n_data.get('role') or '',
+                notes=n_data.get('notes') or '',
+                adventure_id=adventure.id,
+            )
+            db.session.add(npc)
+            db.session.flush()  # get npc.id before creating RoomNPC link
+            room_link = RoomNPC(room_id=room.id, npc_id=npc.id)
+            db.session.add(room_link)
+            npcs_added += 1
+
+        db.session.commit()
+        return jsonify({'success': True, 'creatures_added': creatures_added,
+                        'loot_added': loot_added, 'npcs_added': npcs_added})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e), 'trace': traceback.format_exc()}), 500
+
+
+@ai_bp.route('/generate-scene-rooms', methods=['POST'])
+@login_required
+def generate_scene_rooms():
+    """Generate 3-4 keyed rooms for a scene and save them to the DB.
+
+    Expects JSON: { scene_id }
+    Returns JSON: { rooms: [...], count } with the newly-created room data.
+    """
+    from app import db
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI provider not configured'}), 403
+
+    data = request.get_json() or {}
+    scene_id = data.get('scene_id')
+    if not scene_id:
+        return jsonify({'error': 'scene_id required'}), 400
+
+    scene = AdventureScene.query.get_or_404(scene_id)
+    adventure = scene.act.adventure
+    adventure_ctx = _get_adventure_context(adventure)
+    stat_instructions = _system_hint_instructions(adventure.system_hint or 'generic')
+
+    # Find next available letter prefix for room keys
+    existing_keys = set()
+    for act in adventure.acts:
+        for s in act.scenes:
+            for r in s.rooms:
+                if r.key:
+                    existing_keys.add(r.key)
+
+    used_prefixes = {k[0] for k in existing_keys if k}
+    key_prefix = next((chr(c) for c in range(ord('A'), ord('Z') + 1) if chr(c) not in used_prefixes), 'X')
+
+    system_prompt = f"""You are an expert tabletop RPG adventure designer.
+Generate 3-4 keyed rooms for a specific scene/area in an adventure.
+
+Adventure context:
+{adventure_ctx}
+
+Scene: {scene.title}
+{f'Scene description: {scene.description}' if scene.description else ''}
+
+Creature stat instructions: {stat_instructions}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values on a single line — no literal newlines.
+- Use | to separate bullet points in gm_notes.
+
+Return:
+{{
+  "rooms": [
+    {{
+      "key": "{key_prefix}1",
+      "title": "Room Name",
+      "read_aloud": "2 vivid sentences in present tense.",
+      "gm_notes": "- First note | - Second note",
+      "creatures": [
+        {{
+          "name": "Creature Name",
+          "hearts": 1,
+          "effort_type": "WEAPON",
+          "special_move": "One sentence",
+          "timer_rounds": null,
+          "hp": null,
+          "ac": null,
+          "cr": ""
+        }}
+      ],
+      "loot": [
+        {{
+          "name": "Item Name",
+          "description": "Brief description"
+        }}
+      ]
+    }}
+  ]
+}}
+
+Generate 3-4 rooms. Keep read_aloud to 2 sentences max, gm_notes to 2-3 bullets, 0-2 creatures, 0-1 loot per room."""
+
+    messages = [{'role': 'user', 'content': f'Generate rooms for the scene: {scene.title}'}]
+
+    try:
+        provider = get_feature_provider('generate')
+        response = ai_chat(system_prompt, messages, max_tokens=2000, json_mode=True, provider=provider)
+        result = _parse_ai_json(response)
+        if result is None or 'rooms' not in result:
+            return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
+
+        # Save rooms to DB
+        created_rooms = []
+        next_sort = max((r.sort_order or 0 for r in scene.rooms), default=0) + 1
+        for room_data in result['rooms']:
+            room = AdventureRoom(
+                scene_id=scene.id,
+                key=room_data.get('key', '?'),
+                title=room_data.get('title', 'Untitled Room'),
+                read_aloud=room_data.get('read_aloud', ''),
+                gm_notes=room_data.get('gm_notes', ''),
+                sort_order=next_sort,
+            )
+            db.session.add(room)
+            db.session.flush()
+
+            for c in room_data.get('creatures', []):
+                creature = RoomCreature(
+                    room_id=room.id,
+                    name=c.get('name', 'Unknown'),
+                    hearts=c.get('hearts'),
+                    effort_type=c.get('effort_type'),
+                    special_move=c.get('special_move'),
+                    timer_rounds=c.get('timer_rounds'),
+                    hp=c.get('hp'),
+                    ac=c.get('ac'),
+                    cr=c.get('cr'),
+                )
+                db.session.add(creature)
+
+            for loot_data in room_data.get('loot', []):
+                loot = RoomLoot(
+                    room_id=room.id,
+                    name=loot_data.get('name', 'Unknown'),
+                    description=loot_data.get('description', ''),
+                )
+                db.session.add(loot)
+
+            created_rooms.append({
+                'id': room.id,
+                'key': room.key,
+                'title': room.title,
+                'creature_count': len(room_data.get('creatures', [])),
+                'loot_count': len(room_data.get('loot', [])),
+            })
+            next_sort += 1
+
+        db.session.commit()
+        return jsonify({'rooms': created_rooms, 'count': len(created_rooms)})
+
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+@ai_bp.route('/generate-room-creatures', methods=['POST'])
+@login_required
+def generate_room_creatures():
+    """Generate 1-2 creatures appropriate for a room and save them to DB.
+
+    Expects JSON: { room_id }
+    Returns JSON: { creatures: [...], count }
+    """
+    from app import db
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI provider not configured'}), 403
+
+    data = request.get_json() or {}
+    room_id = data.get('room_id')
+    if not room_id:
+        return jsonify({'error': 'room_id required'}), 400
+
+    room = AdventureRoom.query.get_or_404(room_id)
+    adventure = room.scene.act.adventure
+    adventure_ctx = _get_adventure_context(adventure)
+    stat_instructions = _system_hint_instructions(adventure.system_hint or 'generic')
+
+    system_prompt = f"""You are an expert tabletop RPG monster designer.
+Generate 1-2 appropriate creatures for a room in an adventure.
+
+Adventure context:
+{adventure_ctx}
+
+{stat_instructions}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values on a single line.
+
+Return:
+{{
+  "creatures": [
+    {{
+      "name": "Creature Name",
+      "hearts": 1,
+      "effort_type": "WEAPON",
+      "special_move": "One sentence special ability or attack",
+      "timer_rounds": null,
+      "hp": null,
+      "ac": null,
+      "cr": ""
+    }}
+  ]
+}}"""
+
+    room_desc = f'Room: {room.key} — {room.title or "Untitled"}'
+    if room.gm_notes:
+        room_desc += f'\nGM notes: {room.gm_notes}'
+
+    messages = [{'role': 'user', 'content': f'Generate creatures for this room:\n\n{room_desc}'}]
+
+    try:
+        provider = get_feature_provider('generate')
+        response = ai_chat(system_prompt, messages, max_tokens=600, json_mode=True, provider=provider)
+        result = _parse_ai_json(response)
+        if result is None or 'creatures' not in result:
+            return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
+
+        created = []
+        for c in result['creatures']:
+            creature = RoomCreature(
+                room_id=room.id,
+                name=c.get('name', 'Unknown'),
+                hearts=c.get('hearts'),
+                effort_type=c.get('effort_type'),
+                special_move=c.get('special_move'),
+                timer_rounds=c.get('timer_rounds'),
+                hp=c.get('hp'),
+                ac=c.get('ac'),
+                cr=c.get('cr'),
+            )
+            db.session.add(creature)
+            db.session.flush()
+            created.append({'id': creature.id, 'name': creature.name})
+
+        db.session.commit()
+        return jsonify({'creatures': created, 'count': len(created)})
+
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+@ai_bp.route('/generate-room-loot', methods=['POST'])
+@login_required
+def generate_room_loot():
+    """Generate 1-2 thematically appropriate loot items for a room and save to DB.
+
+    Expects JSON: { room_id }
+    Returns JSON: { loot: [...], count }
+    """
+    from app import db
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI provider not configured'}), 403
+
+    data = request.get_json() or {}
+    room_id = data.get('room_id')
+    if not room_id:
+        return jsonify({'error': 'room_id required'}), 400
+
+    room = AdventureRoom.query.get_or_404(room_id)
+    adventure = room.scene.act.adventure
+    adventure_ctx = _get_adventure_context(adventure)
+
+    system_prompt = f"""You are an expert tabletop RPG loot designer.
+Generate 1-2 thematically appropriate loot items for a room in an adventure.
+
+Adventure context:
+{adventure_ctx}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values on a single line.
+
+Return:
+{{
+  "loot": [
+    {{
+      "name": "Item Name",
+      "description": "Brief evocative description, 1 sentence."
+    }}
+  ]
+}}"""
+
+    room_desc = f'Room: {room.key} — {room.title or "Untitled"}'
+    if room.gm_notes:
+        room_desc += f'\nGM notes: {room.gm_notes}'
+
+    messages = [{'role': 'user', 'content': f'Generate loot for this room:\n\n{room_desc}'}]
+
+    try:
+        provider = get_feature_provider('generate')
+        response = ai_chat(system_prompt, messages, max_tokens=400, json_mode=True, provider=provider)
+        result = _parse_ai_json(response)
+        if result is None or 'loot' not in result:
+            return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
+
+        created = []
+        for loot_data in result['loot']:
+            loot = RoomLoot(
+                room_id=room.id,
+                name=loot_data.get('name', 'Unknown'),
+                description=loot_data.get('description', ''),
+            )
+            db.session.add(loot)
+            db.session.flush()
+            created.append({'id': loot.id, 'name': loot.name, 'description': loot.description})
+
+        db.session.commit()
+        return jsonify({'loot': created, 'count': len(created)})
+
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+@ai_bp.route('/brainstorm-adventure', methods=['POST'])
+@login_required
+def brainstorm_adventure():
+    """Generate brainstorming ideas for an adventure's planning notes.
+
+    Expects JSON: { adventure_id }
+    Returns JSON: { text } — Markdown text to append to planning_notes.
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI provider not configured'}), 403
+
+    data = request.get_json() or {}
+    adventure_id = data.get('adventure_id')
+    if not adventure_id:
+        return jsonify({'error': 'adventure_id required'}), 400
+
+    adventure = Adventure.query.get_or_404(adventure_id)
+    adventure_ctx = _get_adventure_context(adventure)
+    existing_notes = adventure.planning_notes or ''
+
+    system_prompt = f"""You are a creative tabletop RPG adventure designer helping a GM brainstorm.
+Generate useful planning ideas for their adventure.
+
+Adventure: {adventure.name}
+{adventure_ctx}
+
+{f'Existing planning notes (for context, do not repeat):{chr(10)}{existing_notes[:500]}' if existing_notes else ''}
+
+Generate a focused brainstorm block covering:
+- 2-3 plot complications or twists
+- 1-2 NPC motivations or secrets worth developing
+- 1-2 potential player choice points or moral dilemmas
+- Any interesting thematic elements worth exploring
+
+Format as clear Markdown with bold headers and bullet points.
+Keep it concise and directly useful at the game table."""
+
+    messages = [{'role': 'user', 'content': 'Generate brainstorming ideas for this adventure.'}]
+
+    try:
+        provider = get_feature_provider('generate')
+        response = ai_chat(system_prompt, messages, max_tokens=800, provider=provider)
+        if not response:
+            return jsonify({'error': 'AI returned empty response.'}), 500
+        return jsonify({'text': response.strip()})
+
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500

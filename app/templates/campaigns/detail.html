@@ -5,7 +5,7 @@
 <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
         <h2>{{ campaign.name }}</h2>
-        <p class="text-muted">
+        <p class="text-muted mb-0">
             {{ campaign.system or 'No system set' }} &mdash;
             <span class="badge bg-secondary">{{ campaign.status }}</span>
         </p>
@@ -28,106 +28,142 @@
 </div>
 
 {% if campaign.description %}
-<p class="mb-4">{{ campaign.description }}</p>
+<p class="mb-4 text-muted">{{ campaign.description }}</p>
 {% endif %}
 
-<hr class="border-secondary mb-4">
-
-<!-- Campaign Stats Summary -->
+<!-- Stats bar -->
 <div class="card bg-dark border-secondary mb-4">
     <div class="card-body py-3">
         <div class="row text-center g-3">
             <div class="col-4 col-md-2">
-                <div class="fs-3 fw-bold text-light">{{ stats.sessions }}</div>
-                <div class="text-muted small">Sessions</div>
+                <a href="{{ url_for('sessions.list_sessions') }}" class="text-decoration-none">
+                    <div class="fs-3 fw-bold text-light">{{ stats.sessions }}</div>
+                    <div class="text-muted small">Sessions</div>
+                </a>
             </div>
             <div class="col-4 col-md-2">
-                <div class="fs-3 fw-bold text-light">{{ stats.npcs }}</div>
-                <div class="text-muted small">NPCs</div>
+                <a href="{{ url_for('npcs.list_npcs') }}" class="text-decoration-none">
+                    <div class="fs-3 fw-bold text-light">{{ stats.npcs }}</div>
+                    <div class="text-muted small">NPCs</div>
+                </a>
             </div>
             <div class="col-4 col-md-2">
-                <div class="fs-3 fw-bold text-light">{{ stats.locations }}</div>
-                <div class="text-muted small">Locations</div>
+                <a href="{{ url_for('locations.list_locations') }}" class="text-decoration-none">
+                    <div class="fs-3 fw-bold text-light">{{ stats.locations }}</div>
+                    <div class="text-muted small">Locations</div>
+                </a>
             </div>
             <div class="col-4 col-md-2">
-                <div class="fs-3 fw-bold text-light">{{ stats.quests_active }}<span class="fs-6 text-muted">/{{ stats.quests_total }}</span></div>
-                <div class="text-muted small">Active Quests</div>
+                <a href="{{ url_for('quests.list_quests') }}" class="text-decoration-none">
+                    <div class="fs-3 fw-bold text-light">{{ stats.quests_active }}<span class="fs-6 text-muted">/{{ stats.quests_total }}</span></div>
+                    <div class="text-muted small">Active Quests</div>
+                </a>
             </div>
             <div class="col-4 col-md-2">
-                <div class="fs-3 fw-bold text-light">{{ stats.item_count }}</div>
-                <div class="text-muted small">Items</div>
+                <a href="{{ url_for('items.list_items') }}" class="text-decoration-none">
+                    <div class="fs-3 fw-bold text-light">{{ stats.item_count }}</div>
+                    <div class="text-muted small">Items</div>
+                </a>
             </div>
             <div class="col-4 col-md-2">
-                <div class="fs-3 fw-bold text-light">{{ stats.sites_completed }}<span class="fs-6 text-muted">/{{ stats.sites_total }}</span></div>
-                <div class="text-muted small">Sites Done</div>
+                <a href="{{ url_for('adventures.list_adventures') }}" class="text-decoration-none">
+                    <div class="fs-3 fw-bold text-light">{{ stats.adventures_active }}<span class="fs-6 text-muted">/{{ stats.adventures_total }}</span></div>
+                    <div class="text-muted small">Adventures</div>
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Entity summary grid -->
-<div class="row g-3">
-
-    <!-- Story Arcs — full width row at top -->
-    <div class="col-12">
-        <div class="card bg-dark border-secondary">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-map-fill me-2"></i>Story Arcs</span>
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('adventure_sites.create_site') }}" class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-plus-circle"></i> New
-                    </a>
-                    <a href="{{ url_for('adventure_sites.list_sites') }}" class="btn btn-sm btn-outline-secondary">View All</a>
-                </div>
-            </div>
-            <div class="card-body">
-                {% if campaign.adventure_sites %}
-                <div class="row g-2">
-                    {% for site in campaign.adventure_sites | sort(attribute='sort_order') %}
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-start gap-2">
-                            <span class="status-badge mt-1 flex-shrink-0" data-status="{{ site.status }}">{{ site.status }}</span>
-                            <div>
-                                <a href="{{ url_for('adventure_sites.site_detail', site_id=site.id) }}" class="fw-semibold text-decoration-none">{{ site.name }}</a>
-                                {% if site.subtitle %}
-                                <br><span class="text-muted small fst-italic">{{ site.subtitle }}</span>
-                                {% endif %}
-                                {% if site.sessions %}
-                                <br><span class="text-muted small"><i class="bi bi-play-circle"></i> {{ site.sessions | length }} session{{ 's' if site.sessions | length != 1 }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted mb-0 small">No adventure sites yet.
-                    <a href="{{ url_for('adventure_sites.create_site') }}">Create your first one.</a>
-                </p>
-                {% endif %}
-            </div>
+<!-- Adventures — full-width top section -->
+<div class="card bg-dark border-warning mb-4">
+    <div class="card-header border-warning d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-book me-2 text-warning"></i>Adventures</span>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('adventures.create') }}" class="btn btn-sm btn-outline-warning">
+                <i class="bi bi-stars me-1"></i>New Adventure
+            </a>
+            <a href="{{ url_for('adventures.list_adventures') }}" class="btn btn-sm btn-outline-secondary">View All</a>
         </div>
     </div>
+    <div class="card-body">
+        {% if adventures %}
+        <div class="row g-3">
+            {% for adv in adventures %}
+            <div class="col-md-4">
+                <div class="card bg-dark border-secondary h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <a href="{{ url_for('adventures.detail', adventure_id=adv.id) }}"
+                               class="fw-semibold text-decoration-none text-light">{{ adv.name }}</a>
+                            <span class="badge ms-2 flex-shrink-0
+                                {% if adv.status == 'Active' %}bg-success
+                                {% elif adv.status == 'Complete' %}bg-secondary
+                                {% elif adv.status == 'Ready' %}bg-info text-dark
+                                {% else %}bg-dark border border-secondary{% endif %}">
+                                {{ adv.status or 'Draft' }}
+                            </span>
+                        </div>
+                        {% if adv.tagline %}
+                        <div class="text-muted small fst-italic mb-2">{{ adv.tagline }}</div>
+                        {% endif %}
+                        <div class="d-flex gap-3 small text-muted">
+                            {% set room_count = namespace(total=0) %}
+                            {% for act in adv.acts %}{% for scene in act.scenes %}{% set room_count.total = room_count.total + scene.rooms|length %}{% endfor %}{% endfor %}
+                            {% if adv.acts %}<span><i class="bi bi-layers me-1"></i>{{ adv.acts|length }} act{{ 's' if adv.acts|length != 1 }}</span>{% endif %}
+                            {% if room_count.total %}<span><i class="bi bi-door-open me-1"></i>{{ room_count.total }} room{{ 's' if room_count.total != 1 }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer border-secondary py-1 px-3 d-flex gap-2">
+                        <a href="{{ url_for('adventures.run', adventure_id=adv.id) }}"
+                           class="btn btn-sm btn-outline-warning py-0">
+                            <i class="bi bi-play-circle me-1"></i>Run
+                        </a>
+                        <a href="{{ url_for('adventures.detail', adventure_id=adv.id) }}"
+                           class="btn btn-sm btn-outline-secondary py-0">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-3 text-muted">
+            <i class="bi bi-book display-6 d-block mb-2"></i>
+            No adventures yet.
+            <a href="{{ url_for('adventures.create') }}" class="text-warning ms-1">Create your first one →</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
+<!-- Entity grid -->
+<div class="row g-3 mb-4">
+
+    <!-- NPCs -->
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>NPCs</span>
-                <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <span><i class="bi bi-person me-1"></i>NPCs</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('npcs.create_npc') }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-plus"></i></a>
+                    <a href="{{ url_for('npcs.list_npcs') }}" class="btn btn-sm btn-outline-secondary py-0">All</a>
+                </div>
             </div>
             <div class="card-body">
                 {% if campaign.npcs %}
-                <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Filter NPCs">
+                <div class="btn-group btn-group-sm mb-2">
                     <button class="btn btn-outline-secondary active" onclick="filterList('npc-list', 'all', this)">All</button>
                     <button class="btn btn-outline-secondary" onclick="filterList('npc-list', 'alive', this)">Alive</button>
                     <button class="btn btn-outline-secondary" onclick="filterList('npc-list', 'dead', this)">Dead</button>
-                    <button class="btn btn-outline-secondary" onclick="filterList('npc-list', 'missing', this)">Missing</button>
                 </div>
                 <ul class="list-unstyled mb-0" id="npc-list">
                     {% for npc in campaign.npcs %}
-                    <li class="mb-1 npc-item" data-status="{{ npc.status }}" {% if loop.index > 8 %}data-overflow="true" style="display:none;"{% endif %}>
+                    <li class="mb-1 npc-item" data-status="{{ npc.status }}"
+                        {% if loop.index > 8 %}data-overflow="true" style="display:none;"{% endif %}>
                         <a href="{{ url_for('npcs.npc_detail', npc_id=npc.id) }}">{{ npc.name }}</a>
-                        <span class="text-muted small">{{ '— ' + npc.role if npc.role }}</span>
+                        {% if npc.role %}<span class="text-muted small">— {{ npc.role }}</span>{% endif %}
                     </li>
                     {% endfor %}
                     {% if campaign.npcs|length > 8 %}
@@ -135,53 +171,63 @@
                     {% endif %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-0 small">None yet.</p>
+                <p class="text-muted small mb-0">None yet. <a href="{{ url_for('npcs.create_npc') }}">Add one</a></p>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Locations -->
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Locations</span>
-                <a href="{{ url_for('locations.list_locations') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <span><i class="bi bi-geo-alt me-1"></i>Locations</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('locations.create_location') }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-plus"></i></a>
+                    <a href="{{ url_for('locations.list_locations') }}" class="btn btn-sm btn-outline-secondary py-0">All</a>
+                </div>
             </div>
             <div class="card-body">
                 {% if campaign.locations %}
                 <ul class="list-unstyled mb-0">
                     {% for loc in campaign.locations[:8] %}
-                    <li class="mb-1"><a href="{{ url_for('locations.location_detail', location_id=loc.id) }}">{{ loc.name }}</a>
-                        <span class="text-muted small">{{ '— ' + loc.type if loc.type }}</span></li>
+                    <li class="mb-1">
+                        <a href="{{ url_for('locations.location_detail', location_id=loc.id) }}">{{ loc.name }}</a>
+                        {% if loc.type %}<span class="text-muted small">— {{ loc.type }}</span>{% endif %}
+                    </li>
                     {% endfor %}
                     {% if campaign.locations|length > 8 %}
                     <li class="text-muted small mt-1">…and {{ campaign.locations|length - 8 }} more</li>
                     {% endif %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-0 small">None yet.</p>
+                <p class="text-muted small mb-0">None yet. <a href="{{ url_for('locations.create_location') }}">Add one</a></p>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Quests -->
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Quests</span>
-                <a href="{{ url_for('quests.list_quests') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <span><i class="bi bi-flag me-1"></i>Quests</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('quests.create_quest') }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-plus"></i></a>
+                    <a href="{{ url_for('quests.list_quests') }}" class="btn btn-sm btn-outline-secondary py-0">All</a>
+                </div>
             </div>
             <div class="card-body">
                 {% if campaign.quests %}
-                <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Filter Quests">
+                <div class="btn-group btn-group-sm mb-2">
                     <button class="btn btn-outline-secondary active" onclick="filterList('quest-list', 'all', this)">All</button>
                     <button class="btn btn-outline-secondary" onclick="filterList('quest-list', 'active', this)">Active</button>
                     <button class="btn btn-outline-secondary" onclick="filterList('quest-list', 'completed', this)">Done</button>
-                    <button class="btn btn-outline-secondary" onclick="filterList('quest-list', 'failed', this)">Failed</button>
                 </div>
                 <ul class="list-unstyled mb-0" id="quest-list">
                     {% for quest in campaign.quests %}
-                    <li class="mb-1 quest-item" data-status="{{ quest.status }}" {% if loop.index > 8 %}data-overflow="true" style="display:none;"{% endif %}>
+                    <li class="mb-1 quest-item" data-status="{{ quest.status }}"
+                        {% if loop.index > 8 %}data-overflow="true" style="display:none;"{% endif %}>
                         <a href="{{ url_for('quests.quest_detail', quest_id=quest.id) }}">{{ quest.name }}</a>
                         <span class="text-muted small">— {{ quest.status | replace('_', ' ') }}</span>
                     </li>
@@ -191,72 +237,89 @@
                     {% endif %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-0 small">None yet.</p>
+                <p class="text-muted small mb-0">None yet. <a href="{{ url_for('quests.create_quest') }}">Add one</a></p>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Recent Sessions -->
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Sessions</span>
-                <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <span><i class="bi bi-calendar-event me-1"></i>Recent Sessions</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('sessions.create_session') }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-plus"></i></a>
+                    <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-sm btn-outline-secondary py-0">All</a>
+                </div>
             </div>
             <div class="card-body">
-                {% if campaign.sessions %}
+                {% if recent_sessions %}
                 <ul class="list-unstyled mb-0">
-                    {% set sorted_sessions = campaign.sessions | sort(attribute='number', reverse=True) %}
-                    {% for sess in sorted_sessions[:8] %}
-                    <li class="mb-1"><a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}">
-                        {% if sess.number %}#{{ sess.number }} {% endif %}{{ sess.title or 'Untitled' }}</a></li>
+                    {% for sess in recent_sessions %}
+                    <li class="mb-1">
+                        <a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}">
+                            {% if sess.number %}#{{ sess.number }} {% endif %}{{ sess.title or 'Untitled' }}
+                        </a>
+                        {% if sess.adventure %}
+                        <span class="text-warning small ms-1"><i class="bi bi-book"></i> {{ sess.adventure.name | truncate(20) }}</span>
+                        {% endif %}
+                    </li>
                     {% endfor %}
-                    {% if campaign.sessions|length > 8 %}
-                    <li class="text-muted small mt-1">…and {{ campaign.sessions|length - 8 }} more</li>
-                    {% endif %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-0 small">None yet.</p>
+                <p class="text-muted small mb-0">No sessions yet. <a href="{{ url_for('sessions.create_session') }}">Start one</a></p>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Items -->
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Items</span>
-                <a href="{{ url_for('items.list_items') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <span><i class="bi bi-backpack me-1"></i>Items</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('items.create_item') }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-plus"></i></a>
+                    <a href="{{ url_for('items.list_items') }}" class="btn btn-sm btn-outline-secondary py-0">All</a>
+                </div>
             </div>
             <div class="card-body">
                 {% if campaign.items %}
                 <ul class="list-unstyled mb-0">
                     {% for item in campaign.items[:8] %}
-                    <li class="mb-1"><a href="{{ url_for('items.item_detail', item_id=item.id) }}">{{ item.name }}</a>
-                        <span class="text-muted small">{{ '— ' + item.type if item.type }}</span></li>
+                    <li class="mb-1">
+                        <a href="{{ url_for('items.item_detail', item_id=item.id) }}">{{ item.name }}</a>
+                        {% if item.type %}<span class="text-muted small">— {{ item.type }}</span>{% endif %}
+                    </li>
                     {% endfor %}
                     {% if campaign.items|length > 8 %}
                     <li class="text-muted small mt-1">…and {{ campaign.items|length - 8 }} more</li>
                     {% endif %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-0 small">None yet.</p>
+                <p class="text-muted small mb-0">None yet. <a href="{{ url_for('items.create_item') }}">Add one</a></p>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Compendium -->
     <div class="col-md-4">
         <div class="card bg-dark border-secondary h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Compendium</span>
-                <a href="{{ url_for('compendium.list_compendium') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <span><i class="bi bi-journal-text me-1"></i>Compendium</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ url_for('compendium.create_entry') }}" class="btn btn-sm btn-outline-success py-0"><i class="bi bi-plus"></i></a>
+                    <a href="{{ url_for('compendium.list_compendium') }}" class="btn btn-sm btn-outline-secondary py-0">All</a>
+                </div>
             </div>
             <div class="card-body">
                 {% if campaign.compendium_entries %}
                 <ul class="list-unstyled mb-0">
                     {% for entry in campaign.compendium_entries[:8] %}
-                    <li class="mb-1"><a href="{{ url_for('compendium.entry_detail', entry_id=entry.id) }}">{{ entry.title }}</a>
+                    <li class="mb-1">
+                        <a href="{{ url_for('compendium.entry_detail', entry_id=entry.id) }}">{{ entry.title }}</a>
                         {% if entry.is_gm_only %}<span class="badge bg-warning text-dark ms-1 small">GM</span>{% endif %}
                     </li>
                     {% endfor %}
@@ -265,7 +328,7 @@
                     {% endif %}
                 </ul>
                 {% else %}
-                <p class="text-muted mb-0 small">None yet.</p>
+                <p class="text-muted small mb-0">None yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -273,19 +336,19 @@
 
 </div>
 
-<hr class="border-secondary mt-4 mb-3">
+<hr class="border-secondary mb-4">
 
 <!-- AI Tools -->
 {% if ai_enabled %}
 <div class="d-flex gap-3 flex-wrap align-items-start">
 
-    <!-- Campaign Assistant CTA -->
-    <div class="card bg-dark border-secondary" style="max-width: 500px;">
+    <!-- Campaign Assistant -->
+    <div class="card bg-dark border-secondary" style="max-width: 460px;">
         <div class="card-body d-flex align-items-center gap-3">
             <i class="bi bi-robot text-success" style="font-size: 2rem; flex-shrink: 0;"></i>
             <div>
                 <p class="mb-1 fw-semibold">Campaign Assistant</p>
-                <p class="text-muted small mb-2">Use AI to brainstorm ideas, create NPCs, locations, quests, and more.</p>
+                <p class="text-muted small mb-2">Brainstorm ideas, create entities, ask questions about your world.</p>
                 <a href="{{ url_for('campaign_assistant.chat') }}" class="btn btn-sm btn-success">
                     <i class="bi bi-robot me-1"></i>Open Assistant
                 </a>
@@ -293,15 +356,15 @@
         </div>
     </div>
 
-    <!-- Brainstorm Arcs -->
-    <div class="card bg-dark border-secondary" style="max-width: 500px;">
+    <!-- Brainstorm Adventures -->
+    <div class="card bg-dark border-secondary" style="max-width: 460px;">
         <div class="card-body d-flex align-items-center gap-3">
-            <i class="bi bi-lightning-charge text-warning" style="font-size: 2rem; flex-shrink: 0;"></i>
+            <i class="bi bi-book text-warning" style="font-size: 2rem; flex-shrink: 0;"></i>
             <div>
-                <p class="mb-1 fw-semibold">Brainstorm Story Arcs</p>
-                <p class="text-muted small mb-2">Generate 3-5 story arc ideas based on your campaign's NPCs, factions, and world.</p>
-                <button type="button" class="btn btn-sm btn-warning" id="brainstorm-btn" onclick="brainstormArcs()">
-                    <i class="bi bi-lightning-charge me-1"></i>Brainstorm
+                <p class="mb-1 fw-semibold">Brainstorm Adventures</p>
+                <p class="text-muted small mb-2">Generate adventure concepts based on your campaign's world and factions.</p>
+                <button type="button" class="btn btn-sm btn-warning" id="brainstorm-btn" onclick="brainstormAdventures()">
+                    <i class="bi bi-stars me-1"></i>Brainstorm
                 </button>
             </div>
         </div>
@@ -312,7 +375,7 @@
 <!-- Brainstorm results -->
 <div id="brainstorm-results" class="mt-3" style="display: none;">
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0"><i class="bi bi-lightning-charge text-warning"></i> Story Arc Ideas</h5>
+        <h5 class="mb-0"><i class="bi bi-stars text-warning me-2"></i>Adventure Ideas</h5>
         <button type="button" class="btn btn-sm btn-outline-secondary"
                 onclick="document.getElementById('brainstorm-results').style.display='none'">
             <i class="bi bi-x"></i> Dismiss
@@ -322,50 +385,46 @@
 </div>
 
 <script>
-function brainstormArcs() {
-    var btn     = document.getElementById('brainstorm-btn');
-    var results = document.getElementById('brainstorm-results');
-    var cards   = document.getElementById('brainstorm-cards');
+function brainstormAdventures() {
+    const btn     = document.getElementById('brainstorm-btn');
+    const results = document.getElementById('brainstorm-results');
+    const cards   = document.getElementById('brainstorm-cards');
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating... (10-15s)';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating…';
 
     fetch('/api/ai/brainstorm-arcs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
+    .then(r => r.json())
+    .then(data => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-lightning-charge me-1"></i>Brainstorm';
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Brainstorm';
         if (data.error) { alert('Error: ' + data.error); return; }
-        var arcs = data.arcs || [];
-        if (arcs.length === 0) { alert('No arcs generated. Try again.'); return; }
+        const arcs = data.arcs || [];
+        if (!arcs.length) { alert('No ideas generated. Try again.'); return; }
         cards.innerHTML = '';
-        arcs.forEach(function(arc) {
-            var col = document.createElement('div');
-            col.className = 'col-md-6';
-
-            // Compose seed paragraph for the genesis wizard
-            var seedParts = [];
+        arcs.forEach(arc => {
+            const seedParts = [];
             if (arc.title)    seedParts.push(arc.title + ':');
             if (arc.hook)     seedParts.push(arc.hook);
             if (arc.stakes)   seedParts.push('Stakes: ' + arc.stakes);
             if (arc.key_npcs) seedParts.push('Key NPCs: ' + arc.key_npcs);
-            var wizardUrl = '{{ url_for("adventure_sites.genesis_wizard") }}?seed=' + encodeURIComponent(seedParts.join(' '));
-
+            const createUrl = '{{ url_for("adventures.create") }}?seed=' + encodeURIComponent(seedParts.join(' '));
+            const col = document.createElement('div');
+            col.className = 'col-md-6';
             col.innerHTML =
                 '<div class="card bg-dark border-secondary h-100 d-flex flex-column">' +
                     '<div class="card-body flex-grow-1">' +
                         '<h6 class="card-title text-warning">' + escHtml(arc.title) + '</h6>' +
                         '<p class="small mb-1"><strong>Hook:</strong> ' + escHtml(arc.hook) + '</p>' +
                         '<p class="small mb-1"><strong>Stakes:</strong> ' + escHtml(arc.stakes) + '</p>' +
-                        '<p class="small mb-1 text-muted"><strong>Key NPCs:</strong> ' + escHtml(arc.key_npcs) + '</p>' +
-                        '<p class="small mb-0 text-muted"><strong>Est. sessions:</strong> ' + escHtml(arc.estimated_sessions) + '</p>' +
+                        (arc.key_npcs ? '<p class="small mb-0 text-muted"><strong>Key NPCs:</strong> ' + escHtml(arc.key_npcs) + '</p>' : '') +
                     '</div>' +
-                    '<div class="card-footer">' +
-                        '<a href="' + wizardUrl + '" class="btn btn-sm btn-warning">' +
-                            '<i class="bi bi-stars me-1"></i>Build with AI \u2192' +
+                    '<div class="card-footer border-secondary">' +
+                        '<a href="' + createUrl + '" class="btn btn-sm btn-warning">' +
+                            '<i class="bi bi-stars me-1"></i>Build Adventure →' +
                         '</a>' +
                     '</div>' +
                 '</div>';
@@ -373,23 +432,23 @@ function brainstormArcs() {
         });
         results.style.display = 'block';
     })
-    .catch(function() {
+    .catch(() => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-lightning-charge me-1"></i>Brainstorm';
-        alert('Failed to generate arcs. Check your AI provider settings.');
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Brainstorm';
+        alert('Failed to generate ideas. Check your AI provider settings.');
     });
 }
 
 function escHtml(s) {
     if (!s) return '';
-    var div = document.createElement('div');
+    const div = document.createElement('div');
     div.textContent = s;
     return div.innerHTML;
 }
 </script>
 
 {% else %}
-<div class="card bg-dark border-secondary" style="max-width: 500px;">
+<div class="card bg-dark border-secondary" style="max-width: 460px;">
     <div class="card-body d-flex align-items-center gap-3">
         <i class="bi bi-robot text-secondary" style="font-size: 2rem; flex-shrink: 0;"></i>
         <div>
@@ -406,27 +465,16 @@ function escHtml(s) {
 <script>
 function filterList(listId, status, btn) {
     const isAll = (status === 'all');
-    const items = document.querySelectorAll('#' + listId + ' li[data-status]');
-    const overflowNote = document.getElementById(listId.replace('-list', '-overflow-note'));
-
-    items.forEach(function(li) {
+    document.querySelectorAll('#' + listId + ' li[data-status]').forEach(li => {
         if (isAll) {
-            // Restore 8-item limit for "All" view
             li.style.display = li.dataset.overflow ? 'none' : '';
         } else {
             li.style.display = (li.dataset.status === status) ? '' : 'none';
         }
     });
-
-    // Hide overflow note when filtering (showing everything matching)
-    if (overflowNote) {
-        overflowNote.style.display = isAll ? '' : 'none';
-    }
-
-    // Update active button within this group
-    btn.closest('.btn-group').querySelectorAll('.btn').forEach(function(b) {
-        b.classList.remove('active');
-    });
+    const overflowNote = document.getElementById(listId.replace('-list', '-overflow-note'));
+    if (overflowNote) overflowNote.style.display = isAll ? '' : 'none';
+    btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 }
 </script>

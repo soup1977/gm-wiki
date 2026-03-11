@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ adventure.name }} — The War Table{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><a href="{{ url_for('adventures.list_adventures') }}">Adventures</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('adventures.detail', adventure_id=adventure.id) }}">{{ adventure.name }}</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+<h2 class="mb-4">Edit Adventure</h2>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Name</label>
+        <input type="text" name="name" class="form-control bg-dark text-light border-secondary"
+               value="{{ adventure.name }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold">Tagline</label>
+        <input type="text" name="tagline" class="form-control bg-dark text-light border-secondary"
+               value="{{ adventure.tagline or '' }}" placeholder="One evocative sentence">
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold">Synopsis</label>
+        <textarea name="synopsis" class="form-control bg-dark text-light border-secondary" rows="3">{{ adventure.synopsis or '' }}</textarea>
+    </div>
+    <div class="row g-2 mb-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Hook</label>
+            <textarea name="hook" class="form-control bg-dark text-light border-secondary" rows="2">{{ adventure.hook or '' }}</textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Premise</label>
+            <textarea name="premise" class="form-control bg-dark text-light border-secondary" rows="2">{{ adventure.premise or '' }}</textarea>
+        </div>
+    </div>
+    <div class="row g-2 mb-4">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">System</label>
+            <select name="system_hint" class="form-select bg-dark text-light border-secondary">
+                <option value="icrpg" {% if adventure.system_hint == 'icrpg' %}selected{% endif %}>ICRPG</option>
+                <option value="d20" {% if adventure.system_hint == 'd20' %}selected{% endif %}>D&D 5e / d20</option>
+                <option value="generic" {% if adventure.system_hint == 'generic' %}selected{% endif %}>Generic</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Status</label>
+            <select name="status" class="form-select bg-dark text-light border-secondary">
+                {% for s in ['Draft', 'Ready', 'Active', 'Complete'] %}
+                <option value="{{ s }}" {% if adventure.status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">Save Changes</button>
+        <a href="{{ url_for('adventures.detail', adventure_id=adventure.id) }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+</div>
+</div>
+{% endblock %}

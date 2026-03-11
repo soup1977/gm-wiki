@@ -2,7 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required
 from app import db, save_upload
-from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags, Faction, ActivityLog
+from app.models import Location, NPC, Item, Tag, location_tags, get_or_create_tags, Faction, ActivityLog, Adventure
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target
 
 locations_bp = Blueprint('locations', __name__, url_prefix='/locations')
@@ -85,6 +85,8 @@ def create_location():
             faction_id=faction_id
         )
         db.session.add(location)
+        adv_id = request.form.get('adventure_id')
+        location.adventure_id = int(adv_id) if adv_id else None
 
         connected_ids = [int(i) for i in request.form.getlist('connected_location_ids')]
         location.connected_locations = Location.query.filter(Location.id.in_(connected_ids)).all()
@@ -118,7 +120,8 @@ def create_location():
     # Get all locations in this campaign for the parent dropdown
     locations = Location.query.filter_by(campaign_id=campaign_id).order_by(Location.name).all()
     factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
-    return render_template('locations/form.html', location=None, locations=locations, factions=factions)
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
+    return render_template('locations/form.html', location=None, locations=locations, factions=factions, adventures=adventures)
 
 
 @locations_bp.route('/<int:location_id>')
@@ -199,6 +202,8 @@ def edit_location(location_id):
             location.map_filename = filename
 
         location.is_player_visible = 'is_player_visible' in request.form
+        adv_id = request.form.get('adventure_id')
+        location.adventure_id = int(adv_id) if adv_id else None
 
         clear_mentions('loc', location.id)
         for field in _LOC_TEXT_FIELDS:
@@ -221,7 +226,8 @@ def edit_location(location_id):
         Location.id != location.id
     ).order_by(Location.name).all()
     factions = Faction.query.filter_by(campaign_id=campaign_id).order_by(Faction.name).all()
-    return render_template('locations/form.html', location=location, locations=locations, factions=factions)
+    adventures = Adventure.query.filter_by(campaign_id=campaign_id).order_by(Adventure.name).all()
+    return render_template('locations/form.html', location=location, locations=locations, factions=factions, adventures=adventures)
 
 
 @locations_bp.route('/<int:location_id>/delete', methods=['POST'])

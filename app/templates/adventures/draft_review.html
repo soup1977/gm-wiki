@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Review Draft — The War Table{% endblock %}
+
+{% block styles %}
+<style>
+.act-header { background: rgba(255,193,7,0.1); border-left: 3px solid var(--bs-warning); }
+.scene-header { background: rgba(13,202,240,0.08); border-left: 3px solid var(--bs-info); padding-left: 1rem; }
+.room-card { border-left: 3px solid var(--bs-secondary); }
+.room-card:hover { border-left-color: var(--bs-warning); }
+.room-card.editing { border-left-color: var(--bs-warning); }
+.read-aloud-preview { font-style: italic; color: var(--bs-info); }
+.creature-badge { font-size: 0.75rem; }
+.room-key { font-family: monospace; font-weight: bold; font-size: 1.1em; color: var(--bs-warning); }
+#edit-panel { position: sticky; top: 1rem; }
+.gm-notes-preview { font-size: 0.85rem; white-space: pre-line; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="no-draft" class="text-center text-muted py-5" style="display:none;">
+    <i class="bi bi-exclamation-triangle display-4 d-block mb-3"></i>
+    <h5>No draft found</h5>
+    <p>Go back and generate an adventure first.</p>
+    <a href="{{ url_for('adventures.create') }}" class="btn btn-warning">
+        <i class="bi bi-arrow-left me-2"></i>Back to Create
+    </a>
+</div>
+
+<div id="draft-content" style="display:none;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2 class="mb-0" id="preview-title">Adventure Draft</h2>
+            <p class="text-muted small fst-italic mb-0" id="preview-tagline"></p>
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0 ms-3">
+            <button class="btn btn-success" id="save-btn" onclick="saveDraft()">
+                <i class="bi bi-floppy me-1"></i>Save Adventure
+            </button>
+            <a href="{{ url_for('adventures.create') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Regenerate
+            </a>
+        </div>
+    </div>
+    <div id="save-spinner" class="alert alert-info d-none">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        Saving your adventure...
+    </div>
+
+    <div class="row">
+        <!-- LEFT: Adventure tree -->
+        <div class="col-lg-7 col-xl-8">
+
+            <!-- Synopsis card -->
+            <div class="card border-secondary bg-dark mb-3">
+                <div class="card-body py-2">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <div class="text-muted small text-uppercase fw-bold mb-1">Hook</div>
+                            <div class="small" id="preview-hook"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small text-uppercase fw-bold mb-1">Premise</div>
+                            <div class="small" id="preview-premise"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small text-uppercase fw-bold mb-1">System</div>
+                            <div class="small" id="preview-system"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acts tree -->
+            <div id="acts-container"></div>
+
+            <!-- Key NPCs & Factions -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card border-secondary bg-dark h-100">
+                        <div class="card-header border-secondary py-2">
+                            <small class="text-muted fw-bold text-uppercase">Key NPCs</small>
+                        </div>
+                        <div class="card-body py-2" id="npcs-list"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-secondary bg-dark h-100">
+                        <div class="card-header border-secondary py-2">
+                            <small class="text-muted fw-bold text-uppercase">Factions</small>
+                        </div>
+                        <div class="card-body py-2" id="factions-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Edit panel -->
+        <div class="col-lg-5 col-xl-4">
+            <div id="edit-panel">
+                <div class="card border-warning bg-dark" id="room-editor" style="display:none;">
+                    <div class="card-header border-warning d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold"><i class="bi bi-pencil me-2"></i>Editing Room</span>
+                        <button type="button" class="btn-close btn-close-white btn-sm" onclick="closeEditor()"></button>
+                    </div>
+                    <div class="card-body" style="max-height: 75vh; overflow-y: auto;">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Room Key</label>
+                            <input type="text" id="edit-key" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   placeholder="A1">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Title</label>
+                            <input type="text" id="edit-title" class="form-control form-control-sm bg-dark text-light border-secondary">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1 text-info">Read Aloud <span class="text-muted fw-normal">(shown to players)</span></label>
+                            <textarea id="edit-read-aloud" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                      rows="3" placeholder="2-3 vivid sentences, present tense..."></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">GM Notes <span class="text-muted fw-normal">(bullet points)</span></label>
+                            <textarea id="edit-gm-notes" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                      rows="4" placeholder="- Note one&#10;- Note two&#10;- Secret or connection..."></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Creatures</label>
+                            <div id="edit-creatures"></div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addCreature()">
+                                <i class="bi bi-plus"></i> Add Creature
+                            </button>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Loot</label>
+                            <div id="edit-loot"></div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addLoot()">
+                                <i class="bi bi-plus"></i> Add Loot
+                            </button>
+                        </div>
+                        <div class="d-grid mt-3">
+                            <button type="button" class="btn btn-warning btn-sm" onclick="applyEdit()">
+                                <i class="bi bi-check2 me-1"></i>Apply Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="edit-hint" class="text-center text-muted py-5">
+                    <i class="bi bi-hand-index display-6 d-block mb-2"></i>
+                    <div class="small">Click any room to edit it</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/adventure_builder.js') }}"></script>
+{% endblock %}

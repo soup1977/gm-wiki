@@ -25,21 +25,21 @@
             data-bs-toggle="modal" data-bs-target="#aiGenerateModal">
         <i class="bi bi-magic"></i> Generate Entry
     </button>
-    {% if item and item.story_arc %}
+    {% if item and item.adventure %}
     <span class="badge bg-warning text-dark ms-1">
         <i class="bi bi-map-fill me-1"></i>
-        <a href="{{ url_for('adventure_sites.site_detail', site_id=item.story_arc.id) }}"
-           class="text-dark text-decoration-none">{{ item.story_arc.name }}</a>
+        <a href="{{ url_for('adventures.detail', adventure_id=item.adventure.id) }}"
+           class="text-dark text-decoration-none">{{ item.adventure.name }}</a>
     </span>
     {% endif %}
     {% endif %}
 </div>
-{% if item and item.story_arc %}
+{% if item and item.adventure %}
 <p class="text-muted small mb-3">
     <i class="bi bi-stars text-warning me-1"></i>
-    <strong>Arc-aware AI:</strong> Smart Fill and Generate Entry will include the
-    <a href="{{ url_for('adventure_sites.site_detail', site_id=item.story_arc.id) }}">{{ item.story_arc.name }}</a>
-    arc's premise as context, keeping generated content coherent with the story.
+    <strong>Adventure-aware AI:</strong> Smart Fill and Generate Entry will include the
+    <a href="{{ url_for('adventures.detail', adventure_id=item.adventure.id) }}">{{ item.adventure.name }}</a>
+    adventure's premise as context.
 </p>
 {% endif %}
 
@@ -187,6 +187,20 @@
 
     </div><!-- row -->
 
+    {% if adventures %}
+    <div class="mb-3">
+        <label class="form-label">Adventure (optional)</label>
+        <select name="adventure_id" class="form-select bg-dark text-light border-secondary">
+            <option value="">— None —</option>
+            {% for adv in adventures %}
+            <option value="{{ adv.id }}" {% if item and item.adventure_id == adv.id %}selected{% endif %}>
+                {{ adv.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
     <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-circle"></i> {% if item %}Save Changes{% else %}Create Item{% endif %}
@@ -198,8 +212,8 @@
 {% if ai_enabled %}
 <script>window.SMART_FILL_ENTITY_TYPE = 'item';</script>
 <script>window.AI_GENERATE_ENTITY_TYPE = 'item';</script>
-{% if item and item.story_arc_id %}
-<script>window.AI_STORY_ARC_ID = {{ item.story_arc_id }};</script>
+{% if item and item.adventure_id %}
+<script>window.AI_STORY_ARC_ID = {{ item.adventure_id }};</script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/smart_fill.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ai_generate.js') }}"></script>

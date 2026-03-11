@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Edit Room — {{ adventure.name }}{% endblock %}
+
+{% block styles %}
+<style>
+.creature-row, .loot-row, .hazard-row { background: rgba(255,255,255,.03); border-radius: .25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><a href="{{ url_for('adventures.list_adventures') }}">Adventures</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('adventures.detail', adventure_id=adventure.id) }}">{{ adventure.name }}</a></li>
+        <li class="breadcrumb-item active">Edit Room</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">
+        <span class="text-warning me-2" style="font-family:monospace">{{ room.key or '—' }}</span>{{ room.title }}
+    </h2>
+    <form method="POST" action="{{ url_for('adventures.delete_room', room_id=room.id) }}"
+          onsubmit="return confirm('Delete this room?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash me-1"></i>Delete Room
+        </button>
+    </form>
+</div>
+
+<form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+<div class="row g-3">
+    <!-- Left column: key info + read aloud + GM notes -->
+    <div class="col-lg-7">
+        <div class="row g-2 mb-3">
+            <div class="col-3">
+                <label class="form-label fw-bold small">Room Key</label>
+                <input type="text" name="key" class="form-control bg-dark text-light border-secondary"
+                       value="{{ room.key or '' }}" placeholder="A1">
+            </div>
+            <div class="col-9">
+                <label class="form-label fw-bold small">Title</label>
+                <input type="text" name="title" class="form-control bg-dark text-light border-secondary"
+                       value="{{ room.title }}" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold small text-info">
+                Read Aloud <span class="text-muted fw-normal">(shown to players when revealed)</span>
+            </label>
+            <textarea name="read_aloud" class="form-control bg-dark text-light border-info" rows="3"
+                      placeholder="2-3 vivid sentences in present tense...">{{ room.read_aloud or '' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold small">
+                GM Notes <span class="text-muted fw-normal">(bullet points, always visible to you)</span>
+            </label>
+            <textarea name="gm_notes" class="form-control bg-dark text-light border-secondary" rows="5"
+                      placeholder="- Gate can be forced STR 15&#10;- Groaning sounds from beyond&#10;- Secret door behind the tapestry">{{ room.gm_notes or '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- Right column: creatures + loot + hazards -->
+    <div class="col-lg-5">
+
+        <!-- Creatures -->
+        <div class="card border-danger bg-dark mb-3">
+            <div class="card-header border-danger d-flex justify-content-between align-items-center py-2">
+                <span class="small fw-bold text-danger text-uppercase">Creatures</span>
+                <button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="addCreature()">
+                    <i class="bi bi-plus"></i>
+                </button>
+            </div>
+            <div class="card-body py-2" id="creatures-container">
+                {% for c in room.creatures %}
+                <div class="creature-row border border-secondary p-2 mb-2">
+                    <input type="text" name="creature_name" class="form-control form-control-sm bg-dark text-light border-secondary mb-1"
+                           placeholder="Name" value="{{ c.name }}">
+                    {% if adventure.system_hint == 'icrpg' %}
+                    <div class="row g-1 mb-1">
+                        <div class="col-5">
+                            <input type="number" name="creature_hearts" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   placeholder="Hearts" value="{{ c.hearts or 1 }}" min="1">
+                        </div>
+                        <div class="col-7">
+                            <select name="creature_effort" class="form-select form-select-sm bg-dark text-light border-secondary">
+                                {% for e in ['BASIC','WEAPON','MAGIC','ULTIMATE'] %}
+                                <option {% if c.effort_type == e %}selected{% endif %}>{{ e }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <input type="hidden" name="creature_hp" value="">
+                    <input type="hidden" name="creature_ac" value="">
+                    <input type="hidden" name="creature_cr" value="">
+                    {% else %}
+                    <div class="row g-1 mb-1">
+                        <div class="col-4"><input type="number" name="creature_hp" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="HP" value="{{ c.hp or '' }}"></div>
+                        <div class="col-4"><input type="number" name="creature_ac" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="AC" value="{{ c.ac or '' }}"></div>
+                        <div class="col-4"><input type="text" name="creature_cr" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="CR" value="{{ c.cr or '' }}"></div>
+                    </div>
+                    <input type="hidden" name="creature_hearts" value="1">
+                    <input type="hidden" name="creature_effort" value="WEAPON">
+                    {% endif %}
+                    <input type="text" name="creature_move" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           placeholder="Special move" value="{{ c.special_move or '' }}">
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1"
+                            onclick="this.closest('.creature-row').remove()">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Loot -->
+        <div class="card border-warning bg-dark mb-3">
+            <div class="card-header border-warning d-flex justify-content-between align-items-center py-2">
+                <span class="small fw-bold text-warning text-uppercase">Loot</span>
+                <button type="button" class="btn btn-sm btn-outline-warning py-0" onclick="addLoot()">
+                    <i class="bi bi-plus"></i>
+                </button>
+            </div>
+            <div class="card-body py-2" id="loot-container">
+                {% for l in room.loot %}
+                <div class="loot-row border border-secondary p-2 mb-2">
+                    <input type="text" name="loot_name" class="form-control form-control-sm bg-dark text-light border-secondary mb-1"
+                           placeholder="Name" value="{{ l.name }}">
+                    <input type="text" name="loot_desc" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           placeholder="Description" value="{{ l.description or '' }}">
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1"
+                            onclick="this.closest('.loot-row').remove()">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Hazards -->
+        <div class="card border-secondary bg-dark mb-3">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center py-2">
+                <span class="small fw-bold text-uppercase" style="color:#fd7e14">Hazards / Traps</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="addHazard()">
+                    <i class="bi bi-plus"></i>
+                </button>
+            </div>
+            <div class="card-body py-2" id="hazards-container">
+                {% for h in room.hazards %}
+                <div class="hazard-row border border-secondary p-2 mb-2">
+                    <input type="text" name="hazard_name" class="form-control form-control-sm bg-dark text-light border-secondary mb-1"
+                           placeholder="Name" value="{{ h.name }}">
+                    <input type="text" name="hazard_dc" class="form-control form-control-sm bg-dark text-light border-secondary mb-1"
+                           placeholder="DC or Target (e.g. DC 15 DEX)" value="{{ h.dc_or_target or '' }}">
+                    <textarea name="hazard_desc" class="form-control form-control-sm bg-dark text-light border-secondary mb-1"
+                              rows="2" placeholder="Description">{{ h.description or '' }}</textarea>
+                    <input type="text" name="hazard_consequence" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           placeholder="Consequence on failure" value="{{ h.consequence or '' }}">
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1"
+                            onclick="this.closest('.hazard-row').remove()">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="d-flex gap-2 mt-2 mb-4">
+    <button type="submit" class="btn btn-success">
+        <i class="bi bi-floppy me-1"></i>Save Room
+    </button>
+    <a href="{{ url_for('adventures.detail', adventure_id=adventure.id) }}" class="btn btn-outline-secondary">
+        Cancel
+    </a>
+</div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const SYSTEM = '{{ adventure.system_hint }}';
+
+function addCreature() {
+    const icrpg = SYSTEM === 'icrpg';
+    const html = `
+        <div class="creature-row border border-secondary p-2 mb-2">
+            <input type="text" name="creature_name" class="form-control form-control-sm bg-dark text-light border-secondary mb-1" placeholder="Name">
+            ${icrpg ? `
+            <div class="row g-1 mb-1">
+                <div class="col-5"><input type="number" name="creature_hearts" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Hearts" value="1" min="1"></div>
+                <div class="col-7"><select name="creature_effort" class="form-select form-select-sm bg-dark text-light border-secondary">
+                    <option>BASIC</option><option selected>WEAPON</option><option>MAGIC</option><option>ULTIMATE</option>
+                </select></div>
+            </div>
+            <input type="hidden" name="creature_hp" value=""><input type="hidden" name="creature_ac" value=""><input type="hidden" name="creature_cr" value="">
+            ` : `
+            <div class="row g-1 mb-1">
+                <div class="col-4"><input type="number" name="creature_hp" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="HP"></div>
+                <div class="col-4"><input type="number" name="creature_ac" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="AC"></div>
+                <div class="col-4"><input type="text" name="creature_cr" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="CR"></div>
+            </div>
+            <input type="hidden" name="creature_hearts" value="1"><input type="hidden" name="creature_effort" value="WEAPON">
+            `}
+            <input type="text" name="creature_move" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Special move">
+            <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" onclick="this.closest('.creature-row').remove()">Remove</button>
+        </div>`;
+    document.getElementById('creatures-container').insertAdjacentHTML('beforeend', html);
+}
+
+function addLoot() {
+    document.getElementById('loot-container').insertAdjacentHTML('beforeend', `
+        <div class="loot-row border border-secondary p-2 mb-2">
+            <input type="text" name="loot_name" class="form-control form-control-sm bg-dark text-light border-secondary mb-1" placeholder="Name">
+            <input type="text" name="loot_desc" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Description">
+            <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" onclick="this.closest('.loot-row').remove()">Remove</button>
+        </div>`);
+}
+
+function addHazard() {
+    document.getElementById('hazards-container').insertAdjacentHTML('beforeend', `
+        <div class="hazard-row border border-secondary p-2 mb-2">
+            <input type="text" name="hazard_name" class="form-control form-control-sm bg-dark text-light border-secondary mb-1" placeholder="Name">
+            <input type="text" name="hazard_dc" class="form-control form-control-sm bg-dark text-light border-secondary mb-1" placeholder="DC or Target">
+            <textarea name="hazard_desc" class="form-control form-control-sm bg-dark text-light border-secondary mb-1" rows="2" placeholder="Description"></textarea>
+            <input type="text" name="hazard_consequence" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Consequence on failure">
+            <button type="button" class="btn btn-sm btn-link text-danger p-0 mt-1" onclick="this.closest('.hazard-row').remove()">Remove</button>
+        </div>`);
+}
+</script>
+{% endblock %}
