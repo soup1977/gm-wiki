@@ -543,6 +543,14 @@
             </div>
             <div class="modal-body">
                 <div id="icrpgAIControls">
+                    <div id="icrpgAIWorldRow" class="mb-3" style="display:none;">
+                        <label class="form-label small text-muted">Add to World:</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary" id="icrpgAIWorldSelect">
+                            {% for w in all_worlds %}
+                            <option value="{{ w.id }}">{{ w.name }}{% if not w.is_builtin %} (homebrew){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="row g-2 mb-3">
                         <div class="col">
                             <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"

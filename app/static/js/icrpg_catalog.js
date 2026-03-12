@@ -829,6 +829,8 @@
         loot: 'loot', spell: 'spells', path: 'paths'
     };
 
+    var ICRPG_WORLD_ENTITY_TYPES = ['lifeform', 'type', 'loot'];
+
     window.openIcrpgAI = function (entityType, entityLabel) {
         icrpgAIMode   = 'generate';
         icrpgAIEntity = entityType;
@@ -836,6 +838,8 @@
         document.getElementById('icrpgAIModalTitle').textContent = 'AI Homebrew Ideas — ' + entityLabel;
         document.getElementById('icrpgAIControls').style.display = 'block';
         document.getElementById('icrpgAIThemeRow').style.display = 'none';
+        document.getElementById('icrpgAIWorldRow').style.display =
+            ICRPG_WORLD_ENTITY_TYPES.indexOf(entityType) >= 0 ? 'block' : 'none';
         document.getElementById('icrpgAIGenerateBtn').style.display = '';
         document.getElementById('icrpgAIConcept').value = '';
         document.getElementById('icrpgAIResults').innerHTML = '';
@@ -853,6 +857,8 @@
         document.getElementById('icrpgAIModalTitle').textContent = 'Retheme: ' + (icrpgAIRethemeData.name || entityType);
         document.getElementById('icrpgAIControls').style.display = 'block';
         document.getElementById('icrpgAIThemeRow').style.display = 'block';
+        document.getElementById('icrpgAIWorldRow').style.display =
+            ICRPG_WORLD_ENTITY_TYPES.indexOf(entityType) >= 0 ? 'block' : 'none';
         document.getElementById('icrpgAIGenerateBtn').style.display = 'none';
         document.getElementById('icrpgAITheme').value = '';
         document.getElementById('icrpgAIResults').innerHTML = '';
@@ -1023,10 +1029,16 @@
             ? '/icrpg-catalog/' + urlKey + '/' + icrpgAIRethemeId + '/edit'
             : '/icrpg-catalog/' + urlKey + '/create';
 
+        var payload = Object.assign({}, s);
+        if (ICRPG_WORLD_ENTITY_TYPES.indexOf(icrpgAIEntity) >= 0) {
+            var worldSel = document.getElementById('icrpgAIWorldSelect');
+            if (worldSel && worldSel.value) payload.world_id = parseInt(worldSel.value, 10);
+        }
+
         fetch(url, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
-            body: JSON.stringify(s)
+            body: JSON.stringify(payload)
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {
