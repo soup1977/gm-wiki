@@ -775,3 +775,96 @@ def import_ability(item_id):
     db.session.add(new_item)
     db.session.commit()
     return jsonify({'ok': True, 'id': new_item.id})
+
+
+# ─── Type Manage (abilities + starting loot) ────────────────────────────────
+
+@icrpg_catalog_bp.route('/types/<int:type_id>/manage', methods=['GET'])
+@login_required
+def manage_type(type_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    t = ICRPGType.query.get_or_404(type_id)
+    if t.campaign_id != cid:
+        return jsonify({'error': 'Forbidden.'}), 403
+
+    abilities = [{
+        'id': ab.id,
+        'name': ab.name,
+        'description': ab.description or '',
+        'ability_kind': ab.ability_kind or ''
+    } for ab in t.abilities]
+
+    starting_loot = [{
+        'id': sl.id,
+        'name': sl.display_name,
+        'loot_def_id': sl.loot_def_id,
+        'spell_id': sl.spell_id
+    } for sl in t.starting_loot]
+
+    all_loot = [{'id': ld.id, 'name': ld.name}
+                for ld in ICRPGLootDef.query.filter(
+                    (ICRPGLootDef.campaign_id == cid) | (ICRPGLootDef.is_builtin == True)
+                ).order_by(ICRPGLootDef.name).all()]
+
+    all_spells = [{'id': sp.id, 'name': sp.name}
+                  for sp in ICRPGSpell.query.filter(
+                      (ICRPGSpell.campaign_id == cid) | (ICRPGSpell.is_builtin == True)
+                  ).order_by(ICRPGSpell.name).all()]
+
+    return jsonify({
+        'type_name': t.name,
+        'abilities': abilities,
+        'starting_loot': starting_loot,
+        'all_loot': all_loot,
+        'all_spells': all_spells
+    })
+
+
+@icrpg_catalog_bp.route('/types/<int:type_id>/starting-loot/add', methods=['POST'])
+@login_required
+def add_starting_loot(type_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    t = ICRPGType.query.get_or_404(type_id)
+    if t.campaign_id != cid:
+        return jsonify({'error': 'Forbidden.'}), 403
+
+    data = request.get_json(silent=True) or {}
+    loot_def_id = data.get('loot_def_id')
+    spell_id = data.get('spell_id')
+    if not loot_def_id and not spell_id:
+        return jsonify({'error': 'loot_def_id or spell_id required.'}), 400
+
+    sl = ICRPGStartingLoot(
+        type_id=type_id,
+        loot_def_id=loot_def_id or None,
+        spell_id=spell_id or None)
+    db.session.add(sl)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': sl.id})
+
+
+@icrpg_catalog_bp.route('/types/<int:type_id>/starting-loot/<int:sl_id>/delete', methods=['POST'])
+@login_required
+def delete_starting_loot(type_id, sl_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    t = ICRPGType.query.get_or_404(type_id)
+    if t.campaign_id != cid:
+        return jsonify({'error': 'Forbidden.'}), 403
+    sl = ICRPGStartingLoot.query.get_or_404(sl_id)
+    if sl.type_id != type_id:
+        return jsonify({'error': 'Not found.'}), 404
+    db.session.delete(sl)
+    db.session.commit()
+    return jsonify({'ok': True})
