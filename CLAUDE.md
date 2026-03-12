@@ -105,7 +105,10 @@ gm-wiki/
 | 19d | ICRPG Homebrew Catalog CRUD, Add Loot/Ability UI, wiki/combat integration | Complete — PR #21 |
 | 19e | Player Sheet Permissions (loot/ability for owners, per-PC stat toggle) | Complete — PR #22 |
 | 19f | ICRPG Loot & Ability Mechanics (effects parser, smart filtering, slot costs, effect badges) | Complete — PR #23 |
-| 19g | Active Effects Display (collapsible text effects from equipped loot & abilities) | In Progress — see docs/phase-19g-plan.md |
+| 19g | Active Effects Display (collapsible text effects from equipped loot & abilities) | Complete — see docs/phase-19g-plan.md |
+| 19h | ICRPG catalog edit fix + import-to-homebrew for all entity types | Complete — PR #49 |
+| 19i | ICRPG catalog description preview columns (Life Forms, Types, Loot) | Complete — PR #50 |
+| 19j | ICRPG catalog friendly JSON editors (stat grids, tier accordion) + Type manage modal | Complete — PR #51, see docs/phase-19j-plan.md |
 
 ---
 
