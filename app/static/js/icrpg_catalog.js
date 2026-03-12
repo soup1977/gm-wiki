@@ -493,9 +493,28 @@
     function renderTypeManage(data, typeId) {
         var html = '';
 
+        // Count abilities by kind
+        var abilities = data.abilities || [];
+        var nStart = abilities.filter(function(a){return a.ability_kind==='starting';}).length;
+        var nMile  = abilities.filter(function(a){return a.ability_kind==='milestone';}).length;
+        var nMast  = abilities.filter(function(a){return a.ability_kind==='mastery';}).length;
+        var nLoot  = (data.starting_loot || []).length;
+
+        function countBadge(n, target, label) {
+            var color = n >= target ? 'success' : 'secondary';
+            return '<span class="badge bg-' + color + ' me-1 fw-normal">' + label + ': ' + n + '/' + target + '</span>';
+        }
+
         // Abilities section
-        html += '<h6 class="text-uppercase text-muted mb-2" style="font-size:0.7em;letter-spacing:.05em;">Abilities</h6>';
-        if (!data.abilities || data.abilities.length === 0) {
+        html += '<div class="d-flex align-items-baseline gap-2 mb-2">';
+        html += '<h6 class="text-uppercase text-muted mb-0" style="font-size:0.7em;letter-spacing:.05em;">Abilities</h6>';
+        html += '<span class="small">'
+             + countBadge(nStart, 3, 'Starting')
+             + countBadge(nMile, 7, 'Milestone')
+             + countBadge(nMast, 3, 'Mastery')
+             + '</span>';
+        html += '</div>';
+        if (abilities.length === 0) {
             html += '<p class="text-muted small mb-2">No abilities yet.</p>';
         } else {
             html += '<table class="table table-dark table-sm mb-2"><tbody>';
@@ -522,7 +541,10 @@
 
         // Starting Loot section
         html += '<hr class="border-secondary">';
-        html += '<h6 class="text-uppercase text-muted mb-1" style="font-size:0.7em;letter-spacing:.05em;">Starting Loot Options</h6>';
+        html += '<div class="d-flex align-items-baseline gap-2 mb-1">';
+        html += '<h6 class="text-uppercase text-muted mb-0" style="font-size:0.7em;letter-spacing:.05em;">Starting Loot Options</h6>';
+        html += '<span class="small">' + countBadge(nLoot, 3, 'Loot') + '</span>';
+        html += '</div>';
         html += '<p class="text-muted small mb-2">Players choose one of these when creating a character of this type.</p>';
         if (!data.starting_loot || data.starting_loot.length === 0) {
             html += '<p class="text-muted small mb-2">No starting loot yet.</p>';
@@ -564,11 +586,12 @@
         // AI Generate section
         html += '<hr class="border-secondary">';
         html += '<div id="manage-ai-section">';
-        html += '<div class="d-flex align-items-center gap-2 mb-2">';
-        html += '<span class="text-muted small">Generate AI ability and loot ideas for this type:</span>';
+        html += '<div class="d-flex align-items-center gap-2 mb-1">';
+        html += '<span class="text-muted small">Generate AI ability &amp; loot ideas:</span>';
         html += '<button class="btn btn-sm btn-info manage-ai-run" data-type-id="' + typeId + '">'
              + '<i class="bi bi-stars me-1"></i>Generate</button>';
         html += '</div>';
+        html += '<p class="text-muted small mb-2" style="font-size:0.75em;">Targets: 3 Starting · 7 Milestone · 3 Mastery · 3 Starting Loot</p>';
         html += '<div id="manage-ai-spinner" style="display:none;" class="text-muted small">'
              + '<span class="spinner-border spinner-border-sm me-1"></span>Generating…</div>';
         html += '<div id="manage-ai-results"></div>';

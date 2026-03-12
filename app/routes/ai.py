@@ -2422,32 +2422,34 @@ def generate_type_content():
 
     system_prompt = (
         f"{ICRPG_SYSTEM_PRIMER}\n\n"
-        f"You are a creative ICRPG game designer generating content for a homebrew Type called \"{type_name}\".\n"
-        f"Type description: {type_description or '(none provided)'}\n"
+        f"You are generating content for an ICRPG homebrew Type.\n"
         f"{world_section}"
-        f"\nGenerate a cohesive set of abilities and starting loot that feel like a complete, themed kit.\n\n"
-        f"ABILITY PROGRESSION RULES (critical — follow exactly):\n"
-        f"- \"starting\" abilities: 2–3 foundational abilities that define what this Type does at its core.\n"
-        f"  These are active from day one and establish the Type's identity.\n"
-        f"- \"milestone\" abilities: 2 abilities that expand or complement the starting abilities.\n"
-        f"  They should feel like natural growth, not unrelated extras.\n"
-        f"- \"mastery\" ability: 1 ability that is a dramatically powered-up version of one of the starting\n"
-        f"  abilities — same theme, same mechanic, but bigger, bolder, and more impactful.\n"
-        f"  A mastery ability should feel like the pinnacle of what this Type does best.\n\n"
-        f"STARTING LOOT RULES:\n"
-        f"- 3–5 items that reinforce the Type's identity and synergize with its starting abilities.\n"
-        f"  If a starting ability benefits from a specific tool or weapon, that item should be in the loot list.\n"
-        f"- Each item has:\n"
-        f"  - \"name\", \"description\" (flavor + rules), \"loot_type\" (Weapon/Armor/Shield/Pack/Tool/Spell/Item/Augment)\n"
-        f"  - \"effects\": JSON object of numeric bonuses (valid keys: STR, DEX, CON, INT, WIS, CHA,\n"
-        f"    BASIC_EFFORT, WEAPON_EFFORT, GUN_EFFORT, MAGIC_EFFORT, ULTIMATE_EFFORT, HEARTS, DEFENSE,\n"
-        f"    EQUIPPED_SLOTS, CARRIED_SLOTS), or {{}} for no numeric effects\n"
-        f"  - \"slot_cost\": 1 (normal) or 2 (large item)\n\n"
-        f"Return ONLY a JSON object with keys \"abilities\" and \"starting_loot\". No preamble, no markdown fences."
+        f"\nYou MUST return a JSON object with exactly two keys: \"abilities\" and \"starting_loot\".\n"
+        f"Both keys are REQUIRED — never omit either one.\n\n"
+        f"\"abilities\" — exactly 13 objects in this mix:\n"
+        f"  - 3 with ability_kind=\"starting\": Core abilities active from day one. Define the Type's identity.\n"
+        f"  - 7 with ability_kind=\"milestone\": Expand and complement the starting abilities. Natural growth.\n"
+        f"  - 3 with ability_kind=\"mastery\": Each is a dramatically powered-up version of one of the starting\n"
+        f"    abilities. Same theme and mechanic, but bigger and more impactful. They should clearly echo their\n"
+        f"    paired starting ability.\n"
+        f"  Each ability: {{\"name\": \"...\", \"description\": \"...\", \"ability_kind\": \"starting|milestone|mastery\"}}\n\n"
+        f"\"starting_loot\" — exactly 3 objects that synergize with the starting abilities.\n"
+        f"  If a starting ability references a weapon or tool, include it here.\n"
+        f"  Each item: {{\"name\": \"...\", \"description\": \"...\", "
+        f"\"loot_type\": \"Weapon|Armor|Shield|Pack|Tool|Spell|Item|Augment\", "
+        f"\"effects\": {{}} or {{\"WEAPON_EFFORT\": 1}}, \"slot_cost\": 1}}\n"
+        f"  Valid effect keys: STR DEX CON INT WIS CHA BASIC_EFFORT WEAPON_EFFORT GUN_EFFORT "
+        f"MAGIC_EFFORT ULTIMATE_EFFORT HEARTS DEFENSE EQUIPPED_SLOTS CARRIED_SLOTS\n\n"
+        f"Return ONLY the JSON object. No preamble, no markdown fences."
     )
 
-    messages = [{'role': 'user', 'content': f'Generate abilities and starting loot for the ICRPG Type: {type_name}'}]
-    max_out = _get_max_tokens('ai_max_tokens_generate', 2048, 2.0)
+    messages = [{'role': 'user', 'content': (
+        f'Generate the full ability set and starting loot for the ICRPG Type: {type_name}.\n'
+        f'Description: {type_description or "(none)"}\n\n'
+        f'Return a JSON object with "abilities" (13 total: 3 starting + 7 milestone + 3 mastery) '
+        f'and "starting_loot" (3 items).'
+    )}]
+    max_out = _get_max_tokens('ai_max_tokens_generate', 2048, 3.0)
 
     try:
         raw = ai_chat(system_prompt, messages, max_tokens=max_out, json_mode=True,
