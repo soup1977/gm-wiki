@@ -4,7 +4,7 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Play Log</a></li>
         {% if sess %}
             <li class="breadcrumb-item">
                 <a href="{{ url_for('sessions.session_detail', session_id=sess.id) }}">

@@ -73,6 +73,32 @@
         </div>
     </div>
 
+    {# Adventure + Scene link #}
+    {% if adventures %}
+    <div class="mb-3">
+        <label class="form-label">Adventure <span class="text-muted small">(optional)</span></label>
+        <select name="adventure_id" id="adventureSelect"
+                class="form-select bg-dark text-light border-secondary"
+                onchange="loadScenes(this.value)">
+            <option value="">— None —</option>
+            {% for adv in adventures %}
+            <option value="{{ adv.id }}"
+                {% if encounter and encounter.adventure_id == adv.id %}selected
+                {% elif prefill_adventure_id and prefill_adventure_id == adv.id %}selected{% endif %}>
+                {{ adv.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3" id="sceneField" style="display:none;">
+        <label class="form-label">Scene <span class="text-muted small">(optional)</span></label>
+        <select name="scene_id" id="sceneSelect"
+                class="form-select bg-dark text-light border-secondary">
+            <option value="">— None —</option>
+        </select>
+    </div>
+    {% endif %}
+
     {# Loot table — only relevant for loot type #}
     <div class="mb-3" id="lootTableField"
          style="{% if not encounter or encounter.encounter_type != 'loot' %}display:none{% endif %}">
@@ -208,6 +234,42 @@
 </template>
 
 <script>
+// Adventure → Scene cascade
+function loadScenes(adventureId) {
+    const sceneField = document.getElementById('sceneField');
+    const sceneSelect = document.getElementById('sceneSelect');
+    if (!sceneField) return;
+
+    if (!adventureId) {
+        sceneField.style.display = 'none';
+        sceneSelect.innerHTML = '<option value="">— None —</option>';
+        return;
+    }
+
+    fetch('/encounters/scenes-for-adventure/' + adventureId)
+        .then(r => r.json())
+        .then(scenes => {
+            sceneSelect.innerHTML = '<option value="">— None —</option>';
+            let lastAct = null;
+            scenes.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.act_title + ' › ' + s.title;
+                if (opt.value == PREFILL_SCENE_ID) opt.selected = true;
+                sceneSelect.appendChild(opt);
+            });
+            sceneField.style.display = '';
+        });
+}
+
+// Pre-fill values from server (edit form or query params)
+const PREFILL_SCENE_ID = '{{ (encounter.scene_id if encounter and encounter.scene_id else prefill_scene_id or '') }}';
+const INITIAL_ADVENTURE_ID = document.getElementById('adventureSelect') && document.getElementById('adventureSelect').value;
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (INITIAL_ADVENTURE_ID) loadScenes(INITIAL_ADVENTURE_ID);
+});
+
 function addRow() {
     const tmpl = document.getElementById('rowTemplate');
     const clone = tmpl.content.cloneNode(true);

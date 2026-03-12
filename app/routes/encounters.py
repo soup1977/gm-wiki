@@ -1,10 +1,11 @@
 import re
 from collections import defaultdict
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from app import db
 from app.models import (Encounter, EncounterMonster, BestiaryEntry,
-                        MonsterInstance, RandomTable, Session as GameSession, ActivityLog)
+                        MonsterInstance, RandomTable, Session as GameSession, ActivityLog,
+                        Adventure, AdventureScene)
 
 encounters_bp = Blueprint('encounters', __name__, url_prefix='/encounters')
 
@@ -68,6 +69,23 @@ def _save_monsters(encounter, entry_ids, counts):
     encounter.monsters = new_monsters
 
 
+@encounters_bp.route('/scenes-for-adventure/<int:adventure_id>')
+@login_required
+def scenes_for_adventure(adventure_id):
+    """AJAX: return scenes for an adventure, grouped by act."""
+    campaign_id = get_active_campaign_id()
+    adventure = Adventure.query.filter_by(id=adventure_id, campaign_id=campaign_id).first_or_404()
+    scenes = []
+    for act in adventure.acts:
+        for scene in act.scenes:
+            scenes.append({
+                'id': scene.id,
+                'title': scene.title,
+                'act_title': act.title,
+            })
+    return jsonify(scenes)
+
+
 @encounters_bp.route('/')
 @login_required
 def list_encounters():
@@ -106,6 +124,14 @@ def create_encounter():
                 .all())
     bestiary_entries = BestiaryEntry.query.order_by(BestiaryEntry.name).all()
     random_tables = RandomTable.query.filter_by(campaign_id=campaign_id).order_by(RandomTable.name).all()
+    adventures = (Adventure.query
+                  .filter_by(campaign_id=campaign_id)
+                  .order_by(Adventure.name)
+                  .all())
+
+    # Pre-fill adventure/scene from query params (e.g. from Adventure detail page)
+    prefill_adventure_id = request.args.get('adventure_id', type=int)
+    prefill_scene_id = request.args.get('scene_id', type=int)
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -113,13 +139,15 @@ def create_encounter():
             flash('Encounter name is required.', 'danger')
             return render_template('encounters/form.html', encounter=None,
                                    sessions=sessions, bestiary_entries=bestiary_entries,
-                                   random_tables=random_tables,
+                                   random_tables=random_tables, adventures=adventures,
                                    encounter_types=ENCOUNTER_TYPES,
                                    encounter_statuses=ENCOUNTER_STATUSES,
                                    type_colors=TYPE_COLORS)
 
         sess_id = request.form.get('session_id', '').strip() or None
         table_id = request.form.get('loot_table_id', '').strip() or None
+        adventure_id = request.form.get('adventure_id', '').strip() or None
+        scene_id = request.form.get('scene_id', '').strip() or None
 
         encounter = Encounter(
             campaign_id=campaign_id,
@@ -130,6 +158,8 @@ def create_encounter():
             gm_notes=request.form.get('gm_notes', '').strip() or None,
             session_id=int(sess_id) if sess_id else None,
             loot_table_id=int(table_id) if table_id else None,
+            adventure_id=int(adventure_id) if adventure_id else None,
+            scene_id=int(scene_id) if scene_id else None,
         )
         db.session.add(encounter)
         db.session.flush()
@@ -145,7 +175,9 @@ def create_encounter():
 
     return render_template('encounters/form.html', encounter=None,
                            sessions=sessions, bestiary_entries=bestiary_entries,
-                           random_tables=random_tables,
+                           random_tables=random_tables, adventures=adventures,
+                           prefill_adventure_id=prefill_adventure_id,
+                           prefill_scene_id=prefill_scene_id,
                            encounter_types=ENCOUNTER_TYPES,
                            encounter_statuses=ENCOUNTER_STATUSES,
                            type_colors=TYPE_COLORS)
@@ -172,6 +204,10 @@ def edit_encounter(encounter_id):
                 .all())
     bestiary_entries = BestiaryEntry.query.order_by(BestiaryEntry.name).all()
     random_tables = RandomTable.query.filter_by(campaign_id=campaign_id).order_by(RandomTable.name).all()
+    adventures = (Adventure.query
+                  .filter_by(campaign_id=campaign_id)
+                  .order_by(Adventure.name)
+                  .all())
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -179,13 +215,15 @@ def edit_encounter(encounter_id):
             flash('Encounter name is required.', 'danger')
             return render_template('encounters/form.html', encounter=encounter,
                                    sessions=sessions, bestiary_entries=bestiary_entries,
-                                   random_tables=random_tables,
+                                   random_tables=random_tables, adventures=adventures,
                                    encounter_types=ENCOUNTER_TYPES,
                                    encounter_statuses=ENCOUNTER_STATUSES,
                                    type_colors=TYPE_COLORS)
 
         sess_id = request.form.get('session_id', '').strip() or None
         table_id = request.form.get('loot_table_id', '').strip() or None
+        adventure_id = request.form.get('adventure_id', '').strip() or None
+        scene_id = request.form.get('scene_id', '').strip() or None
 
         encounter.name = name
         encounter.encounter_type = request.form.get('encounter_type', 'combat')
@@ -194,6 +232,8 @@ def edit_encounter(encounter_id):
         encounter.gm_notes = request.form.get('gm_notes', '').strip() or None
         encounter.session_id = int(sess_id) if sess_id else None
         encounter.loot_table_id = int(table_id) if table_id else None
+        encounter.adventure_id = int(adventure_id) if adventure_id else None
+        encounter.scene_id = int(scene_id) if scene_id else None
 
         entry_ids = request.form.getlist('monster_entry_ids[]')
         counts = request.form.getlist('monster_counts[]')
@@ -206,7 +246,7 @@ def edit_encounter(encounter_id):
 
     return render_template('encounters/form.html', encounter=encounter,
                            sessions=sessions, bestiary_entries=bestiary_entries,
-                           random_tables=random_tables,
+                           random_tables=random_tables, adventures=adventures,
                            encounter_types=ENCOUNTER_TYPES,
                            encounter_statuses=ENCOUNTER_STATUSES,
                            type_colors=TYPE_COLORS)

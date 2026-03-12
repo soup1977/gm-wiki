@@ -187,6 +187,63 @@ def save():
             if scope == 'campaign':
                 adventure.campaign_quests.append(quest)
 
+        # Create campaign NPCs from key_npcs list and link to adventure
+        for npc_data in data.get('key_npcs', []):
+            npc_name = npc_data.get('name', '').strip()
+            if not npc_name:
+                continue
+            npc = NPC(
+                campaign_id=campaign.id,
+                name=npc_name,
+                role=npc_data.get('role', ''),
+                notes=npc_data.get('notes', ''),
+                adventure_id=adventure.id,
+            )
+            db.session.add(npc)
+            db.session.flush()
+            adventure.key_npcs.append(npc)
+
+        # Create campaign Factions and link to adventure
+        for f_data in data.get('factions', []):
+            f_name = f_data.get('name', '').strip()
+            if not f_name:
+                continue
+            faction = Faction(
+                campaign_id=campaign.id,
+                name=f_name,
+                disposition=f_data.get('disposition', 'neutral'),
+                gm_notes=f_data.get('notes', ''),
+            )
+            db.session.add(faction)
+            db.session.flush()
+            adventure.factions.append(faction)
+
+        # Create a campaign Location for each Scene and an Encounter for scenes with creatures
+        for act in adventure.acts:
+            for scene in act.scenes:
+                # Location
+                loc = Location(
+                    campaign_id=campaign.id,
+                    name=scene.title,
+                    description=scene.description or '',
+                    adventure_id=adventure.id,
+                )
+                db.session.add(loc)
+                db.session.flush()
+                scene.location_id = loc.id
+
+                # Encounter — only if any room in this scene has creatures
+                if any(room.creatures for room in scene.rooms):
+                    enc = Encounter(
+                        campaign_id=campaign.id,
+                        adventure_id=adventure.id,
+                        scene_id=scene.id,
+                        name=scene.title,
+                        encounter_type='combat',
+                        status='planned',
+                    )
+                    db.session.add(enc)
+
         db.session.commit()
         return jsonify({'success': True, 'adventure_id': adventure.id,
                         'redirect': url_for('adventures.detail', adventure_id=adventure.id) + '#tab-structure'})

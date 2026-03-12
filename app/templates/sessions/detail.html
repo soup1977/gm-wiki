@@ -6,7 +6,7 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Play Log</a></li>
         <li class="breadcrumb-item active">
             {% if sess.number %}#{{ sess.number }}{% if sess.title %} — {{ sess.title }}{% endif %}{% else %}{{ sess.title or 'Untitled' }}{% endif %}
         </li>
