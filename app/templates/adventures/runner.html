@@ -351,7 +351,7 @@ body { overflow: hidden; }
                     <textarea id="rt-chat-situation"
                               class="form-control form-control-sm bg-dark text-light border-secondary mb-2"
                               rows="2" placeholder="Describe the situation..."></textarea>
-                    <button class="btn btn-sm btn-warning w-100 mb-2" onclick="runNpcChat()">
+                    <button class="btn btn-sm btn-warning w-100 mb-2" id="rt-npc-chat-btn" onclick="runNpcChat()">
                         <i class="bi bi-chat-left-text me-1"></i>Generate Response
                     </button>
                     <div id="rt-chat-result" style="display:none;"
@@ -378,7 +378,7 @@ body { overflow: hidden; }
                                 <textarea id="rt-improv-prompt"
                                           class="form-control form-control-sm bg-dark text-light border-secondary mb-2"
                                           rows="2" placeholder="What are players doing?"></textarea>
-                                <button class="btn btn-sm btn-warning w-100 mb-2" onclick="runRtImprov()">
+                                <button class="btn btn-sm btn-warning w-100 mb-2" id="rt-improv-btn" onclick="runRtImprov()">
                                     <i class="bi bi-stars me-1"></i>Generate
                                 </button>
                                 <div id="rt-improv-result" style="display:none;" class="small"></div>
@@ -399,7 +399,7 @@ body { overflow: hidden; }
                                 <textarea id="rt-hazard-input"
                                           class="form-control form-control-sm bg-dark text-light border-secondary mb-2"
                                           rows="2" placeholder="Describe the hazard..."></textarea>
-                                <button class="btn btn-sm btn-warning w-100 mb-2" onclick="runHazardFlavor()">
+                                <button class="btn btn-sm btn-warning w-100 mb-2" id="rt-hazard-btn" onclick="runHazardFlavor()">
                                     <i class="bi bi-fire me-1"></i>Generate Flavor
                                 </button>
                                 <div id="rt-hazard-result" style="display:none;"
@@ -419,7 +419,8 @@ body { overflow: hidden; }
                         <div id="ai-consequences-pane" class="accordion-collapse collapse">
                             <div class="accordion-body py-2 px-0">
                                 <p class="text-muted small mb-2">Ripple effects from this session's events.</p>
-                                <button class="btn btn-sm btn-warning w-100 mb-2" onclick="runConsequences()"
+                                <button class="btn btn-sm btn-warning w-100 mb-2" id="rt-consequences-btn"
+                                        onclick="runConsequences()"
                                         {% if not active_game_session %}disabled{% endif %}>
                                     <i class="bi bi-lightning me-1"></i>Suggest Consequences
                                 </button>
@@ -911,9 +912,11 @@ function closeNpcChat() {
 async function runNpcChat() {
     const situation = document.getElementById('rt-chat-situation').value.trim();
     if (!situation || !rtChatNpcId) return;
+    const btn = document.getElementById('rt-npc-chat-btn');
     const resultEl = document.getElementById('rt-chat-result');
-    resultEl.style.display = '';
-    resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    resultEl.style.display = 'none';
     try {
         const resp = await fetch('/adventures/ai/npc-chat', {
             method: 'POST',
@@ -922,9 +925,16 @@ async function runNpcChat() {
             body: JSON.stringify({ npc_id: rtChatNpcId, situation })
         });
         const data = await resp.json();
+        resultEl.style.display = '';
         if (data.error) { resultEl.innerHTML = `<span class="text-danger">${data.error}</span>`; }
         else { resultEl.innerHTML = data.response.replace(/\n/g, '<br>'); }
-    } catch(e) { resultEl.innerHTML = `<span class="text-danger">${e.message}</span>`; }
+    } catch(e) {
+        resultEl.style.display = '';
+        resultEl.innerHTML = `<span class="text-danger">${e.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-chat-left-text me-1"></i>Generate Response';
+    }
 }
 
 // ── Right Panel: Session tab ─────────────────────────────────────────────────
@@ -972,9 +982,11 @@ async function setRunnerLocation(locationId) {
 async function runRtImprov() {
     const prompt = document.getElementById('rt-improv-prompt').value.trim();
     if (!prompt) return;
+    const btn = document.getElementById('rt-improv-btn');
     const resultEl = document.getElementById('rt-improv-result');
-    resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
-    resultEl.style.display = '';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    resultEl.style.display = 'none';
     try {
         const resp = await fetch('/api/ai/generate-adventure-draft', {
             method: 'POST',
@@ -984,6 +996,7 @@ async function runRtImprov() {
                                    system_hint: SYSTEM_HINT, world_context: '' })
         });
         const data = await resp.json();
+        resultEl.style.display = '';
         const rooms = data.acts?.[0]?.scenes?.[0]?.rooms || [];
         if (rooms.length) {
             const r = rooms[0];
@@ -998,16 +1011,22 @@ async function runRtImprov() {
             resultEl.innerHTML = '<div class="text-muted small">No result.</div>';
         }
     } catch(e) {
+        resultEl.style.display = '';
         resultEl.innerHTML = `<span class="text-danger">${e.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars me-1"></i>Generate';
     }
 }
 
 async function runHazardFlavor() {
     const hazard = document.getElementById('rt-hazard-input').value.trim();
     if (!hazard) return;
+    const btn = document.getElementById('rt-hazard-btn');
     const resultEl = document.getElementById('rt-hazard-result');
-    resultEl.textContent = 'Generating...';
-    resultEl.style.display = '';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    resultEl.style.display = 'none';
     try {
         const resp = await fetch('/adventures/ai/hazard-flavor', {
             method: 'POST',
@@ -1016,17 +1035,24 @@ async function runHazardFlavor() {
             body: JSON.stringify({ hazard })
         });
         const data = await resp.json();
+        resultEl.style.display = '';
         resultEl.innerHTML = data.error ? `<span class="text-danger">${data.error}</span>` : data.flavor;
     } catch(e) {
+        resultEl.style.display = '';
         resultEl.innerHTML = `<span class="text-danger">${e.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-fire me-1"></i>Generate Flavor';
     }
 }
 
 async function runConsequences() {
     if (!activeSessionId) return;
+    const btn = document.getElementById('rt-consequences-btn');
     const resultEl = document.getElementById('rt-consequences-result');
-    resultEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
-    resultEl.style.display = '';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+    resultEl.style.display = 'none';
     try {
         const resp = await fetch('/adventures/ai/suggest-consequences', {
             method: 'POST',
@@ -1035,10 +1061,10 @@ async function runConsequences() {
             body: JSON.stringify({ session_id: activeSessionId })
         });
         const data = await resp.json();
+        resultEl.style.display = '';
         if (data.error) {
             resultEl.innerHTML = `<span class="text-danger">${data.error}</span>`;
         } else {
-            // Render markdown bullet list as HTML
             const lines = (data.consequences || '').split('\n').filter(Boolean);
             resultEl.innerHTML = lines.map(l => {
                 const text = l.replace(/^[-*]\s*/, '');
@@ -1046,7 +1072,11 @@ async function runConsequences() {
             }).join('');
         }
     } catch(e) {
+        resultEl.style.display = '';
         resultEl.innerHTML = `<span class="text-danger">${e.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightning me-1"></i>Suggest Consequences';
     }
 }
 </script>

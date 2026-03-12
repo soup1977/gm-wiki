@@ -13,6 +13,11 @@
 </head>
 <body>
 
+<!-- AI loading bar — thin progress bar at top, shown automatically during any AI fetch call -->
+<div id="ai-loading-bar" style="position:fixed;top:0;left:0;width:0;height:3px;
+     background:linear-gradient(90deg,#0d6efd,#6ea8fe,#0dcaf0);
+     z-index:9999;display:none;transition:none;"></div>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
@@ -281,6 +286,54 @@
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
     new bootstrap.Tooltip(el, { placement: 'bottom' });
   });
+</script>
+<script>
+// AI loading bar — intercepts fetch calls to AI endpoints and shows progress bar
+(function () {
+    var bar = document.getElementById('ai-loading-bar');
+    var inFlight = 0;
+    var animTimer = null;
+
+    var AI_PATHS = ['/api/ai/', '/adventures/ai/', '/sites/', '/random-tables/import-url',
+                    '/adventures/generate', '/api/ai/generate'];
+
+    function showBar() {
+        if (animTimer) clearTimeout(animTimer);
+        bar.style.transition = 'none';
+        bar.style.width = '0';
+        bar.style.display = 'block';
+        // Force reflow so the transition fires from 0
+        bar.offsetHeight;
+        bar.style.transition = 'width 8s cubic-bezier(0.1, 0.05, 0.3, 1)';
+        bar.style.width = '80%';
+    }
+
+    function hideBar() {
+        if (animTimer) clearTimeout(animTimer);
+        bar.style.transition = 'width 0.25s ease';
+        bar.style.width = '100%';
+        animTimer = setTimeout(function () {
+            bar.style.transition = 'none';
+            bar.style.display = 'none';
+            bar.style.width = '0';
+        }, 250);
+    }
+
+    var origFetch = window.fetch;
+    window.fetch = function (url, opts) {
+        var isAi = typeof url === 'string' && AI_PATHS.some(function (p) { return url.indexOf(p) !== -1; });
+        if (isAi) {
+            inFlight++;
+            if (inFlight === 1) showBar();
+        }
+        return origFetch(url, opts).finally(function () {
+            if (isAi) {
+                inFlight = Math.max(0, inFlight - 1);
+                if (inFlight === 0) hideBar();
+            }
+        });
+    };
+})();
 </script>
 {% block scripts %}{% endblock %}
 </body>
