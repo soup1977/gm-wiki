@@ -1053,6 +1053,7 @@
                     ck.textContent = overwrite ? 'Updated!' : 'Added!';
                     card.querySelector('.card-body').appendChild(ck);
                 }
+                setTimeout(function () { location.reload(); }, 800);
             } else {
                 alert(data.error || 'Unknown error');
             }
