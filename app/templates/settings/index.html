@@ -127,8 +127,15 @@
                                placeholder="sk-ant-...">
                         <div class="form-text">
                             Get a key at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
-                            Uses claude-haiku-4-5 (fast and affordable).
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Model</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary" name="anthropic_model">
+                            <option value="claude-haiku-4-5-20251001" {% if ai_config.anthropic_model == 'claude-haiku-4-5-20251001' %}selected{% endif %}>Haiku 4.5 — Fast &amp; affordable</option>
+                            <option value="claude-sonnet-4-6" {% if ai_config.anthropic_model == 'claude-sonnet-4-6' %}selected{% endif %}>Sonnet 4.6 — Balanced</option>
+                            <option value="claude-opus-4-6" {% if ai_config.anthropic_model == 'claude-opus-4-6' %}selected{% endif %}>Opus 4.6 — Most capable</option>
+                        </select>
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConnection('anthropic')">
                         <i class="bi bi-wifi"></i> Test Connection

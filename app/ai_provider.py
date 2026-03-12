@@ -87,6 +87,7 @@ def get_ai_config():
         'ollama_url': settings.get('ollama_url', 'http://localhost:11434'),
         'ollama_model': settings.get('ollama_model', 'llama3.1'),
         'anthropic_api_key': settings.get('anthropic_api_key', ''),
+        'anthropic_model': settings.get('anthropic_model', 'claude-haiku-4-5-20251001'),
         'sd_url': settings.get('sd_url', ''),
         'sd_model': settings.get('sd_model', ''),
         'sd_sampler': settings.get('sd_sampler', 'DPM++ SDE'),
@@ -194,7 +195,7 @@ def _call_anthropic(config, system_prompt, messages, max_tokens):
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
-            model='claude-haiku-4-5-20251001',
+            model=config.get('anthropic_model', 'claude-haiku-4-5-20251001'),
             max_tokens=max_tokens,
             system=system_prompt,
             messages=messages,
