@@ -138,6 +138,11 @@ def create_pc():
             return redirect(url_for('player.dashboard'))
         return redirect(url_for('main.index'))
 
+    # Auto-route to ICRPG wizard if campaign system is ICRPG
+    campaign = Campaign.query.get(campaign_id)
+    if campaign and 'icrpg' in (campaign.system or '').lower():
+        return redirect(url_for('pcs.icrpg_wizard'))
+
     template_fields = CampaignStatTemplate.query.filter_by(campaign_id=campaign_id)\
         .order_by(CampaignStatTemplate.display_order).all()
     locations = Location.query.filter_by(campaign_id=campaign_id)\
