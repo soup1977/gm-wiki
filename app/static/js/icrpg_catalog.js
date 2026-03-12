@@ -516,9 +516,7 @@
             html += '</tbody></table>';
         }
         html += '<button class="btn btn-sm btn-outline-success mb-3 manage-add-ability" data-type-id="' + typeId + '">' +
-            '<i class="bi bi-plus-circle me-1"></i>Add Ability</button>'
-            + ' <button class="btn btn-sm btn-outline-info mb-3 manage-ai-generate" data-type-id="' + typeId + '">'
-            + '<i class="bi bi-stars me-1"></i>AI Ideas</button>';
+            '<i class="bi bi-plus-circle me-1"></i>Add Ability</button>';
 
         // Starting Loot section
         html += '<hr class="border-secondary">';
@@ -654,16 +652,6 @@
             });
             return;
         }
-        // AI Ideas toggle (just scrolls to the generate section at bottom)
-        var aiGenToggle = e.target.closest('.manage-ai-generate');
-        if (aiGenToggle) {
-            var sec = document.getElementById('manage-ai-section');
-            if (sec) sec.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-            var inp = document.getElementById('manage-ai-concept');
-            if (inp) inp.focus();
-            return;
-        }
-
         // AI Generate run
         var aiRunBtn = e.target.closest('.manage-ai-run');
         if (!aiRunBtn) return;
