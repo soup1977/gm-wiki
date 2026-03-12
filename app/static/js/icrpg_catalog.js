@@ -1022,7 +1022,7 @@
 
         fetch(url, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
             body: JSON.stringify(s)
         })
         .then(function (r) { return r.json(); })
