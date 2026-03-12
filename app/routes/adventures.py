@@ -3,6 +3,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    request, flash, session, jsonify)
 from flask_login import login_required, current_user
 from app import db
+from app.routes.ai import _get_max_tokens, _get_system_prompt
 from app.models import (Campaign, Adventure, AdventureAct, AdventureScene,
                         AdventureRoom, RoomCreature, RoomLoot, RoomHazard,
                         AdventureRoomLog, RoomNPC, NPC, Faction, BestiaryEntry,
@@ -1081,18 +1082,14 @@ def ai_npc_chat():
         parts.append(f'Current location: {game_session.active_location.name}')
     if campaign and campaign.ai_world_context:
         parts.append(f'World context: {campaign.ai_world_context}')
-    parts.append(
-        '\nWhen the GM describes a situation, respond with 3-4 short lines of dialogue '
-        'that this character would say. Stay in character. Be concise — this is for '
-        'quick reference at the game table, not prose. Include mannerisms or speech '
-        'patterns that fit the personality. Each line should be a separate thing the '
-        'NPC might say, giving the GM options to choose from.'
-    )
+    parts.append(_get_system_prompt('npc_chat'))
     system_prompt = '\n\n'.join(parts)
     messages = [{'role': 'user', 'content': situation}]
     try:
         effective_provider = requested_provider or get_feature_provider('npc_chat')
-        response = ai_chat(system_prompt, messages, max_tokens=512, provider=effective_provider)
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                           provider=effective_provider)
         return jsonify({'response': response})
     except AIProviderError as e:
         return jsonify({'error': str(e)}), 502
@@ -1114,18 +1111,12 @@ def ai_hazard_flavor():
     if not hazard:
         return jsonify({'error': 'Describe the hazard first.'}), 400
     campaign = _Campaign.query.get(campaign_id)
-    parts = [
-        'You are a tabletop RPG narrator. Write vivid, sensory flavor text for a GM to read '
-        'aloud when a hazard occurs at the table. '
-        'Focus on what the players see, hear, smell, and feel. '
-        'Keep it to 2-3 sentences — punchy and atmospheric, not a wall of text.'
-    ]
-    if campaign and campaign.ai_world_context:
-        parts.append(f'World context: {campaign.ai_world_context}')
-    system_prompt = '\n\n'.join(parts)
+    world_context = f'\n\nWorld context: {campaign.ai_world_context}' if campaign and campaign.ai_world_context else ''
+    system_prompt = _get_system_prompt('hazard_flavor', world_context=world_context)
     messages = [{'role': 'user', 'content': f'Write flavor text for this hazard: {hazard}'}]
     try:
-        response = ai_chat(system_prompt, messages, max_tokens=256,
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
                            provider=get_feature_provider('generate'))
         return jsonify({'flavor': response})
     except AIProviderError as e:
@@ -1164,20 +1155,13 @@ def ai_suggest_consequences():
         context_parts.append('NPC statuses:\n' + '\n'.join(npc_lines))
     if not context_parts:
         return jsonify({'error': 'Not enough session data to suggest consequences. Add a summary first.'}), 400
-    system_prompt = (
-        'You are a narrative consequence designer for tabletop RPGs. '
-        'Based on what happened in the last session, suggest 3-5 ripple effects '
-        'that could emerge in future sessions — new threats, changed relationships, '
-        'opened opportunities, or lingering complications. '
-        'Format as a Markdown bullet list. Each consequence should be 1-2 sentences. '
-        'Be specific to the events described, not generic.'
-    )
-    if campaign and campaign.ai_world_context:
-        system_prompt += f'\n\nWorld context: {campaign.ai_world_context}'
+    world_context = f'\n\nWorld context: {campaign.ai_world_context}' if campaign and campaign.ai_world_context else ''
+    system_prompt = _get_system_prompt('suggest_consequences', world_context=world_context)
     user_content = '\n\n'.join(context_parts)
     messages = [{'role': 'user', 'content': user_content}]
     try:
-        response = ai_chat(system_prompt, messages, max_tokens=512,
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
                            provider=get_feature_provider('generate'))
         return jsonify({'consequences': response})
     except AIProviderError as e:

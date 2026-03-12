@@ -392,6 +392,213 @@ Scope guidelines:
 - Include 2-4 key NPCs and 1-3 factions
 - Include 2-4 quests: scope must be either "adventure" or "campaign"
 """,
+
+    'flesh_out_room': """\
+You are an expert tabletop RPG adventure writer.
+Expand the read-aloud text and GM notes for a keyed dungeon/adventure room.
+Also suggest new creatures, loot, or key NPCs ONLY if the room clearly warrants them
+and they are not already present.
+
+Adventure context:
+{adventure_ctx}
+
+{stat_instructions}
+
+Currently in this room:
+- Creatures: {existing_creatures}
+- Loot: {existing_loot}
+- NPCs: {existing_npcs}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values must be on a single line — no literal newlines.
+- Use | to separate bullet points in gm_notes.
+- Leave new_creatures/new_loot/new_npcs as empty arrays [] if room is already populated or suggestions don't fit.
+- NPCs are named characters the players interact with (prisoners, merchants, informants, bosses with dialogue).
+  Do NOT put combat monsters in new_npcs — those go in new_creatures.
+
+Return:
+{
+  "read_aloud": "2-3 vivid sentences in present tense for the players.",
+  "gm_notes": "- First GM note | - Second note | - Third note",
+  "new_creatures": [],
+  "new_loot": [],
+  "new_npcs": []
+}
+
+If suggesting creatures, use this format per creature:
+{ "name": "...", "hearts": 1, "effort_type": "WEAPON", "special_move": "...", "timer_rounds": null, "hp": null, "ac": null, "cr": null, "actions": null }
+
+If suggesting loot, use: { "name": "...", "description": "..." }
+If suggesting NPCs, use: { "name": "...", "role": "...", "notes": "..." }
+""",
+
+    'generate_scene_rooms': """\
+You are an expert tabletop RPG adventure designer.
+Generate 3-4 keyed rooms for a specific scene/area in an adventure.
+
+Adventure context:
+{adventure_ctx}
+
+Scene: {scene_title}
+{scene_description_line}
+
+Creature stat instructions: {stat_instructions}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values on a single line — no literal newlines.
+- Use | to separate bullet points in gm_notes.
+
+Return:
+{
+  "rooms": [
+    {
+      "key": "{key_prefix}1",
+      "title": "Room Name",
+      "read_aloud": "2 vivid sentences in present tense.",
+      "gm_notes": "- First note | - Second note",
+      "creatures": [
+        {
+          "name": "Creature Name",
+          "hearts": 1,
+          "effort_type": "WEAPON",
+          "special_move": "One sentence",
+          "timer_rounds": null,
+          "hp": null,
+          "ac": null,
+          "cr": ""
+        }
+      ],
+      "loot": [
+        {
+          "name": "Item Name",
+          "description": "Brief description"
+        }
+      ]
+    }
+  ]
+}
+
+Generate 3-4 rooms. Keep read_aloud to 2 sentences max, gm_notes to 2-3 bullets, 0-2 creatures, 0-1 loot per room.
+""",
+
+    'generate_room_creatures': """\
+You are an expert tabletop RPG monster designer.
+Generate 1-2 appropriate creatures for a room in an adventure.
+
+Adventure context:
+{adventure_ctx}
+
+{stat_instructions}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values on a single line.
+
+Return:
+{
+  "creatures": [
+    {
+      "name": "Creature Name",
+      "hearts": 1,
+      "effort_type": "WEAPON",
+      "special_move": "One sentence special ability or attack",
+      "timer_rounds": null,
+      "hp": null,
+      "ac": null,
+      "cr": ""
+    }
+  ]
+}
+""",
+
+    'generate_room_loot': """\
+You are an expert tabletop RPG loot designer.
+Generate 1-2 thematically appropriate loot items for a room in an adventure.
+
+Adventure context:
+{adventure_ctx}
+
+IMPORTANT JSON rules:
+- Return ONLY the raw JSON object. No markdown, no code fences.
+- All string values on a single line.
+
+Return:
+{
+  "loot": [
+    {
+      "name": "Item Name",
+      "description": "Brief evocative description, 1 sentence."
+    }
+  ]
+}
+""",
+
+    'brainstorm_adventure': """\
+You are a creative tabletop RPG adventure designer helping a GM brainstorm.
+Generate useful planning ideas for their adventure.
+
+Adventure: {adventure_name}
+{adventure_ctx}
+
+{existing_notes_section}
+
+Generate a focused brainstorm block covering:
+- 2-3 plot complications or twists
+- 1-2 NPC motivations or secrets worth developing
+- 1-2 potential player choice points or moral dilemmas
+- Any interesting thematic elements worth exploring
+
+Format as clear Markdown with bold headers and bullet points.
+Keep it concise and directly useful at the game table.
+""",
+
+    'npc_chat': """\
+When the GM describes a situation, respond with 3-4 short lines of dialogue
+that this character would say. Stay in character. Be concise — this is for
+quick reference at the game table, not prose. Include mannerisms or speech
+patterns that fit the personality. Each line should be a separate thing the
+NPC might say, giving the GM options to choose from.
+""",
+
+    'hazard_flavor': """\
+You are a tabletop RPG narrator. Write vivid, sensory flavor text for a GM to read
+aloud when a hazard occurs at the table.
+Focus on what the players see, hear, smell, and feel.
+Keep it to 2-3 sentences — punchy and atmospheric, not a wall of text.
+{world_context}
+""",
+
+    'suggest_consequences': """\
+You are a narrative consequence designer for tabletop RPGs.
+Based on what happened in the last session, suggest 3-5 ripple effects
+that could emerge in future sessions — new threats, changed relationships,
+opened opportunities, or lingering complications.
+Format as a Markdown bullet list. Each consequence should be 1-2 sentences.
+Be specific to the events described, not generic.
+{world_context}
+""",
+
+    'suggest_milestones': """\
+You are a tabletop RPG adventure designer.
+Based on the adventure site content provided, suggest 5-7 key milestones or story beats
+that could be tracked as progress checkpoints for this adventure.
+Each milestone should represent a meaningful moment of completion or achievement —
+clearing an area, defeating a boss, finding a key item, triggering a plot revelation, etc.
+Format as a Markdown bullet list. Each milestone is one line, starting with a verb.
+{world_context}
+""",
+
+    'import_table': """\
+You extract rollable random tables from web page text.
+Return ONLY valid JSON, no explanation, no markdown fences.
+Format: {"name": "Table Name", "entries": ["entry 1", "entry 2", ...]}
+- Each entry should be a short, self-contained result suitable for rolling.
+- If entries have numbers (like "1. ...", "2. ..."), strip the numbers.
+- If the page has multiple tables, pick the largest or most interesting one.
+- If no table is found, return: {"error": "No rollable table found on this page."}
+""",
 }
 
 
@@ -1466,43 +1673,13 @@ def flesh_out_room():
     existing_loot = ', '.join(l.name for l in room.loot) if room.loot else 'none'
     existing_npcs = ', '.join(rn.npc.name for rn in room.room_npcs) if room.room_npcs else 'none'
 
-    system_prompt = f"""You are an expert tabletop RPG adventure writer.
-Expand the read-aloud text and GM notes for a keyed dungeon/adventure room.
-Also suggest new creatures, loot, or key NPCs ONLY if the room clearly warrants them
-and they are not already present.
-
-Adventure context:
-{adventure_ctx}
-
-{stat_instructions}
-
-Currently in this room:
-- Creatures: {existing_creatures}
-- Loot: {existing_loot}
-- NPCs: {existing_npcs}
-
-IMPORTANT JSON rules:
-- Return ONLY the raw JSON object. No markdown, no code fences.
-- All string values must be on a single line — no literal newlines.
-- Use | to separate bullet points in gm_notes.
-- Leave new_creatures/new_loot/new_npcs as empty arrays [] if room is already populated or suggestions don't fit.
-- NPCs are named characters the players interact with (prisoners, merchants, informants, bosses with dialogue).
-  Do NOT put combat monsters in new_npcs — those go in new_creatures.
-
-Return:
-{{
-  "read_aloud": "2-3 vivid sentences in present tense for the players.",
-  "gm_notes": "- First GM note | - Second note | - Third note",
-  "new_creatures": [],
-  "new_loot": [],
-  "new_npcs": []
-}}
-
-If suggesting creatures, use this format per creature:
-{{ "name": "...", "hearts": 1, "effort_type": "WEAPON", "special_move": "...", "timer_rounds": null, "hp": null, "ac": null, "cr": null, "actions": null }}
-
-If suggesting loot, use: {{ "name": "...", "description": "..." }}
-If suggesting NPCs, use: {{ "name": "...", "role": "...", "notes": "..." }}"""
+    system_prompt = _get_system_prompt('flesh_out_room',
+        adventure_ctx=adventure_ctx,
+        stat_instructions=stat_instructions,
+        existing_creatures=existing_creatures,
+        existing_loot=existing_loot,
+        existing_npcs=existing_npcs,
+    )
 
     current_content = []
     if room.title:
@@ -1518,7 +1695,9 @@ If suggesting NPCs, use: {{ "name": "...", "role": "...", "notes": "..." }}"""
 
     try:
         provider = get_feature_provider('generate')
-        response = ai_chat(system_prompt, messages, max_tokens=900, json_mode=True, provider=provider)
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                           json_mode=True, provider=provider)
         result = _parse_ai_json(response)
         if result is None:
             return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
@@ -1684,59 +1863,22 @@ def generate_scene_rooms():
     used_prefixes = {k[0] for k in existing_keys if k}
     key_prefix = next((chr(c) for c in range(ord('A'), ord('Z') + 1) if chr(c) not in used_prefixes), 'X')
 
-    system_prompt = f"""You are an expert tabletop RPG adventure designer.
-Generate 3-4 keyed rooms for a specific scene/area in an adventure.
-
-Adventure context:
-{adventure_ctx}
-
-Scene: {scene.title}
-{f'Scene description: {scene.description}' if scene.description else ''}
-
-Creature stat instructions: {stat_instructions}
-
-IMPORTANT JSON rules:
-- Return ONLY the raw JSON object. No markdown, no code fences.
-- All string values on a single line — no literal newlines.
-- Use | to separate bullet points in gm_notes.
-
-Return:
-{{
-  "rooms": [
-    {{
-      "key": "{key_prefix}1",
-      "title": "Room Name",
-      "read_aloud": "2 vivid sentences in present tense.",
-      "gm_notes": "- First note | - Second note",
-      "creatures": [
-        {{
-          "name": "Creature Name",
-          "hearts": 1,
-          "effort_type": "WEAPON",
-          "special_move": "One sentence",
-          "timer_rounds": null,
-          "hp": null,
-          "ac": null,
-          "cr": ""
-        }}
-      ],
-      "loot": [
-        {{
-          "name": "Item Name",
-          "description": "Brief description"
-        }}
-      ]
-    }}
-  ]
-}}
-
-Generate 3-4 rooms. Keep read_aloud to 2 sentences max, gm_notes to 2-3 bullets, 0-2 creatures, 0-1 loot per room."""
+    scene_description_line = f'Scene description: {scene.description}' if scene.description else ''
+    system_prompt = _get_system_prompt('generate_scene_rooms',
+        adventure_ctx=adventure_ctx,
+        stat_instructions=stat_instructions,
+        scene_title=scene.title,
+        scene_description_line=scene_description_line,
+        key_prefix=key_prefix,
+    )
 
     messages = [{'role': 'user', 'content': f'Generate rooms for the scene: {scene.title}'}]
 
     try:
         provider = get_feature_provider('generate')
-        response = ai_chat(system_prompt, messages, max_tokens=2000, json_mode=True, provider=provider)
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_generate', 2048),
+                           json_mode=True, provider=provider)
         result = _parse_ai_json(response)
         if result is None or 'rooms' not in result:
             return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
@@ -1818,33 +1960,10 @@ def generate_room_creatures():
     adventure_ctx = _get_adventure_context(adventure)
     stat_instructions = _system_hint_instructions(adventure.system_hint or 'generic')
 
-    system_prompt = f"""You are an expert tabletop RPG monster designer.
-Generate 1-2 appropriate creatures for a room in an adventure.
-
-Adventure context:
-{adventure_ctx}
-
-{stat_instructions}
-
-IMPORTANT JSON rules:
-- Return ONLY the raw JSON object. No markdown, no code fences.
-- All string values on a single line.
-
-Return:
-{{
-  "creatures": [
-    {{
-      "name": "Creature Name",
-      "hearts": 1,
-      "effort_type": "WEAPON",
-      "special_move": "One sentence special ability or attack",
-      "timer_rounds": null,
-      "hp": null,
-      "ac": null,
-      "cr": ""
-    }}
-  ]
-}}"""
+    system_prompt = _get_system_prompt('generate_room_creatures',
+        adventure_ctx=adventure_ctx,
+        stat_instructions=stat_instructions,
+    )
 
     room_desc = f'Room: {room.key} — {room.title or "Untitled"}'
     if room.gm_notes:
@@ -1854,7 +1973,9 @@ Return:
 
     try:
         provider = get_feature_provider('generate')
-        response = ai_chat(system_prompt, messages, max_tokens=600, json_mode=True, provider=provider)
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                           json_mode=True, provider=provider)
         result = _parse_ai_json(response)
         if result is None or 'creatures' not in result:
             return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
@@ -1906,25 +2027,9 @@ def generate_room_loot():
     adventure = room.scene.act.adventure
     adventure_ctx = _get_adventure_context(adventure)
 
-    system_prompt = f"""You are an expert tabletop RPG loot designer.
-Generate 1-2 thematically appropriate loot items for a room in an adventure.
-
-Adventure context:
-{adventure_ctx}
-
-IMPORTANT JSON rules:
-- Return ONLY the raw JSON object. No markdown, no code fences.
-- All string values on a single line.
-
-Return:
-{{
-  "loot": [
-    {{
-      "name": "Item Name",
-      "description": "Brief evocative description, 1 sentence."
-    }}
-  ]
-}}"""
+    system_prompt = _get_system_prompt('generate_room_loot',
+        adventure_ctx=adventure_ctx,
+    )
 
     room_desc = f'Room: {room.key} — {room.title or "Untitled"}'
     if room.gm_notes:
@@ -1934,7 +2039,9 @@ Return:
 
     try:
         provider = get_feature_provider('generate')
-        response = ai_chat(system_prompt, messages, max_tokens=400, json_mode=True, provider=provider)
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                           json_mode=True, provider=provider)
         result = _parse_ai_json(response)
         if result is None or 'loot' not in result:
             return jsonify({'error': 'AI returned invalid JSON. Try again.', 'raw': response[:200]}), 500
@@ -1979,28 +2086,20 @@ def brainstorm_adventure():
     adventure_ctx = _get_adventure_context(adventure)
     existing_notes = adventure.planning_notes or ''
 
-    system_prompt = f"""You are a creative tabletop RPG adventure designer helping a GM brainstorm.
-Generate useful planning ideas for their adventure.
-
-Adventure: {adventure.name}
-{adventure_ctx}
-
-{f'Existing planning notes (for context, do not repeat):{chr(10)}{existing_notes[:500]}' if existing_notes else ''}
-
-Generate a focused brainstorm block covering:
-- 2-3 plot complications or twists
-- 1-2 NPC motivations or secrets worth developing
-- 1-2 potential player choice points or moral dilemmas
-- Any interesting thematic elements worth exploring
-
-Format as clear Markdown with bold headers and bullet points.
-Keep it concise and directly useful at the game table."""
+    existing_notes_section = f'Existing planning notes (for context, do not repeat):\n{existing_notes[:500]}' if existing_notes else ''
+    system_prompt = _get_system_prompt('brainstorm_adventure',
+        adventure_name=adventure.name,
+        adventure_ctx=adventure_ctx,
+        existing_notes_section=existing_notes_section,
+    )
 
     messages = [{'role': 'user', 'content': 'Generate brainstorming ideas for this adventure.'}]
 
     try:
         provider = get_feature_provider('generate')
-        response = ai_chat(system_prompt, messages, max_tokens=800, provider=provider)
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
+                           provider=provider)
         if not response:
             return jsonify({'error': 'AI returned empty response.'}), 500
         return jsonify({'text': response.strip()})

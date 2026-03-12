@@ -3,6 +3,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_required
 from app import db
+from app.routes.ai import _get_max_tokens, _get_system_prompt
 from app.models import AdventureSite, Session, Tag, get_or_create_tags, Campaign, ActivityLog
 from app.shortcode import process_shortcodes, clear_mentions, resolve_mentions_for_target, resolve_mentions_for_source
 
@@ -412,21 +413,14 @@ def suggest_milestones(site_id):
         context_parts.append(f'Status: {site.status}')
     context_parts.append(f'\nSite content:\n{site.content[:4000]}')
 
-    system_prompt = (
-        'You are a tabletop RPG adventure designer. '
-        'Based on the adventure site content provided, suggest 5-7 key milestones or story beats '
-        'that could be tracked as progress checkpoints for this adventure. '
-        'Each milestone should represent a meaningful moment of completion or achievement — '
-        'clearing an area, defeating a boss, finding a key item, triggering a plot revelation, etc. '
-        'Format as a Markdown bullet list. Each milestone is one line, starting with a verb.'
-    )
-    if campaign and campaign.ai_world_context:
-        system_prompt += f'\n\nWorld context: {campaign.ai_world_context}'
+    world_context = f'\n\nWorld context: {campaign.ai_world_context}' if campaign and campaign.ai_world_context else ''
+    system_prompt = _get_system_prompt('suggest_milestones', world_context=world_context)
 
     messages = [{'role': 'user', 'content': '\n\n'.join(context_parts)}]
 
     try:
-        response = ai_chat(system_prompt, messages, max_tokens=512,
+        response = ai_chat(system_prompt, messages,
+                           max_tokens=_get_max_tokens('ai_max_tokens_standard', 2048),
                            provider=get_feature_provider('generate'))
         return jsonify({'milestones': response})
     except AIProviderError as e:

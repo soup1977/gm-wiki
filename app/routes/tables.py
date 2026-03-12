@@ -7,6 +7,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import login_required
 from app import db
 from app.models import RandomTable, TableRow, ActivityLog
+from app.routes.ai import _get_max_tokens, _get_system_prompt
 
 tables_bp = Blueprint('tables', __name__, url_prefix='/random-tables')
 
@@ -414,18 +415,13 @@ def import_from_url():
     if not is_ai_enabled():
         return jsonify({'error': 'AI is not configured. URL import requires an AI provider.'}), 403
 
-    system_prompt = """You extract rollable random tables from web page text.
-Return ONLY valid JSON, no explanation, no markdown fences.
-Format: {"name": "Table Name", "entries": ["entry 1", "entry 2", ...]}
-- Each entry should be a short, self-contained result suitable for rolling.
-- If entries have numbers (like "1. ...", "2. ..."), strip the numbers.
-- If the page has multiple tables, pick the largest or most interesting one.
-- If no table is found, return: {"error": "No rollable table found on this page."}"""
-
+    system_prompt = _get_system_prompt('import_table')
     messages = [{'role': 'user', 'content': f'Extract a rollable table from this page:\n\n{text}'}]
 
     try:
-        raw = ai_chat(system_prompt, messages, max_tokens=2048, json_mode=True)
+        raw = ai_chat(system_prompt, messages,
+                      max_tokens=_get_max_tokens('ai_max_tokens_generate', 2048),
+                      json_mode=True)
         if raw.startswith('```'):
             raw = raw.split('\n', 1)[-1]
             if raw.endswith('```'):

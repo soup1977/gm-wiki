@@ -388,16 +388,69 @@
                         <span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Advanced — prompts must instruct the AI to return JSON or features will break.</span>
                     </p>
 
+                    <h6 class="text-secondary text-uppercase small mb-3 mt-1">Entity & Campaign Prompts</h6>
                     {% set prompt_labels = [
-                        ('smart_fill',      'Smart Fill',       'Extracts structured fields from pasted GM notes.'),
+                        ('smart_fill',      'Smart Fill',       'Extracts structured fields from pasted GM notes. Uses {entity_type} and {field_lines} placeholders.'),
                         ('generate',        'Generate Entry',   'Creates a complete entity from a short concept. Uses {entity_type}, {field_lines}, and {world_section} placeholders.'),
-                        ('brainstorm_arcs',    'Campaign Brainstorm',    'Suggests adventure and story ideas from campaign context. Used on the Campaign detail page.'),
+                        ('brainstorm_arcs',    'Campaign Brainstorm',    'Suggests story arc ideas from campaign context. Used on the Campaign detail page.'),
                         ('session_prep',       'Session Prep',           'Generates prep notes for an upcoming session. Used on the Session edit form. Uses {world_section} placeholder.'),
                         ('generate_adventure', 'Generate Adventure Draft','Generates a full adventure skeleton from a concept. Uses {stat_instructions} and {world_context_line} placeholders.'),
+                        ('brainstorm_adventure', 'Brainstorm Adventure', 'Generates brainstorm ideas for an adventure planning doc. Used on the Adventure detail page. Uses {adventure_name}, {adventure_ctx}, and {existing_notes_section} placeholders.'),
                     ] %}
 
                     <div class="row g-4">
                         {% for key, label, hint in prompt_labels %}
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="ai_prompt_{{ key }}" class="form-label fw-semibold mb-0">{{ label }}</label>
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                        onclick="resetPrompt('{{ key }}')">Reset</button>
+                            </div>
+                            <div class="form-text mb-1">{{ hint }}</div>
+                            <textarea class="form-control form-control-sm bg-dark text-light border-secondary font-monospace"
+                                      id="ai_prompt_{{ key }}" name="ai_prompt_{{ key }}"
+                                      rows="6"
+                                      placeholder="Leave blank to use built-in default">{{ ai_prompts[key] }}</textarea>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr class="border-secondary my-4">
+                    <h6 class="text-secondary text-uppercase small mb-3">Adventure Runner Prompts</h6>
+                    {% set runner_prompt_labels = [
+                        ('flesh_out_room',         'Flesh Out Room',        'Expands read-aloud text and GM notes for a room, and suggests creatures/loot/NPCs. Uses {adventure_ctx}, {stat_instructions}, {existing_creatures}, {existing_loot}, {existing_npcs} placeholders.'),
+                        ('generate_scene_rooms',   'Generate Scene Rooms',  'Generates 3-4 keyed rooms for a scene. Uses {adventure_ctx}, {stat_instructions}, {scene_title}, {scene_description_line}, {key_prefix} placeholders.'),
+                        ('generate_room_creatures','Generate Creatures',     'Generates 1-2 creatures for a room. Uses {adventure_ctx} and {stat_instructions} placeholders.'),
+                        ('generate_room_loot',     'Generate Room Loot',    'Generates 1-2 loot items for a room. Uses {adventure_ctx} placeholder.'),
+                    ] %}
+                    <div class="row g-4">
+                        {% for key, label, hint in runner_prompt_labels %}
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="ai_prompt_{{ key }}" class="form-label fw-semibold mb-0">{{ label }}</label>
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                        onclick="resetPrompt('{{ key }}')">Reset</button>
+                            </div>
+                            <div class="form-text mb-1">{{ hint }}</div>
+                            <textarea class="form-control form-control-sm bg-dark text-light border-secondary font-monospace"
+                                      id="ai_prompt_{{ key }}" name="ai_prompt_{{ key }}"
+                                      rows="6"
+                                      placeholder="Leave blank to use built-in default">{{ ai_prompts[key] }}</textarea>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr class="border-secondary my-4">
+                    <h6 class="text-secondary text-uppercase small mb-3">Session Tools Prompts</h6>
+                    {% set session_prompt_labels = [
+                        ('npc_chat',             'NPC Chat',              'Instruction appended to NPC context when the GM asks how the NPC would respond to a situation.'),
+                        ('hazard_flavor',        'Hazard Flavor',         'Generates vivid read-aloud flavor text for a hazard. Uses {world_context} placeholder.'),
+                        ('suggest_consequences', 'Suggest Consequences',  'Suggests narrative ripple effects from the last session. Uses {world_context} placeholder.'),
+                        ('suggest_milestones',   'Suggest Milestones',    'Suggests story beat milestones for an adventure site. Uses {world_context} placeholder.'),
+                        ('import_table',         'Import Table from URL', 'Extracts a rollable random table from web page text.'),
+                    ] %}
+                    <div class="row g-4">
+                        {% for key, label, hint in session_prompt_labels %}
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label for="ai_prompt_{{ key }}" class="form-label fw-semibold mb-0">{{ label }}</label>
