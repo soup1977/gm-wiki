@@ -725,7 +725,7 @@ def _build_generate_prompt(entity_type, concept, world_context=None, arc_context
 
 
 def _get_active_world_context():
-    """Return the ai_world_context for the active campaign, or None."""
+    """Return game system + world context for the active campaign, or None."""
     from flask import session as flask_session
     from flask_login import current_user
     from app.models import Campaign
@@ -734,8 +734,14 @@ def _get_active_world_context():
         campaign = Campaign.query.filter_by(
             id=campaign_id, user_id=current_user.id
         ).first()
-        if campaign and campaign.ai_world_context:
-            return campaign.ai_world_context.strip()
+        if campaign:
+            parts = []
+            if campaign.system:
+                parts.append(f'Game system: {campaign.system}')
+            if campaign.ai_world_context:
+                parts.append(campaign.ai_world_context.strip())
+            if parts:
+                return '\n'.join(parts)
     return None
 
 
@@ -1619,10 +1625,19 @@ def _parse_ai_json(response):
 # ---------------------------------------------------------------------------
 
 def _get_adventure_context(adventure):
-    """Build a short context string from an adventure for AI prompts."""
+    """Build a context string from an adventure and its campaign for AI prompts."""
+    from app.models import Campaign
     parts = []
+    # Include campaign system and world context so every runner AI call is system-aware
+    if adventure.campaign_id:
+        campaign = Campaign.query.get(adventure.campaign_id)
+        if campaign:
+            if campaign.system:
+                parts.append(f'Game system: {campaign.system}')
+            if campaign.ai_world_context:
+                parts.append(f'World context: {campaign.ai_world_context}')
     if adventure.synopsis:
-        parts.append(f'Synopsis: {adventure.synopsis}')
+        parts.append(f'Adventure synopsis: {adventure.synopsis}')
     if adventure.hook:
         parts.append(f'Hook: {adventure.hook}')
     if adventure.premise:
