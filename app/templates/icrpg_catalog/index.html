@@ -546,8 +546,11 @@
                     <div id="icrpgAIWorldRow" class="mb-3" style="display:none;">
                         <label class="form-label small text-muted">Add to World:</label>
                         <select class="form-select form-select-sm bg-dark text-light border-secondary" id="icrpgAIWorldSelect">
-                            {% for w in all_worlds %}
-                            <option value="{{ w.id }}">{{ w.name }}{% if not w.is_builtin %} (homebrew){% endif %}</option>
+                            {% for w in all_worlds if not w.is_builtin %}
+                            <option value="{{ w.id }}">{{ w.name }} (homebrew)</option>
+                            {% endfor %}
+                            {% for w in all_worlds if w.is_builtin %}
+                            <option value="{{ w.id }}">{{ w.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
