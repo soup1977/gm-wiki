@@ -464,10 +464,19 @@
         .catch(function (err) { console.error(err); });
     });
 
+    var typeManageDirty = false;
+
     // ── Type Manage Modal ─────────────────────────────────────────
     window.openTypeManage = function (typeId, typeName) {
         currentManageTypeId = typeId;
-        if (!typeManageEl) typeManageEl = document.getElementById('typeManageModal');
+        if (!typeManageEl) {
+            typeManageEl = document.getElementById('typeManageModal');
+            if (typeManageEl) {
+                typeManageEl.addEventListener('hidden.bs.modal', function () {
+                    if (typeManageDirty) { typeManageDirty = false; location.reload(); }
+                });
+            }
+        }
         document.getElementById('typeManageTitle').textContent = typeName;
         loadTypeManage(typeId);
         if (!typeManageModal && typeManageEl) typeManageModal = new bootstrap.Modal(typeManageEl);
@@ -789,6 +798,7 @@
                 addAbBtn.disabled = true;
                 addAbBtn.innerHTML = '<i class="bi bi-check"></i>';
                 addAbBtn.classList.replace('btn-success', 'btn-secondary');
+                typeManageDirty = true;
             });
             return;
         }
@@ -826,6 +836,7 @@
                 addLdBtn.disabled = true;
                 addLdBtn.innerHTML = '<i class="bi bi-check"></i>';
                 addLdBtn.classList.replace('btn-success', 'btn-secondary');
+                typeManageDirty = true;
             })
             .catch(function () { alert('Request failed.'); });
         }
@@ -891,6 +902,7 @@
         });
         chain.then(function () {
             addAllBtn.innerHTML = '<i class="bi bi-check-all me-1"></i>All Added!';
+            typeManageDirty = true;
         });
     });
 
