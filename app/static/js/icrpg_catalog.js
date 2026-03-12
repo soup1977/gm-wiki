@@ -516,7 +516,9 @@
             html += '</tbody></table>';
         }
         html += '<button class="btn btn-sm btn-outline-success mb-3 manage-add-ability" data-type-id="' + typeId + '">' +
-            '<i class="bi bi-plus-circle me-1"></i>Add Ability</button>';
+            '<i class="bi bi-plus-circle me-1"></i>Add Ability</button>'
+            + ' <button class="btn btn-sm btn-outline-info mb-3 manage-ai-generate" data-type-id="' + typeId + '">'
+            + '<i class="bi bi-stars me-1"></i>AI Ideas</button>';
 
         // Starting Loot section
         html += '<hr class="border-secondary">';
@@ -557,6 +559,21 @@
         html += '</select></div>';
         html += '<button class="btn btn-sm btn-outline-primary manage-add-sl" data-type-id="' + typeId + '">' +
             '<i class="bi bi-plus me-1"></i>Add</button>';
+        html += '</div>';
+
+        // AI Generate section
+        html += '<hr class="border-secondary">';
+        html += '<div id="manage-ai-section">';
+        html += '<div class="d-flex align-items-center gap-2 mb-2">';
+        html += '<span class="text-muted small">Generate AI ideas for this type:</span>';
+        html += '<input type="text" id="manage-ai-concept" class="form-control form-control-sm bg-dark text-light border-secondary" '
+             + 'style="max-width:220px;" placeholder="Optional concept hint">';
+        html += '<button class="btn btn-sm btn-info manage-ai-run" data-type-id="' + typeId + '">'
+             + '<i class="bi bi-stars me-1"></i>Generate</button>';
+        html += '</div>';
+        html += '<div id="manage-ai-spinner" style="display:none;" class="text-muted small">'
+             + '<span class="spinner-border spinner-border-sm me-1"></span>Generating…</div>';
+        html += '<div id="manage-ai-results"></div>';
         html += '</div>';
 
         return html;
@@ -636,6 +653,161 @@
                 loadTypeManage(currentManageTypeId);
             });
             return;
+        }
+        // AI Ideas toggle (just scrolls to the generate section at bottom)
+        var aiGenToggle = e.target.closest('.manage-ai-generate');
+        if (aiGenToggle) {
+            var sec = document.getElementById('manage-ai-section');
+            if (sec) sec.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+            var inp = document.getElementById('manage-ai-concept');
+            if (inp) inp.focus();
+            return;
+        }
+
+        // AI Generate run
+        var aiRunBtn = e.target.closest('.manage-ai-run');
+        if (!aiRunBtn) return;
+        var aiTypeId = aiRunBtn.dataset.typeId;
+        var conceptInput = document.getElementById('manage-ai-concept');
+        var concept = conceptInput ? conceptInput.value.trim() : '';
+        var spinner = document.getElementById('manage-ai-spinner');
+        var results = document.getElementById('manage-ai-results');
+        if (spinner) spinner.style.display = 'block';
+        if (results) results.innerHTML = '';
+        aiRunBtn.disabled = true;
+
+        // Get type name/description from current manage data
+        var manageTitle = document.getElementById('typeManageTitle');
+        var typeName = manageTitle ? manageTitle.textContent : '';
+
+        fetch('/api/ai/generate-type-content', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type_name: typeName, type_description: '', concept: concept})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (spinner) spinner.style.display = 'none';
+            aiRunBtn.disabled = false;
+            if (data.error) {
+                if (results) results.innerHTML = '<div class="alert alert-danger small mt-2">' + data.error + '</div>';
+                return;
+            }
+            var html = '';
+            // Abilities suggestions
+            var abilities = data.abilities || [];
+            if (abilities.length) {
+                html += '<div class="mt-2"><strong class="small text-info">Ability Ideas</strong></div>';
+                abilities.forEach(function (ab, i) {
+                    var kindColor = ab.ability_kind === 'starting' ? 'info' : ab.ability_kind === 'milestone' ? 'warning' : 'danger';
+                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2">';
+                    html += '<div class="flex-grow-1">';
+                    html += '<span class="badge bg-' + kindColor + ' me-1">' + (ab.ability_kind || '') + '</span>';
+                    html += '<strong class="small">' + escapeHtml(ab.name || '') + '</strong> ';
+                    html += '<span class="text-muted small">' + escapeHtml((ab.description || '').substring(0, 80)) + '</span>';
+                    html += '</div>';
+                    html += '<button class="btn btn-sm btn-success py-0 flex-shrink-0 manage-ai-add-ability" '
+                         + 'data-type-id="' + aiTypeId + '" '
+                         + 'data-name="' + escapeHtml(ab.name || '') + '" '
+                         + 'data-desc="' + escapeHtml(ab.description || '') + '" '
+                         + 'data-kind="' + (ab.ability_kind || 'starting') + '">'
+                         + '<i class="bi bi-plus"></i></button>';
+                    html += '</div>';
+                });
+            }
+            // Starting loot suggestions
+            var loot = data.starting_loot || [];
+            if (loot.length) {
+                html += '<div class="mt-2"><strong class="small text-warning">Starting Loot Ideas</strong></div>';
+                loot.forEach(function (ld) {
+                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2">';
+                    html += '<div class="flex-grow-1">';
+                    html += '<span class="badge bg-secondary border border-info me-1">' + (ld.loot_type || '') + '</span>';
+                    html += '<strong class="small">' + escapeHtml(ld.name || '') + '</strong> ';
+                    html += '<span class="text-muted small">' + escapeHtml((ld.description || '').substring(0, 80)) + '</span>';
+                    html += '</div>';
+                    html += '<button class="btn btn-sm btn-success py-0 flex-shrink-0 manage-ai-add-loot" '
+                         + 'data-type-id="' + aiTypeId + '" '
+                         + 'data-name="' + escapeHtml(ld.name || '') + '" '
+                         + 'data-desc="' + escapeHtml(ld.description || '') + '" '
+                         + 'data-loot-type="' + (ld.loot_type || 'Item') + '" '
+                         + 'data-effects=\'' + JSON.stringify(ld.effects || {}) + '\' '
+                         + 'data-slot-cost="' + (ld.slot_cost || 1) + '">'
+                         + '<i class="bi bi-plus"></i></button>';
+                    html += '</div>';
+                });
+            }
+            if (results) results.innerHTML = html;
+        })
+        .catch(function () {
+            if (spinner) spinner.style.display = 'none';
+            aiRunBtn.disabled = false;
+            if (results) results.innerHTML = '<div class="alert alert-danger small mt-2">Request failed.</div>';
+        });
+    });
+
+    // Delegated listener for manage-ai-add-ability and manage-ai-add-loot
+    document.addEventListener('click', function (e) {
+        var addAbBtn = e.target.closest('.manage-ai-add-ability');
+        if (addAbBtn) {
+            var payload = {
+                name: addAbBtn.dataset.name,
+                description: addAbBtn.dataset.desc,
+                ability_kind: addAbBtn.dataset.kind,
+                type_id: parseInt(addAbBtn.dataset.typeId)
+            };
+            fetch('/icrpg-catalog/abilities/create', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                if (result.error) { alert(result.error); return; }
+                addAbBtn.disabled = true;
+                addAbBtn.innerHTML = '<i class="bi bi-check"></i>';
+                addAbBtn.classList.replace('btn-success', 'btn-secondary');
+                loadTypeManage(currentManageTypeId);
+            });
+            return;
+        }
+
+        var addLdBtn = e.target.closest('.manage-ai-add-loot');
+        if (addLdBtn) {
+            var typeId = addLdBtn.dataset.typeId;
+            var lootPayload = {
+                name: addLdBtn.dataset.name,
+                description: addLdBtn.dataset.desc,
+                loot_type: addLdBtn.dataset.lootType,
+                slot_cost: parseInt(addLdBtn.dataset.slotCost) || 1,
+                effects: JSON.parse(addLdBtn.dataset.effects || '{}')
+            };
+            // First create the loot entry, then link it as starting loot
+            fetch('/icrpg-catalog/loot/create', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(lootPayload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                if (result.error) { alert(result.error); return; }
+                var lootId = result.id;
+                return fetch('/icrpg-catalog/types/' + typeId + '/starting-loot/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    body: JSON.stringify({loot_def_id: lootId})
+                });
+            })
+            .then(function (r) { return r ? r.json() : null; })
+            .then(function (result) {
+                if (!result) return;
+                if (result.error) { alert(result.error); return; }
+                addLdBtn.disabled = true;
+                addLdBtn.innerHTML = '<i class="bi bi-check"></i>';
+                addLdBtn.classList.replace('btn-success', 'btn-secondary');
+                loadTypeManage(currentManageTypeId);
+            })
+            .catch(function () { alert('Request failed.'); });
         }
     });
 

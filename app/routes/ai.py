@@ -2189,6 +2189,13 @@ Balance guidance for stat bonuses (not hard limits — creativity is welcome):
 - Defense: usually -2 to +2 range
 - Loot slot cost: 1 = minor; 2 = significant item
 - Be creative and thematic — just avoid giving +6 to every stat
+
+CRITICAL: You are creating content ONLY for ICRPG. Do NOT use terminology from
+Dungeons & Dragons, Pathfinder, or any other game system. Forbidden terms include:
+spell slots, hit dice, AC, armor class, saving throws, proficiency bonus, cantrips,
+attunement, concentration spells, action economy, bonus action, reaction, short rest,
+long rest, CR, challenge rating, XP, level-up, feats, multiclassing, d100, percentile.
+Use only ICRPG's own vocabulary: Hearts, Effort, Loot, Type, Life Form, Timer, Room, etc.
 """.strip()
 
 ICRPG_SCHEMAS = {
@@ -2390,6 +2397,64 @@ def retheme_icrpg():
         if isinstance(result, list) and result:
             result = result[0]
         return jsonify({'suggestion': result})
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@ai_bp.route('/generate-type-content', methods=['POST'])
+@login_required
+def generate_type_content():
+    """Generate ability and starting loot ideas for an existing homebrew Type."""
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True) or {}
+    type_name = data.get('type_name', '').strip()
+    type_description = data.get('type_description', '').strip()
+    concept = data.get('concept', '').strip()
+
+    if not type_name:
+        return jsonify({'error': 'type_name is required.'}), 400
+
+    world_context = _get_active_world_context()
+    world_section = f'\nCampaign context:\n{world_context}\n' if world_context else ''
+    concept_section = f'\nExtra concept hint: {concept}\n' if concept else ''
+
+    system_prompt = (
+        f"{ICRPG_SYSTEM_PRIMER}\n\n"
+        f"You are a creative ICRPG game designer generating content for a homebrew Type called \"{type_name}\".\n"
+        f"Type description: {type_description or '(none provided)'}\n"
+        f"{world_section}"
+        f"{concept_section}\n"
+        f"Generate the following as a single JSON object with two keys:\n\n"
+        f"\"abilities\": Array of 4–6 ability objects. Each has:\n"
+        f"  - \"name\": ability name\n"
+        f"  - \"description\": what it does (specific and flavorful, ICRPG style)\n"
+        f"  - \"ability_kind\": exactly one of: starting, milestone, mastery\n"
+        f"  Include at least 2 starting abilities, 2 milestone abilities, and 1 mastery ability.\n\n"
+        f"\"starting_loot\": Array of 3–5 starting loot ideas. Each has:\n"
+        f"  - \"name\": loot item name\n"
+        f"  - \"description\": flavor and rules text\n"
+        f"  - \"loot_type\": one of: Weapon, Armor, Shield, Pack, Tool, Spell, Item, Augment\n"
+        f"  - \"effects\": JSON object of numeric bonuses (valid keys: STR, DEX, CON, INT, WIS, CHA, "
+        f"BASIC_EFFORT, WEAPON_EFFORT, GUN_EFFORT, MAGIC_EFFORT, ULTIMATE_EFFORT, HEARTS, DEFENSE, "
+        f"EQUIPPED_SLOTS, CARRIED_SLOTS), or {{}} for no numeric effects\n"
+        f"  - \"slot_cost\": integer (1 = normal, 2 = large item)\n\n"
+        f"Return ONLY a JSON object with keys \"abilities\" and \"starting_loot\". No preamble, no markdown fences."
+    )
+
+    messages = [{'role': 'user', 'content': f'Generate abilities and starting loot for the ICRPG Type: {type_name}'}]
+    max_out = _get_max_tokens('ai_max_tokens_generate', 2048, 2.0)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=max_out, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        abilities = result.get('abilities', []) if isinstance(result, dict) else []
+        starting_loot = result.get('starting_loot', []) if isinstance(result, dict) else []
+        return jsonify({'abilities': abilities, 'starting_loot': starting_loot})
     except json.JSONDecodeError as e:
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
