@@ -109,6 +109,7 @@ gm-wiki/
 | 19h | ICRPG catalog edit fix + import-to-homebrew for all entity types | Complete — PR #49 |
 | 19i | ICRPG catalog description preview columns (Life Forms, Types, Loot) | Complete — PR #50 |
 | 19j | ICRPG catalog friendly JSON editors (stat grids, tier accordion) + Type manage modal | Complete — PR #51, see docs/phase-19j-plan.md |
+| 19k | Anthropic model selector in Settings (Haiku / Sonnet / Opus dropdown) | Complete — PR #52, see docs/phase-19k-plan.md |
 
 ---
 
