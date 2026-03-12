@@ -960,12 +960,15 @@
                 MAGIC_EFFORT:'Magic Effort',ULTIMATE_EFFORT:'Ultimate Effort',
                 HEARTS:'Hearts',DEFENSE:'Defense',ABILITY:'Innate Ability'};
             var items = [];
+            var abilityText = null;
             Object.keys(s.bonuses).forEach(function (k) {
+                if (k === 'ABILITY') { abilityText = s.bonuses[k]; return; }
                 var label = bonusLabels[k] || k;
                 var val = s.bonuses[k];
                 items.push('<span class="badge bg-dark border border-secondary me-1">' + label + ': '
                     + (typeof val === 'number' && val > 0 ? '+' : '') + val + '</span>');
             });
+            if (abilityText) parts.push('<div class="text-muted small fst-italic mt-1"><strong>Innate Ability:</strong> ' + escapeHtml(abilityText) + '</div>');
             if (items.length) parts.push('<div class="mt-1">' + items.join('') + '</div>');
         }
         if (entityType === 'loot') {
