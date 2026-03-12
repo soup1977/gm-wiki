@@ -23,6 +23,7 @@
     var typeManageModal = null;
     var currentManageTypeId = null;
     var manageAbilityData = {};
+    var manageCurrentDescription = '';
 
     // ── URL mapping ───────────────────────────────────────────────
     var URL_KEYS = {
@@ -483,6 +484,7 @@
         .then(function (data) {
             manageAbilityData = {};
             (data.abilities || []).forEach(function (ab) { manageAbilityData[ab.id] = ab; });
+            manageCurrentDescription = data.type_description || '';
             body.innerHTML = renderTypeManage(data, typeId);
         })
         .catch(function (err) { console.error(err); });
@@ -563,9 +565,7 @@
         html += '<hr class="border-secondary">';
         html += '<div id="manage-ai-section">';
         html += '<div class="d-flex align-items-center gap-2 mb-2">';
-        html += '<span class="text-muted small">Generate AI ideas for this type:</span>';
-        html += '<input type="text" id="manage-ai-concept" class="form-control form-control-sm bg-dark text-light border-secondary" '
-             + 'style="max-width:220px;" placeholder="Optional concept hint">';
+        html += '<span class="text-muted small">Generate AI ability and loot ideas for this type:</span>';
         html += '<button class="btn btn-sm btn-info manage-ai-run" data-type-id="' + typeId + '">'
              + '<i class="bi bi-stars me-1"></i>Generate</button>';
         html += '</div>';
@@ -656,8 +656,6 @@
         var aiRunBtn = e.target.closest('.manage-ai-run');
         if (!aiRunBtn) return;
         var aiTypeId = aiRunBtn.dataset.typeId;
-        var conceptInput = document.getElementById('manage-ai-concept');
-        var concept = conceptInput ? conceptInput.value.trim() : '';
         var spinner = document.getElementById('manage-ai-spinner');
         var results = document.getElementById('manage-ai-results');
         if (spinner) spinner.style.display = 'block';
@@ -667,11 +665,12 @@
         // Get type name/description from current manage data
         var manageTitle = document.getElementById('typeManageTitle');
         var typeName = manageTitle ? manageTitle.textContent : '';
+        var typeDesc = manageCurrentDescription || '';
 
         fetch('/api/ai/generate-type-content', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({type_name: typeName, type_description: '', concept: concept})
+            body: JSON.stringify({type_name: typeName, type_description: typeDesc})
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -755,7 +754,6 @@
                 addAbBtn.disabled = true;
                 addAbBtn.innerHTML = '<i class="bi bi-check"></i>';
                 addAbBtn.classList.replace('btn-success', 'btn-secondary');
-                loadTypeManage(currentManageTypeId);
             });
             return;
         }
@@ -793,7 +791,6 @@
                 addLdBtn.disabled = true;
                 addLdBtn.innerHTML = '<i class="bi bi-check"></i>';
                 addLdBtn.classList.replace('btn-success', 'btn-secondary');
-                loadTypeManage(currentManageTypeId);
             })
             .catch(function () { alert('Request failed.'); });
         }

@@ -2413,35 +2413,36 @@ def generate_type_content():
     data = request.get_json(silent=True) or {}
     type_name = data.get('type_name', '').strip()
     type_description = data.get('type_description', '').strip()
-    concept = data.get('concept', '').strip()
 
     if not type_name:
         return jsonify({'error': 'type_name is required.'}), 400
 
     world_context = _get_active_world_context()
     world_section = f'\nCampaign context:\n{world_context}\n' if world_context else ''
-    concept_section = f'\nExtra concept hint: {concept}\n' if concept else ''
 
     system_prompt = (
         f"{ICRPG_SYSTEM_PRIMER}\n\n"
         f"You are a creative ICRPG game designer generating content for a homebrew Type called \"{type_name}\".\n"
         f"Type description: {type_description or '(none provided)'}\n"
         f"{world_section}"
-        f"{concept_section}\n"
-        f"Generate the following as a single JSON object with two keys:\n\n"
-        f"\"abilities\": Array of 4–6 ability objects. Each has:\n"
-        f"  - \"name\": ability name\n"
-        f"  - \"description\": what it does (specific and flavorful, ICRPG style)\n"
-        f"  - \"ability_kind\": exactly one of: starting, milestone, mastery\n"
-        f"  Include at least 2 starting abilities, 2 milestone abilities, and 1 mastery ability.\n\n"
-        f"\"starting_loot\": Array of 3–5 starting loot ideas. Each has:\n"
-        f"  - \"name\": loot item name\n"
-        f"  - \"description\": flavor and rules text\n"
-        f"  - \"loot_type\": one of: Weapon, Armor, Shield, Pack, Tool, Spell, Item, Augment\n"
-        f"  - \"effects\": JSON object of numeric bonuses (valid keys: STR, DEX, CON, INT, WIS, CHA, "
-        f"BASIC_EFFORT, WEAPON_EFFORT, GUN_EFFORT, MAGIC_EFFORT, ULTIMATE_EFFORT, HEARTS, DEFENSE, "
-        f"EQUIPPED_SLOTS, CARRIED_SLOTS), or {{}} for no numeric effects\n"
-        f"  - \"slot_cost\": integer (1 = normal, 2 = large item)\n\n"
+        f"\nGenerate a cohesive set of abilities and starting loot that feel like a complete, themed kit.\n\n"
+        f"ABILITY PROGRESSION RULES (critical — follow exactly):\n"
+        f"- \"starting\" abilities: 2–3 foundational abilities that define what this Type does at its core.\n"
+        f"  These are active from day one and establish the Type's identity.\n"
+        f"- \"milestone\" abilities: 2 abilities that expand or complement the starting abilities.\n"
+        f"  They should feel like natural growth, not unrelated extras.\n"
+        f"- \"mastery\" ability: 1 ability that is a dramatically powered-up version of one of the starting\n"
+        f"  abilities — same theme, same mechanic, but bigger, bolder, and more impactful.\n"
+        f"  A mastery ability should feel like the pinnacle of what this Type does best.\n\n"
+        f"STARTING LOOT RULES:\n"
+        f"- 3–5 items that reinforce the Type's identity and synergize with its starting abilities.\n"
+        f"  If a starting ability benefits from a specific tool or weapon, that item should be in the loot list.\n"
+        f"- Each item has:\n"
+        f"  - \"name\", \"description\" (flavor + rules), \"loot_type\" (Weapon/Armor/Shield/Pack/Tool/Spell/Item/Augment)\n"
+        f"  - \"effects\": JSON object of numeric bonuses (valid keys: STR, DEX, CON, INT, WIS, CHA,\n"
+        f"    BASIC_EFFORT, WEAPON_EFFORT, GUN_EFFORT, MAGIC_EFFORT, ULTIMATE_EFFORT, HEARTS, DEFENSE,\n"
+        f"    EQUIPPED_SLOTS, CARRIED_SLOTS), or {{}} for no numeric effects\n"
+        f"  - \"slot_cost\": 1 (normal) or 2 (large item)\n\n"
         f"Return ONLY a JSON object with keys \"abilities\" and \"starting_loot\". No preamble, no markdown fences."
     )
 

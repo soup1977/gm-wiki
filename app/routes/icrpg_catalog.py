@@ -833,6 +833,7 @@ def manage_type(type_id):
 
     return jsonify({
         'type_name': t.name,
+        'type_description': t.description or '',
         'abilities': abilities,
         'starting_loot': starting_loot,
         'all_loot': all_loot,
