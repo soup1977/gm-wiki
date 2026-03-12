@@ -21,6 +21,8 @@ def index():
         AppSetting.set('ollama_model', request.form.get('ollama_model', 'llama3.1').strip())
         AppSetting.set('anthropic_api_key', request.form.get('anthropic_api_key', '').strip())
         AppSetting.set('anthropic_model', request.form.get('anthropic_model', 'claude-haiku-4-5-20251001'))
+        AppSetting.set('grok_api_key', request.form.get('grok_api_key', '').strip())
+        AppSetting.set('grok_model', request.form.get('grok_model', 'grok-3-mini'))
         AppSetting.set('sd_url', request.form.get('sd_url', '').strip())
         AppSetting.set('sd_model', request.form.get('sd_model', '').strip())
         AppSetting.set('sd_sampler', request.form.get('sd_sampler', 'DPM++ SDE').strip())
@@ -149,6 +151,26 @@ def test_anthropic():
             max_tokens=10,
         )
         return jsonify({'ok': True, 'message': f'Connected to Anthropic. Response: {result[:50]}'})
+    except AIProviderError as e:
+        return jsonify({'ok': False, 'message': str(e)})
+
+
+@settings_bp.route('/test-grok')
+@login_required
+@admin_required
+def test_grok():
+    """AJAX endpoint: test Grok (xAI) API key."""
+    config = get_ai_config()
+    if not config.get('grok_api_key'):
+        return jsonify({'ok': False, 'message': 'No Grok API key entered.'})
+    try:
+        result = ai_chat(
+            system_prompt='Reply with exactly: OK',
+            messages=[{'role': 'user', 'content': 'Say OK'}],
+            max_tokens=10,
+            provider='grok',
+        )
+        return jsonify({'ok': True, 'message': f'Connected to Grok. Response: {result[:50]}'})
     except AIProviderError as e:
         return jsonify({'ok': False, 'message': str(e)})
 

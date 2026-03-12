@@ -1,9 +1,10 @@
 """
 app/ai_provider.py — Provider-agnostic AI abstraction layer
 
-Supports two backends:
+Supports three backends:
   - Ollama (local, free) — talks to the Ollama REST API
   - Anthropic (cloud, paid) — uses the official anthropic Python SDK
+  - Grok (cloud, paid) — uses the xAI API (OpenAI-compatible)
 
 All settings are read from the AppSetting database table, not environment
 variables. This means the AI provider can be changed from the browser
@@ -38,6 +39,8 @@ def is_ai_enabled():
         return bool(settings.get('ollama_url'))
     elif provider == 'anthropic':
         return bool(settings.get('anthropic_api_key'))
+    elif provider == 'grok':
+        return bool(settings.get('grok_api_key'))
     return False
 
 
@@ -53,6 +56,8 @@ def get_available_providers():
         available.append('ollama')
     if settings.get('anthropic_api_key'):
         available.append('anthropic')
+    if settings.get('grok_api_key'):
+        available.append('grok')
     return available
 
 
@@ -63,14 +68,14 @@ FEATURE_KEYS = ('smart_fill', 'generate', 'assistant', 'npc_chat')
 def get_feature_provider(feature_key):
     """Return the effective AI provider for a specific feature.
 
-    Each feature can be individually assigned to 'ollama' or 'anthropic'.
+    Each feature can be individually assigned to 'ollama', 'anthropic', or 'grok'.
     If set to 'default' (or not set), the global ai_provider is used.
 
     Args:
         feature_key: One of 'smart_fill', 'generate', 'assistant', 'npc_chat'
 
     Returns:
-        'ollama', 'anthropic', or 'none'
+        'ollama', 'anthropic', 'grok', or 'none'
     """
     settings = _get_settings()
     override = settings.get(f'ai_feature_{feature_key}', 'default')
@@ -88,6 +93,8 @@ def get_ai_config():
         'ollama_model': settings.get('ollama_model', 'llama3.1'),
         'anthropic_api_key': settings.get('anthropic_api_key', ''),
         'anthropic_model': settings.get('anthropic_model', 'claude-haiku-4-5-20251001'),
+        'grok_api_key': settings.get('grok_api_key', ''),
+        'grok_model': settings.get('grok_model', 'grok-3-mini'),
         'sd_url': settings.get('sd_url', ''),
         'sd_model': settings.get('sd_model', ''),
         'sd_sampler': settings.get('sd_sampler', 'DPM++ SDE'),
@@ -125,6 +132,8 @@ def ai_chat(system_prompt, messages, max_tokens=1024, json_mode=False, provider=
         return _call_ollama(config, system_prompt, messages, json_mode=json_mode)
     elif effective_provider == 'anthropic':
         return _call_anthropic(config, system_prompt, messages, max_tokens)
+    elif effective_provider == 'grok':
+        return _call_grok(config, system_prompt, messages, max_tokens, json_mode=json_mode)
     else:
         raise AIProviderError('No AI provider configured. Go to Settings to set one up.')
 
@@ -208,3 +217,41 @@ def _call_anthropic(config, system_prompt, messages, max_tokens):
         if 'authentication' in error_msg.lower() or 'api_key' in error_msg.lower():
             raise AIProviderError('Invalid Anthropic API key. Check your key in Settings.')
         raise AIProviderError(f'Anthropic API error: {error_msg}')
+
+
+def _call_grok(config, system_prompt, messages, max_tokens, json_mode=False):
+    """Call the xAI Grok API (OpenAI-compatible)."""
+    api_key = config.get('grok_api_key', '').strip()
+    model = config.get('grok_model', 'grok-3-mini').strip() or 'grok-3-mini'
+    if not api_key:
+        raise AIProviderError('Grok API key is not set. Go to Settings to add it.')
+
+    payload = {
+        'model': model,
+        'messages': [{'role': 'system', 'content': system_prompt}] + messages,
+        'max_tokens': max_tokens,
+    }
+    if json_mode:
+        payload['response_format'] = {'type': 'json_object'}
+
+    try:
+        resp = requests.post(
+            'https://api.x.ai/v1/chat/completions',
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            json=payload,
+            timeout=60,
+        )
+        if resp.status_code == 401:
+            raise AIProviderError('Grok API key is invalid or unauthorized. Check your key in Settings.')
+        resp.raise_for_status()
+        return resp.json()['choices'][0]['message']['content'].strip()
+    except AIProviderError:
+        raise
+    except requests.ConnectionError:
+        raise AIProviderError('Cannot connect to the xAI Grok API. Check your internet connection.')
+    except requests.Timeout:
+        raise AIProviderError('Grok API request timed out.')
+    except requests.HTTPError as e:
+        raise AIProviderError(f'Grok API returned an error: {e}')
+    except (KeyError, json.JSONDecodeError) as e:
+        raise AIProviderError(f'Unexpected response from Grok API: {e}')
