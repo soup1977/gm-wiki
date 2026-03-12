@@ -12,6 +12,12 @@
     var currentAction = null;   // 'create' or 'edit'
     var currentItemId = null;
 
+    // Import state
+    var importEntity = null;
+    var importId = null;
+    var importModalEl = document.getElementById('importConfirmModal');
+    var importModal = null;
+
     // ── URL mapping ───────────────────────────────────────────────
     var URL_KEYS = {
         world: 'worlds', lifeform: 'life-forms', type: 'types',
@@ -212,6 +218,14 @@
         modal.show();
     };
 
+    // ── Delegated click listener for edit buttons (data-* attrs) ──
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.catalog-edit-btn');
+        if (!btn) return;
+        var data = JSON.parse(btn.dataset.payload);
+        catalogModal(btn.dataset.entity, 'edit', parseInt(btn.dataset.id), data);
+    });
+
     // ── Delete ────────────────────────────────────────────────────
     window.catalogDelete = function (urlKey, itemId, name) {
         if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
@@ -248,6 +262,71 @@
         .then(function (result) {
             if (result.error) { alert(result.error); return; }
             if (modal) modal.hide();
+            window.location.reload();
+        })
+        .catch(function (err) { console.error(err); });
+    });
+
+    // ── Import to Homebrew ────────────────────────────────────────
+    window.importBuiltin = function (entity, id, name) {
+        importEntity = entity;
+        importId = id;
+
+        document.getElementById('import-entity-name').textContent = name;
+        var pickerDiv = document.getElementById('import-picker');
+        var confirmBtn = document.getElementById('import-confirm-btn');
+        pickerDiv.innerHTML = '';
+        confirmBtn.style.display = '';
+
+        if (entity === 'lifeform' || entity === 'type') {
+            if (!IMPORT_HOMEBREW_WORLDS || IMPORT_HOMEBREW_WORLDS.length === 0) {
+                pickerDiv.innerHTML = '<div class="alert alert-warning small mb-0">You need at least one homebrew world first. Create one in the Worlds tab.</div>';
+                confirmBtn.style.display = 'none';
+            } else {
+                var sel = '<div class="mb-0"><label class="form-label small">Target World</label>' +
+                    '<select id="import-world-select" class="form-select form-select-sm bg-dark text-light border-secondary">';
+                IMPORT_HOMEBREW_WORLDS.forEach(function (w) {
+                    sel += '<option value="' + w.id + '">' + escapeHtml(w.name) + '</option>';
+                });
+                sel += '</select></div>';
+                pickerDiv.innerHTML = sel;
+            }
+        } else if (entity === 'ability') {
+            if (!IMPORT_HOMEBREW_TYPES || IMPORT_HOMEBREW_TYPES.length === 0) {
+                pickerDiv.innerHTML = '<div class="alert alert-warning small mb-0">You need at least one homebrew type first. Create one in the Types tab.</div>';
+                confirmBtn.style.display = 'none';
+            } else {
+                var sel2 = '<div class="mb-0"><label class="form-label small">Target Type (class)</label>' +
+                    '<select id="import-type-select" class="form-select form-select-sm bg-dark text-light border-secondary">';
+                IMPORT_HOMEBREW_TYPES.forEach(function (t) {
+                    sel2 += '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>';
+                });
+                sel2 += '</select></div>';
+                pickerDiv.innerHTML = sel2;
+            }
+        }
+
+        if (!importModal) importModal = new bootstrap.Modal(importModalEl);
+        importModal.show();
+    };
+
+    document.getElementById('import-confirm-btn').addEventListener('click', function () {
+        var body = {};
+        var worldSel = document.getElementById('import-world-select');
+        var typeSel = document.getElementById('import-type-select');
+        if (worldSel && worldSel.value) body.target_world_id = parseInt(worldSel.value);
+        if (typeSel && typeSel.value) body.target_type_id = parseInt(typeSel.value);
+
+        var urlKey = URL_KEYS[importEntity];
+        fetch('/icrpg-catalog/' + urlKey + '/' + importId + '/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify(body)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) { alert(data.error); return; }
+            if (importModal) importModal.hide();
             window.location.reload();
         })
         .catch(function (err) { console.error(err); });

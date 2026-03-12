@@ -9,7 +9,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import (Campaign, ICRPGWorld, ICRPGLifeForm, ICRPGType,
                          ICRPGAbility, ICRPGLootDef, ICRPGSpell,
-                         ICRPGMilestonePath)
+                         ICRPGMilestonePath, ICRPGStartingLoot)
 
 icrpg_catalog_bp = Blueprint('icrpg_catalog', __name__,
                               url_prefix='/icrpg-catalog')
@@ -596,3 +596,182 @@ def delete_path(item_id):
     db.session.delete(item)
     db.session.commit()
     return jsonify({'ok': True})
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# IMPORT BUILTIN → HOMEBREW
+# ═══════════════════════════════════════════════════════════════════════════
+
+@icrpg_catalog_bp.route('/worlds/<int:item_id>/import', methods=['POST'])
+@login_required
+def import_world(item_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    source = ICRPGWorld.query.get(item_id)
+    if not source or not source.is_builtin:
+        return jsonify({'error': 'Builtin world not found.'}), 404
+    new_item = ICRPGWorld(
+        name=source.name,
+        description=source.description,
+        basic_loot_count=source.basic_loot_count,
+        include_world_loot=source.include_world_loot,
+        is_builtin=False,
+        campaign_id=cid)
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_item.id})
+
+
+@icrpg_catalog_bp.route('/life-forms/<int:item_id>/import', methods=['POST'])
+@login_required
+def import_life_form(item_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    source = ICRPGLifeForm.query.get(item_id)
+    if not source or not source.is_builtin:
+        return jsonify({'error': 'Builtin life form not found.'}), 404
+    data = request.get_json(silent=True) or {}
+    target_world_id = data.get('target_world_id')
+    if not target_world_id:
+        return jsonify({'error': 'target_world_id is required.'}), 400
+    new_item = ICRPGLifeForm(
+        world_id=target_world_id,
+        name=source.name,
+        description=source.description,
+        bonuses=source.bonuses,
+        is_builtin=False,
+        campaign_id=cid)
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_item.id})
+
+
+@icrpg_catalog_bp.route('/types/<int:item_id>/import', methods=['POST'])
+@login_required
+def import_type(item_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    source = ICRPGType.query.get(item_id)
+    if not source or not source.is_builtin:
+        return jsonify({'error': 'Builtin type not found.'}), 404
+    data = request.get_json(silent=True) or {}
+    target_world_id = data.get('target_world_id')
+    if not target_world_id:
+        return jsonify({'error': 'target_world_id is required.'}), 400
+    new_type = ICRPGType(
+        world_id=target_world_id,
+        name=source.name,
+        description=source.description,
+        is_builtin=False,
+        campaign_id=cid)
+    db.session.add(new_type)
+    db.session.flush()  # get new_type.id before adding children
+
+    for ab in source.abilities:
+        new_ab = ICRPGAbility(
+            type_id=new_type.id,
+            name=ab.name,
+            description=ab.description,
+            ability_kind=ab.ability_kind,
+            is_builtin=False,
+            campaign_id=cid)
+        db.session.add(new_ab)
+
+    for sl in source.starting_loot:
+        new_sl = ICRPGStartingLoot(
+            type_id=new_type.id,
+            loot_def_id=sl.loot_def_id,
+            spell_id=sl.spell_id)
+        db.session.add(new_sl)
+
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_type.id})
+
+
+@icrpg_catalog_bp.route('/loot/<int:item_id>/import', methods=['POST'])
+@login_required
+def import_loot(item_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    source = ICRPGLootDef.query.get(item_id)
+    if not source or not source.is_builtin:
+        return jsonify({'error': 'Builtin loot not found.'}), 404
+    new_item = ICRPGLootDef(
+        world_id=None,
+        name=source.name,
+        loot_type=source.loot_type,
+        description=source.description,
+        effects=source.effects,
+        slot_cost=source.slot_cost,
+        coin_cost=source.coin_cost,
+        is_starter=source.is_starter,
+        is_builtin=False,
+        campaign_id=cid)
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_item.id})
+
+
+@icrpg_catalog_bp.route('/spells/<int:item_id>/import', methods=['POST'])
+@login_required
+def import_spell(item_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    source = ICRPGSpell.query.get(item_id)
+    if not source or not source.is_builtin:
+        return jsonify({'error': 'Builtin spell not found.'}), 404
+    new_item = ICRPGSpell(
+        name=source.name,
+        spell_type=source.spell_type,
+        casting_stat=source.casting_stat,
+        level=source.level,
+        target=source.target,
+        duration=source.duration,
+        description=source.description,
+        is_builtin=False,
+        campaign_id=cid)
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_item.id})
+
+
+@icrpg_catalog_bp.route('/abilities/<int:item_id>/import', methods=['POST'])
+@login_required
+def import_ability(item_id):
+    err = _gm_only()
+    if err: return err
+    campaign, cid = _get_campaign_or_error()
+    if not campaign:
+        return jsonify({'error': 'No ICRPG campaign.'}), 400
+    source = ICRPGAbility.query.get(item_id)
+    if not source or not source.is_builtin:
+        return jsonify({'error': 'Builtin ability not found.'}), 404
+    data = request.get_json(silent=True) or {}
+    target_type_id = data.get('target_type_id')
+    if not target_type_id:
+        return jsonify({'error': 'target_type_id is required.'}), 400
+    new_item = ICRPGAbility(
+        type_id=target_type_id,
+        name=source.name,
+        description=source.description,
+        ability_kind=source.ability_kind,
+        is_builtin=False,
+        campaign_id=cid)
+    db.session.add(new_item)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': new_item.id})

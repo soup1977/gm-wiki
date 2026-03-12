@@ -42,8 +42,12 @@
             <td class="text-muted small">{{ w.description[:80] if w.description else '' }}{% if w.description and w.description|length > 80 %}...{% endif %}</td>
             <td class="text-muted small text-center">{{ w.basic_loot_count or 4 }}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('world', 'edit', {{ w.id }}, {{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4,'include_world_loot':w.include_world_loot or []} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, '{{ w.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="world" data-id="{{ w.id }}"
+                        data-payload="{{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4,'include_world_loot':w.include_world_loot or []} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, '{{ w.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -59,7 +63,16 @@
         <table class="table table-dark table-sm mt-2">
             <tbody>
             {% for w in bw %}
-            <tr><td>{{ w.name }}</td><td class="text-muted small">{{ w.description[:80] if w.description else '' }}</td></tr>
+            <tr>
+                <td>{{ w.name }}</td>
+                <td class="text-muted small">{{ w.description[:80] if w.description else '' }}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info py-0"
+                            onclick="importBuiltin('world', {{ w.id }}, '{{ w.name | e }}')">
+                        <i class="bi bi-download me-1"></i>Import
+                    </button>
+                </td>
+            </tr>
             {% endfor %}
             </tbody>
         </table>
@@ -87,8 +100,12 @@
             <td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td>
             <td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('lifeform', 'edit', {{ lf.id }}, {{ {'name':lf.name,'description':lf.description or '','world_id':lf.world_id,'bonuses':lf.bonuses or {}} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('life-forms', {{ lf.id }}, '{{ lf.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="lifeform" data-id="{{ lf.id }}"
+                        data-payload="{{ {'name':lf.name,'description':lf.description or '','world_id':lf.world_id,'bonuses':lf.bonuses or {}} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('life-forms', {{ lf.id }}, '{{ lf.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -104,7 +121,17 @@
         <table class="table table-dark table-sm mt-2">
             <tbody>
             {% for lf in blf %}
-            <tr><td>{{ lf.name }}</td><td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td><td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td></tr>
+            <tr>
+                <td>{{ lf.name }}</td>
+                <td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td>
+                <td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info py-0"
+                            onclick="importBuiltin('lifeform', {{ lf.id }}, '{{ lf.name | e }}')">
+                        <i class="bi bi-download me-1"></i>Import
+                    </button>
+                </td>
+            </tr>
             {% endfor %}
             </tbody>
         </table>
@@ -130,10 +157,14 @@
         <tr>
             <td>{{ t.name }}</td>
             <td class="text-muted small">{{ t.world.name if t.world else '—' }}</td>
-            <td class="text-muted small">{{ t.description[:60] }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
+            <td class="text-muted small">{{ t.description[:60] if t.description else '' }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('type', 'edit', {{ t.id }}, {{ {'name':t.name,'description':t.description or '','world_id':t.world_id} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('types', {{ t.id }}, '{{ t.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="type" data-id="{{ t.id }}"
+                        data-payload="{{ {'name':t.name,'description':t.description or '','world_id':t.world_id} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('types', {{ t.id }}, '{{ t.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -149,7 +180,16 @@
         <table class="table table-dark table-sm mt-2">
             <tbody>
             {% for t in bt %}
-            <tr><td>{{ t.name }}</td><td class="text-muted small">{{ t.world.name if t.world else '—' }}</td></tr>
+            <tr>
+                <td>{{ t.name }}</td>
+                <td class="text-muted small">{{ t.world.name if t.world else '—' }}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info py-0"
+                            onclick="importBuiltin('type', {{ t.id }}, '{{ t.name | e }}')">
+                        <i class="bi bi-download me-1"></i>Import
+                    </button>
+                </td>
+            </tr>
             {% endfor %}
             </tbody>
         </table>
@@ -176,10 +216,14 @@
             <td>{{ ab.name }}</td>
             <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
             <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
-            <td class="text-muted small">{{ ab.description[:60] }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
+            <td class="text-muted small">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('ability', 'edit', {{ ab.id }}, {{ {'name':ab.name,'description':ab.description or '','type_id':ab.type_id,'ability_kind':ab.ability_kind} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('abilities', {{ ab.id }}, '{{ ab.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="ability" data-id="{{ ab.id }}"
+                        data-payload="{{ {'name':ab.name,'description':ab.description or '','type_id':ab.type_id,'ability_kind':ab.ability_kind} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('abilities', {{ ab.id }}, '{{ ab.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -193,14 +237,20 @@
     <details class="mt-3">
         <summary class="text-muted small">Show built-in abilities ({{ bab|length }})</summary>
         <table class="table table-dark table-sm mt-2">
-            <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th></tr></thead>
+            <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th><th></th></tr></thead>
             <tbody>
             {% for ab in bab %}
             <tr>
                 <td>{{ ab.name }}</td>
                 <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
                 <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
-                <td class="text-muted small">{{ ab.description[:60] }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
+                <td class="text-muted small">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info py-0"
+                            onclick="importBuiltin('ability', {{ ab.id }}, '{{ ab.name | e }}')">
+                        <i class="bi bi-download me-1"></i>Import
+                    </button>
+                </td>
             </tr>
             {% endfor %}
             </tbody>
@@ -230,8 +280,12 @@
             <td class="text-muted small">{{ ld.slot_cost }}</td>
             <td class="text-muted small">{{ ld.effects | tojson if ld.effects else '—' }}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('loot', 'edit', {{ ld.id }}, {{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','world_id':ld.world_id,'effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost or 0,'is_starter':ld.is_starter} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, '{{ ld.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="loot" data-id="{{ ld.id }}"
+                        data-payload="{{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','world_id':ld.world_id,'effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost or 0,'is_starter':ld.is_starter} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, '{{ ld.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -245,14 +299,20 @@
     <details class="mt-3">
         <summary class="text-muted small">Show built-in loot ({{ bld|length }})</summary>
         <table class="table table-dark table-sm mt-2">
-            <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th></tr></thead>
+            <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th><th></th></tr></thead>
             <tbody>
             {% for ld in bld %}
             <tr>
                 <td>{{ ld.name }}</td>
                 <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
                 <td class="text-muted small">{{ ld.slot_cost }}</td>
-                <td class="text-muted small">{{ ld.description[:60] }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
+                <td class="text-muted small">{{ ld.description[:60] if ld.description else '' }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info py-0"
+                            onclick="importBuiltin('loot', {{ ld.id }}, '{{ ld.name | e }}')">
+                        <i class="bi bi-download me-1"></i>Import
+                    </button>
+                </td>
             </tr>
             {% endfor %}
             </tbody>
@@ -281,10 +341,14 @@
             <td class="text-muted small">{{ sp.spell_type or '—' }}</td>
             <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
             <td class="text-muted small">{{ sp.level }}</td>
-            <td class="text-muted small">{{ sp.description[:50] }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
+            <td class="text-muted small">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('spell', 'edit', {{ sp.id }}, {{ {'name':sp.name,'description':sp.description or '','spell_type':sp.spell_type or '','casting_stat':sp.casting_stat or '','level':sp.level,'target':sp.target or '','duration':sp.duration or ''} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('spells', {{ sp.id }}, '{{ sp.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="spell" data-id="{{ sp.id }}"
+                        data-payload="{{ {'name':sp.name,'description':sp.description or '','spell_type':sp.spell_type or '','casting_stat':sp.casting_stat or '','level':sp.level,'target':sp.target or '','duration':sp.duration or ''} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('spells', {{ sp.id }}, '{{ sp.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -298,7 +362,7 @@
     <details class="mt-3">
         <summary class="text-muted small">Show built-in spells ({{ bsp|length }})</summary>
         <table class="table table-dark table-sm mt-2">
-            <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th></tr></thead>
+            <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th><th></th></tr></thead>
             <tbody>
             {% for sp in bsp %}
             <tr>
@@ -306,7 +370,13 @@
                 <td class="text-muted small">{{ sp.spell_type or '—' }}</td>
                 <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
                 <td class="text-muted small">{{ sp.level }}</td>
-                <td class="text-muted small">{{ sp.description[:50] }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
+                <td class="text-muted small">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-info py-0"
+                            onclick="importBuiltin('spell', {{ sp.id }}, '{{ sp.name | e }}')">
+                        <i class="bi bi-download me-1"></i>Import
+                    </button>
+                </td>
             </tr>
             {% endfor %}
             </tbody>
@@ -332,11 +402,15 @@
         {% for mp in hmp %}
         <tr>
             <td>{{ mp.name }}</td>
-            <td class="text-muted small">{{ mp.description[:60] }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
+            <td class="text-muted small">{{ mp.description[:60] if mp.description else '' }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
             <td class="text-muted small">{{ mp.tiers | length if mp.tiers else 0 }} tiers</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary" onclick="catalogModal('path', 'edit', {{ mp.id }}, {{ {'name':mp.name,'description':mp.description or '','tiers':mp.tiers or []} | tojson }})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('paths', {{ mp.id }}, '{{ mp.name }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
+                        data-entity="path" data-id="{{ mp.id }}"
+                        data-payload="{{ {'name':mp.name,'description':mp.description or '','tiers':mp.tiers or []} | tojson | forceescape }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('paths', {{ mp.id }}, '{{ mp.name | e }}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -355,7 +429,7 @@
             {% for mp in bmp %}
             <tr>
                 <td>{{ mp.name }}</td>
-                <td class="text-muted small">{{ mp.description[:60] }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
+                <td class="text-muted small">{{ mp.description[:60] if mp.description else '' }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
                 <td class="text-muted small">{{ mp.tiers | length if mp.tiers else 0 }} tiers</td>
             </tr>
             {% endfor %}
@@ -368,7 +442,7 @@
 </div>{# /tab-content #}
 
 {# ═══════════════════════════════════════════════════════════════ #}
-{# SHARED MODAL                                                    #}
+{# SHARED EDIT MODAL                                               #}
 {# ═══════════════════════════════════════════════════════════════ #}
 <div class="modal fade" id="catalogFormModal" tabindex="-1">
     <div class="modal-dialog">
@@ -388,6 +462,30 @@
     </div>
 </div>
 
+{# ═══════════════════════════════════════════════════════════════ #}
+{# IMPORT CONFIRM MODAL                                            #}
+{# ═══════════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="importConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content bg-dark border-info">
+            <div class="modal-header border-info">
+                <h5 class="modal-title text-info"><i class="bi bi-download me-2"></i>Import to Homebrew</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 small">Copy <strong id="import-entity-name"></strong> into your homebrew catalog for editing.</p>
+                <div id="import-picker"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info btn-sm" id="import-confirm-btn">
+                    <i class="bi bi-download me-1"></i>Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {# Pass dropdown options to JS #}
 <script>
 var CATALOG_WORLDS = {{ all_worlds | map(attribute='id') | list | tojson }};
@@ -396,6 +494,10 @@ var CATALOG_WORLD_NAMES = {};
 var CATALOG_TYPES = {{ all_types | map(attribute='id') | list | tojson }};
 var CATALOG_TYPE_NAMES = {};
 {% for t in all_types %}CATALOG_TYPE_NAMES[{{ t.id }}] = {{ t.name | tojson }};{% endfor %}
+
+{# Homebrew-only worlds/types for import picker #}
+var IMPORT_HOMEBREW_WORLDS = [{% for w in hw %}{id:{{ w.id }},name:{{ w.name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var IMPORT_HOMEBREW_TYPES = [{% for t in ht %}{id:{{ t.id }},name:{{ t.name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
 </script>
 {% endblock %}
 
