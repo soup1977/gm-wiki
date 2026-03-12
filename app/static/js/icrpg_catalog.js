@@ -703,20 +703,32 @@
                 if (results) results.innerHTML = '<div class="alert alert-danger small mt-2">' + data.error + '</div>';
                 return;
             }
-            var html = '';
-            // Abilities suggestions
             var abilities = data.abilities || [];
+            var loot = data.starting_loot || [];
+            var html = '';
+
+            // Add All button
+            if (abilities.length || loot.length) {
+                html += '<div class="d-flex justify-content-between align-items-center mb-2 mt-2">';
+                html += '<span class="text-muted small">' + abilities.length + ' abilities · ' + loot.length + ' loot items</span>';
+                html += '<button class="btn btn-sm btn-success manage-ai-add-all" data-type-id="' + aiTypeId + '">'
+                     + '<i class="bi bi-check-all me-1"></i>Add All</button>';
+                html += '</div>';
+            }
+
+            // Abilities suggestions
             if (abilities.length) {
-                html += '<div class="mt-2"><strong class="small text-info">Ability Ideas</strong></div>';
+                html += '<div class="mt-1"><strong class="small text-info">Ability Ideas</strong></div>';
                 abilities.forEach(function (ab, i) {
                     var kindColor = ab.ability_kind === 'starting' ? 'info' : ab.ability_kind === 'milestone' ? 'warning' : 'danger';
-                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2">';
+                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2" id="manage-ai-ab-' + i + '">';
                     html += '<div class="flex-grow-1">';
                     html += '<span class="badge bg-' + kindColor + ' me-1">' + (ab.ability_kind || '') + '</span>';
                     html += '<strong class="small">' + escapeHtml(ab.name || '') + '</strong> ';
                     html += '<span class="text-muted small">' + escapeHtml((ab.description || '').substring(0, 80)) + '</span>';
                     html += '</div>';
                     html += '<button class="btn btn-sm btn-success py-0 flex-shrink-0 manage-ai-add-ability" '
+                         + 'data-idx="' + i + '" '
                          + 'data-type-id="' + aiTypeId + '" '
                          + 'data-name="' + escapeHtml(ab.name || '') + '" '
                          + 'data-desc="' + escapeHtml(ab.description || '') + '" '
@@ -726,17 +738,17 @@
                 });
             }
             // Starting loot suggestions
-            var loot = data.starting_loot || [];
             if (loot.length) {
                 html += '<div class="mt-2"><strong class="small text-warning">Starting Loot Ideas</strong></div>';
-                loot.forEach(function (ld) {
-                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2">';
+                loot.forEach(function (ld, i) {
+                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2" id="manage-ai-ld-' + i + '">';
                     html += '<div class="flex-grow-1">';
                     html += '<span class="badge bg-secondary border border-info me-1">' + (ld.loot_type || '') + '</span>';
                     html += '<strong class="small">' + escapeHtml(ld.name || '') + '</strong> ';
                     html += '<span class="text-muted small">' + escapeHtml((ld.description || '').substring(0, 80)) + '</span>';
                     html += '</div>';
                     html += '<button class="btn btn-sm btn-success py-0 flex-shrink-0 manage-ai-add-loot" '
+                         + 'data-idx="' + i + '" '
                          + 'data-type-id="' + aiTypeId + '" '
                          + 'data-name="' + escapeHtml(ld.name || '') + '" '
                          + 'data-desc="' + escapeHtml(ld.description || '') + '" '
@@ -817,6 +829,69 @@
             })
             .catch(function () { alert('Request failed.'); });
         }
+    });
+
+    // Add All handler
+    document.addEventListener('click', function (e) {
+        var addAllBtn = e.target.closest('.manage-ai-add-all');
+        if (!addAllBtn) return;
+        var typeId = addAllBtn.dataset.typeId;
+        addAllBtn.disabled = true;
+        addAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding…';
+
+        var abBtns = Array.from(document.querySelectorAll('.manage-ai-add-ability:not([disabled])'));
+        var ldBtns = Array.from(document.querySelectorAll('.manage-ai-add-loot:not([disabled])'));
+
+        function markDone(btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-check"></i>';
+            btn.classList.replace('btn-success', 'btn-secondary');
+        }
+
+        // Chain all ability POSTs then all loot POSTs sequentially
+        var chain = Promise.resolve();
+        abBtns.forEach(function (btn) {
+            chain = chain.then(function () {
+                return fetch('/icrpg-catalog/abilities/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    body: JSON.stringify({
+                        name: btn.dataset.name,
+                        description: btn.dataset.desc,
+                        ability_kind: btn.dataset.kind,
+                        type_id: parseInt(typeId)
+                    })
+                }).then(function (r) { return r.json(); })
+                  .then(function (res) { if (!res.error) markDone(btn); });
+            });
+        });
+        ldBtns.forEach(function (btn) {
+            chain = chain.then(function () {
+                return fetch('/icrpg-catalog/loot/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    body: JSON.stringify({
+                        name: btn.dataset.name,
+                        description: btn.dataset.desc,
+                        loot_type: btn.dataset.lootType,
+                        slot_cost: parseInt(btn.dataset.slotCost) || 1,
+                        effects: JSON.parse(btn.dataset.effects || '{}')
+                    })
+                }).then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (res.error) return;
+                    return fetch('/icrpg-catalog/types/' + typeId + '/starting-loot/add', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                        body: JSON.stringify({loot_def_id: res.id})
+                    }).then(function (r) { return r.json(); })
+                      .then(function () { markDone(btn); });
+                });
+            });
+        });
+        chain.then(function () {
+            addAllBtn.innerHTML = '<i class="bi bi-check-all me-1"></i>All Added!';
+        });
     });
 
     // ── ICRPG AI Generator ────────────────────────────────────────
