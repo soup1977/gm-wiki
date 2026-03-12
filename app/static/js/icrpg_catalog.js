@@ -639,6 +639,250 @@
         }
     });
 
+    // ── ICRPG AI Generator ────────────────────────────────────────
+
+    var icrpgAIModalEl = null;
+    var icrpgAIModal   = null;
+    var icrpgAIMode    = 'generate'; // 'generate' or 'retheme'
+    var icrpgAIEntity  = null;
+    var icrpgAIRethemeId = null;
+    var icrpgAIRethemeData = null;
+
+    var ICRPG_URL_KEYS = {
+        lifeform: 'life-forms', type: 'types', ability: 'abilities',
+        loot: 'loot', spell: 'spells', path: 'paths'
+    };
+    var ICRPG_EDIT_ROUTES = {
+        lifeform: 'life-forms', type: 'types', ability: 'abilities',
+        loot: 'loot', spell: 'spells', path: 'paths'
+    };
+
+    window.openIcrpgAI = function (entityType, entityLabel) {
+        icrpgAIMode   = 'generate';
+        icrpgAIEntity = entityType;
+        _initIcrpgModal();
+        document.getElementById('icrpgAIModalTitle').textContent = 'AI Homebrew Ideas — ' + entityLabel;
+        document.getElementById('icrpgAIControls').style.display = 'block';
+        document.getElementById('icrpgAIThemeRow').style.display = 'none';
+        document.getElementById('icrpgAIGenerateBtn').style.display = '';
+        document.getElementById('icrpgAIConcept').value = '';
+        document.getElementById('icrpgAIResults').innerHTML = '';
+        document.getElementById('icrpgAISpinner').style.display = 'none';
+        icrpgAIModal.show();
+    };
+
+    window.openIcrpgRetheme = function (entityType, entityId, payloadJson) {
+        icrpgAIMode       = 'retheme';
+        icrpgAIEntity     = entityType;
+        icrpgAIRethemeId  = entityId;
+        try { icrpgAIRethemeData = JSON.parse(payloadJson); }
+        catch (e) { icrpgAIRethemeData = {}; }
+        _initIcrpgModal();
+        document.getElementById('icrpgAIModalTitle').textContent = 'Retheme: ' + (icrpgAIRethemeData.name || entityType);
+        document.getElementById('icrpgAIControls').style.display = 'block';
+        document.getElementById('icrpgAIThemeRow').style.display = 'block';
+        document.getElementById('icrpgAIGenerateBtn').style.display = 'none';
+        document.getElementById('icrpgAITheme').value = '';
+        document.getElementById('icrpgAIResults').innerHTML = '';
+        document.getElementById('icrpgAISpinner').style.display = 'none';
+        icrpgAIModal.show();
+    };
+
+    function _initIcrpgModal() {
+        if (!icrpgAIModalEl) icrpgAIModalEl = document.getElementById('icrpgAIModal');
+        if (!icrpgAIModal && icrpgAIModalEl) icrpgAIModal = new bootstrap.Modal(icrpgAIModalEl);
+    }
+
+    window.runIcrpgGenerate = function () {
+        var concept = document.getElementById('icrpgAIConcept').value.trim();
+        var count   = parseInt(document.getElementById('icrpgAICount').value, 10) || 3;
+        _showIcrpgSpinner(true);
+        fetch('/api/ai/generate-icrpg', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({entity_type: icrpgAIEntity, concept: concept, count: count})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            _showIcrpgSpinner(false);
+            if (data.error) { _icrpgError(data.error); return; }
+            _renderIcrpgSuggestions(data.suggestions || [], false);
+        })
+        .catch(function () { _showIcrpgSpinner(false); _icrpgError('Request failed.'); });
+    };
+
+    window.runIcrpgRetheme = function () {
+        var theme = document.getElementById('icrpgAITheme').value.trim();
+        if (!theme) { alert('Please enter a theme.'); return; }
+        _showIcrpgSpinner(true);
+        fetch('/api/ai/retheme-icrpg', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({entity_type: icrpgAIEntity, existing_data: icrpgAIRethemeData, theme: theme})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            _showIcrpgSpinner(false);
+            if (data.error) { _icrpgError(data.error); return; }
+            var suggestion = data.suggestion || {};
+            _renderIcrpgSuggestions([suggestion], true);
+        })
+        .catch(function () { _showIcrpgSpinner(false); _icrpgError('Request failed.'); });
+    };
+
+    function _showIcrpgSpinner(show) {
+        document.getElementById('icrpgAISpinner').style.display = show ? 'block' : 'none';
+        document.getElementById('icrpgAIResults').innerHTML = '';
+        var genBtn = document.getElementById('icrpgAIGenerateBtn');
+        var rethBtn = document.getElementById('icrpgAIRethemeBtn');
+        if (genBtn) genBtn.disabled = show;
+        if (rethBtn) rethBtn.disabled = show;
+    }
+
+    function _icrpgError(msg) {
+        document.getElementById('icrpgAIResults').innerHTML =
+            '<div class="alert alert-danger small">' + msg + '</div>';
+    }
+
+    function _renderIcrpgSuggestions(suggestions, isRetheme) {
+        var container = document.getElementById('icrpgAIResults');
+        if (!suggestions || !suggestions.length) {
+            container.innerHTML = '<p class="text-muted small">No suggestions returned.</p>';
+            return;
+        }
+        var html = '';
+        suggestions.forEach(function (s, idx) {
+            html += '<div class="card bg-secondary border-0 mb-3" id="icrpg-card-' + idx + '">';
+            html += '<div class="card-body p-3">';
+            html += '<div class="d-flex justify-content-between align-items-start mb-2">';
+            html += '<strong class="text-light">' + (s.name || '(no name)') + '</strong>';
+            html += '<div class="d-flex gap-1">';
+            if (isRetheme) {
+                html += '<button class="btn btn-sm btn-success py-0" onclick="addIcrpgEntry(' + idx + ', false)">'
+                      + '<i class="bi bi-plus-circle me-1"></i>Save as New</button>';
+                html += '<button class="btn btn-sm btn-warning py-0" onclick="addIcrpgEntry(' + idx + ', true)">'
+                      + '<i class="bi bi-arrow-repeat me-1"></i>Overwrite</button>';
+            } else {
+                html += '<button class="btn btn-sm btn-success py-0" onclick="addIcrpgEntry(' + idx + ', false)">'
+                      + '<i class="bi bi-plus-circle me-1"></i>Add to Catalog</button>';
+            }
+            html += '</div></div>';
+            // Description
+            if (s.description) {
+                html += '<p class="small text-light mb-2">' + s.description + '</p>';
+            }
+            // Entity-specific detail display
+            html += _icrpgSuggestionDetails(s, icrpgAIEntity);
+            html += '</div></div>';
+        });
+        container.innerHTML = html;
+        // Store suggestions for later retrieval
+        container._suggestions = suggestions;
+    }
+
+    function _icrpgSuggestionDetails(s, entityType) {
+        var parts = [];
+        if (entityType === 'lifeform' && s.bonuses && Object.keys(s.bonuses).length) {
+            var bonusLabels = {STR:'STR',DEX:'DEX',CON:'CON',INT:'INT',WIS:'WIS',CHA:'CHA',
+                BASIC_EFFORT:'Basic Effort',WEAPON_EFFORT:'Weapon Effort',GUN_EFFORT:'Gun Effort',
+                MAGIC_EFFORT:'Magic Effort',ULTIMATE_EFFORT:'Ultimate Effort',
+                HEARTS:'Hearts',DEFENSE:'Defense',ABILITY:'Innate Ability'};
+            var items = [];
+            Object.keys(s.bonuses).forEach(function (k) {
+                var label = bonusLabels[k] || k;
+                var val = s.bonuses[k];
+                items.push('<span class="badge bg-dark border border-secondary me-1">' + label + ': '
+                    + (typeof val === 'number' && val > 0 ? '+' : '') + val + '</span>');
+            });
+            if (items.length) parts.push('<div class="mt-1">' + items.join('') + '</div>');
+        }
+        if (entityType === 'loot') {
+            var meta = [];
+            if (s.loot_type) meta.push('<span class="badge bg-secondary border border-info">' + s.loot_type + '</span>');
+            if (s.slot_cost) meta.push('<span class="text-muted small">Slots: ' + s.slot_cost + '</span>');
+            if (s.coin_cost) meta.push('<span class="text-muted small">Cost: ' + s.coin_cost + 'gp</span>');
+            if (meta.length) parts.push('<div class="mb-1">' + meta.join(' ') + '</div>');
+            if (s.effects && Object.keys(s.effects).length) {
+                var efxLabels = {STR:'STR',DEX:'DEX',CON:'CON',INT:'INT',WIS:'WIS',CHA:'CHA',
+                    BASIC_EFFORT:'Basic Effort',WEAPON_EFFORT:'Weapon Effort',GUN_EFFORT:'Gun Effort',
+                    MAGIC_EFFORT:'Magic Effort',ULTIMATE_EFFORT:'Ultimate Effort',
+                    HEARTS:'Hearts',DEFENSE:'Defense',EQUIPPED_SLOTS:'Equip Slots',CARRIED_SLOTS:'Carry Slots'};
+                var efxItems = [];
+                Object.keys(s.effects).forEach(function (k) {
+                    var val = s.effects[k];
+                    efxItems.push('<span class="badge bg-dark border border-warning me-1">' + (efxLabels[k]||k) + ': '
+                        + (typeof val === 'number' && val > 0 ? '+' : '') + val + '</span>');
+                });
+                if (efxItems.length) parts.push('<div>' + efxItems.join('') + '</div>');
+            }
+        }
+        if (entityType === 'spell') {
+            var smeta = [];
+            if (s.spell_type) smeta.push(s.spell_type);
+            if (s.casting_stat) smeta.push('Cast: ' + s.casting_stat);
+            if (s.level) smeta.push('Lvl ' + s.level);
+            if (s.target) smeta.push('Target: ' + s.target);
+            if (s.duration) smeta.push('Duration: ' + s.duration);
+            if (smeta.length) parts.push('<div class="text-muted small">' + smeta.join(' · ') + '</div>');
+        }
+        if (entityType === 'ability' && s.ability_kind) {
+            var kindColor = s.ability_kind === 'starting' ? 'info' : s.ability_kind === 'milestone' ? 'warning' : 'danger';
+            parts.push('<span class="badge bg-' + kindColor + '">' + s.ability_kind + '</span>');
+        }
+        if (entityType === 'path' && s.tiers) {
+            var tierCount = Object.keys(s.tiers).length;
+            parts.push('<div class="text-muted small">Tiers: ' + tierCount
+                + (tierCount === 4 ? ' ✓' : '') + '</div>');
+        }
+        return parts.join('');
+    }
+
+    window.addIcrpgEntry = function (idx, overwrite) {
+        var container = document.getElementById('icrpgAIResults');
+        var suggestions = container._suggestions || [];
+        var s = suggestions[idx];
+        if (!s) return;
+
+        var urlKey = ICRPG_URL_KEYS[icrpgAIEntity];
+        var url = overwrite
+            ? '/icrpg-catalog/' + urlKey + '/' + icrpgAIRethemeId + '/edit'
+            : '/icrpg-catalog/' + urlKey + '/create';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(s)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var card = document.getElementById('icrpg-card-' + idx);
+            if (data.ok) {
+                if (card) card.style.opacity = '0.6';
+                var btns = card ? card.querySelectorAll('button') : [];
+                btns.forEach(function (b) { b.disabled = true; });
+                if (card) {
+                    var ck = document.createElement('span');
+                    ck.className = 'badge bg-success ms-2';
+                    ck.textContent = overwrite ? 'Updated!' : 'Added!';
+                    card.querySelector('.card-body').appendChild(ck);
+                }
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(function () { alert('Request failed.'); });
+    };
+
+    // Delegated listener for Retheme buttons
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.icrpg-retheme-btn');
+        if (!btn) return;
+        var entityType = btn.dataset.entity;
+        var entityId   = btn.dataset.id;
+        var payload    = btn.dataset.payload;
+        window.openIcrpgRetheme(entityType, entityId, payload);
+    });
+
     // ── Tab persistence via URL hash ──────────────────────────────
     var tabButtons = document.querySelectorAll('#catalogTabs button[data-bs-toggle="tab"]');
     tabButtons.forEach(function (btn) {
