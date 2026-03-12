@@ -130,8 +130,13 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small">Model</label>
-                        <select class="form-select form-select-sm bg-dark text-light border-secondary" name="anthropic_model">
+                        <label class="form-label small">Model
+                            <span id="anthropic-model-loading" class="text-muted small ms-2" style="display:none;">
+                                <span class="spinner-border spinner-border-sm"></span> Loading…
+                            </span>
+                        </label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                name="anthropic_model" id="anthropic_model">
                             <option value="claude-haiku-4-5-20251001" {% if ai_config.anthropic_model == 'claude-haiku-4-5-20251001' %}selected{% endif %}>Haiku 4.5 — Fast &amp; affordable</option>
                             <option value="claude-sonnet-4-6" {% if ai_config.anthropic_model == 'claude-sonnet-4-6' %}selected{% endif %}>Sonnet 4.6 — Balanced</option>
                             <option value="claude-opus-4-6" {% if ai_config.anthropic_model == 'claude-opus-4-6' %}selected{% endif %}>Opus 4.6 — Most capable</option>
@@ -483,12 +488,50 @@
 
 {% block scripts %}
 <script>
+var _anthropicModelsLoaded = false;
+
 function toggleProviderSections() {
     const provider = document.querySelector('input[name="ai_provider"]:checked').value;
     document.getElementById('ollama-section').style.display =
         provider === 'ollama' ? 'block' : 'none';
     document.getElementById('anthropic-section').style.display =
         provider === 'anthropic' ? 'block' : 'none';
+    if (provider === 'anthropic' && !_anthropicModelsLoaded) {
+        loadAnthropicModels();
+    }
+}
+
+function loadAnthropicModels() {
+    const select = document.getElementById('anthropic_model');
+    const loading = document.getElementById('anthropic-model-loading');
+    if (!select) return;
+    const currentVal = select.value;
+    loading.style.display = 'inline';
+    fetch('/api/ai/anthropic-models')
+        .then(r => r.json())
+        .then(data => {
+            const models = data.models || [];
+            if (models.length === 0) return;
+            select.innerHTML = '';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.display_name || m.id;
+                if (m.id === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+            // If saved value not in list, re-select it
+            if (!select.value && currentVal) {
+                const fallback = document.createElement('option');
+                fallback.value = currentVal;
+                fallback.textContent = currentVal;
+                fallback.selected = true;
+                select.insertBefore(fallback, select.firstChild);
+            }
+            _anthropicModelsLoaded = true;
+        })
+        .catch(() => { /* silently keep hardcoded fallback */ })
+        .finally(() => { loading.style.display = 'none'; });
 }
 
 function testConnection(provider) {

@@ -2123,3 +2123,342 @@ def brainstorm_adventure():
         return jsonify({'error': str(e)}), 503
     except Exception as e:
         return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+# ---------------------------------------------------------------------------
+# ICRPG Homebrew — Dynamic Anthropic model list
+# ---------------------------------------------------------------------------
+
+@ai_bp.route('/anthropic-models')
+@login_required
+def anthropic_models():
+    """Fetch available models from the Anthropic API.
+    Returns a list of model IDs and display names.
+    Falls back gracefully if the API call fails."""
+    from app.ai_provider import get_ai_config
+    config = get_ai_config()
+    api_key = config.get('anthropic_api_key', '')
+
+    FALLBACK = [
+        {'id': 'claude-haiku-4-5-20251001', 'display_name': 'Haiku 4.5 — Fast & affordable'},
+        {'id': 'claude-sonnet-4-6',          'display_name': 'Sonnet 4.6 — Balanced'},
+        {'id': 'claude-opus-4-6',            'display_name': 'Opus 4.6 — Most capable'},
+    ]
+
+    if not api_key:
+        return jsonify({'models': FALLBACK, 'source': 'fallback'})
+
+    try:
+        import requests as req
+        r = req.get(
+            'https://api.anthropic.com/v1/models',
+            headers={'x-api-key': api_key, 'anthropic-version': '2023-06-01'},
+            timeout=5,
+        )
+        r.raise_for_status()
+        data = r.json()
+        models = []
+        for m in data.get('data', []):
+            mid = m.get('id', '')
+            if 'claude' in mid:
+                models.append({'id': mid, 'display_name': m.get('display_name', mid)})
+        if not models:
+            return jsonify({'models': FALLBACK, 'source': 'fallback'})
+        return jsonify({'models': models, 'source': 'api'})
+    except Exception:
+        return jsonify({'models': FALLBACK, 'source': 'fallback'})
+
+
+# ---------------------------------------------------------------------------
+# ICRPG Homebrew — AI Generator
+# ---------------------------------------------------------------------------
+
+ICRPG_SYSTEM_PRIMER = """
+ICRPG (Index Card RPG) is a fast, cinematic tabletop RPG.
+Core rules: roll d20 equal to or under your stat to succeed.
+Effort dice: d4 (Basic), d6 (Weapon), d8 (Gun), d10 (Magic), d12 (Ultimate).
+Hearts = hit points (each Heart = 10 HP). Loot = gear stored in inventory slots.
+Types = character classes; each has starting abilities and milestone abilities.
+Life Forms = race/species with stat bonuses and an optional innate ability.
+Milestone Paths = progression trees with 4 tiers of rewards.
+
+Balance guidance for stat bonuses (not hard limits — creativity is welcome):
+- Stat bonuses (STR/DEX/CON/INT/WIS/CHA): typically +1 to +2 per trait
+- Effort bonuses: usually +1 to one effort die
+- Hearts bonus: +1 is meaningful; +2 is rare and significant
+- Defense: usually -2 to +2 range
+- Loot slot cost: 1 = minor; 2 = significant item
+- Be creative and thematic — just avoid giving +6 to every stat
+
+CRITICAL: You are creating content ONLY for ICRPG. Do NOT use terminology from
+Dungeons & Dragons, Pathfinder, or any other game system. Forbidden terms include:
+spell slots, hit dice, AC, armor class, saving throws, proficiency bonus, cantrips,
+attunement, concentration spells, action economy, bonus action, reaction, short rest,
+long rest, CR, challenge rating, XP, level-up, feats, multiclassing, d100, percentile.
+Use only ICRPG's own vocabulary: Hearts, Effort, Loot, Type, Life Form, Timer, Room, etc.
+""".strip()
+
+ICRPG_SCHEMAS = {
+    'lifeform': {
+        'fields': {
+            'name':        'Name of the life form (species/race)',
+            'description': 'Flavor description — what they look like, where they come from, their culture',
+            'bonuses':     ('JSON object of stat bonuses. Valid keys: STR, DEX, CON, INT, WIS, CHA, '
+                           'BASIC_EFFORT, WEAPON_EFFORT, GUN_EFFORT, MAGIC_EFFORT, ULTIMATE_EFFORT, '
+                           'HEARTS, DEFENSE. Values are integers (positive or negative). '
+                           'Also may include ABILITY: a short text string describing an innate trait. '
+                           'Example: {"STR": 2, "CON": 1, "ABILITY": "Darkvision 60 ft"}'),
+        }
+    },
+    'type': {
+        'fields': {
+            'name':        'Name of the Type (character class)',
+            'description': 'What this Type is about — their role, flavor, and typical playstyle',
+        }
+    },
+    'ability': {
+        'fields': {
+            'name':         'Name of the ability',
+            'description':  'What the ability does — be specific and flavorful',
+            'ability_kind': 'One of exactly: starting, milestone, mastery',
+        }
+    },
+    'loot': {
+        'fields': {
+            'name':        'Name of the loot item',
+            'description': 'Flavor description and any special rules text',
+            'loot_type':   'One of: Weapon, Armor, Shield, Pack, Tool, Spell, Item, Augment',
+            'effects':     ('JSON object of numeric effects. Valid keys: STR, DEX, CON, INT, WIS, CHA, '
+                           'BASIC_EFFORT, WEAPON_EFFORT, GUN_EFFORT, MAGIC_EFFORT, ULTIMATE_EFFORT, '
+                           'HEARTS, DEFENSE, EQUIPPED_SLOTS, CARRIED_SLOTS. Values are integers. '
+                           'Example: {"WEAPON_EFFORT": 1, "DEFENSE": -1}. Use {} for no numeric effects.'),
+            'slot_cost':   'Integer: how many inventory slots this uses (1 = most items, 2 = large)',
+            'coin_cost':   'Integer coin cost, or null if unknown/priceless',
+        }
+    },
+    'spell': {
+        'fields': {
+            'name':         'Name of the spell',
+            'description':  'What the spell does — effect, range, flavor',
+            'spell_type':   'The magic tradition: Arcane, Holy, Infernal, or other fitting label',
+            'casting_stat': 'The stat used to cast: INT, WIS, CHA, or another stat in all-caps',
+            'level':        'Spell level 1–4 (1 = basic, 4 = ultimate)',
+            'target':       'What the spell targets, e.g. "Single target", "Cone 30 ft", "Self"',
+            'duration':     'How long it lasts, e.g. "Instant", "1 round", "Concentration"',
+        }
+    },
+    'path': {
+        'fields': {
+            'name':        'Name of the milestone path',
+            'description': 'What this path represents — the progression arc and theme',
+            'tiers':       ('JSON object with tier numbers "1" through "4" as keys. Each value is an array '
+                           'of reward objects with "name" and "description" fields. '
+                           'Tier 1 = starting reward, Tier 4 = ultimate mastery. '
+                           'Each tier should have 1–3 rewards. '
+                           'Example: {"1": [{"name": "Power Surge", "description": "Once per rest, add +3 to any roll."}], "2": [...], "3": [...], "4": [...]}'),
+        }
+    },
+}
+
+ICRPG_URL_KEYS = {
+    'lifeform': 'life-forms',
+    'type': 'types',
+    'ability': 'abilities',
+    'loot': 'loot',
+    'spell': 'spells',
+    'path': 'paths',
+}
+
+
+def _build_icrpg_generate_prompt(entity_type, concept, count, world_context):
+    schema = ICRPG_SCHEMAS[entity_type]
+    field_lines = '\n'.join(f'  "{k}": {v}' for k, v in schema['fields'].items())
+
+    world_section = ''
+    if world_context:
+        world_section = f'\nCampaign context (match this tone and setting):\n{world_context}\n'
+
+    concept_section = ''
+    if concept:
+        concept_section = f'\nConcept / theme hint: {concept}\n'
+
+    system_prompt = (
+        f"{ICRPG_SYSTEM_PRIMER}\n\n"
+        f"You are a creative ICRPG game designer. Generate exactly {count} homebrew {entity_type} suggestions "
+        f"for the GM's campaign. Each suggestion must be a JSON object with these fields:\n"
+        f"{field_lines}\n"
+        f"{world_section}"
+        f"{concept_section}"
+        f"\nReturn ONLY a JSON array containing exactly {count} objects. No preamble, no explanation, no markdown fences."
+    )
+
+    messages = [{'role': 'user', 'content': f'Generate {count} homebrew ICRPG {entity_type} ideas.'}]
+    return system_prompt, messages
+
+
+def _build_icrpg_retheme_prompt(entity_type, existing_data, theme, world_context):
+    schema = ICRPG_SCHEMAS[entity_type]
+    field_lines = '\n'.join(f'  "{k}": {v}' for k, v in schema['fields'].items())
+
+    world_section = ''
+    if world_context:
+        world_section = f'\nCampaign context:\n{world_context}\n'
+
+    system_prompt = (
+        f"{ICRPG_SYSTEM_PRIMER}\n\n"
+        f"You are a creative ICRPG game designer. Retheme the following existing {entity_type} to fit a new setting: {theme}\n\n"
+        f"Keep the same mechanical values (bonuses, effects, slot costs, tier structure, etc.) but rename and re-flavor "
+        f"the name, description, and any flavor text to match the new theme. "
+        f"Return a single JSON object with these fields:\n"
+        f"{field_lines}\n"
+        f"{world_section}"
+        f"\nExisting entry to retheme:\n{json.dumps(existing_data, indent=2)}\n\n"
+        f"Return ONLY a JSON object. No preamble, no explanation, no markdown fences."
+    )
+
+    messages = [{'role': 'user', 'content': f'Retheme this {entity_type} to fit: {theme}'}]
+    return system_prompt, messages
+
+
+@ai_bp.route('/generate-icrpg', methods=['POST'])
+@login_required
+def generate_icrpg():
+    """Generate multiple ICRPG homebrew suggestions for a given entity type."""
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True) or {}
+    entity_type = data.get('entity_type', '').strip().lower()
+    concept = data.get('concept', '').strip()
+    try:
+        count = max(1, min(int(data.get('count', 3)), 5))
+    except (ValueError, TypeError):
+        count = 3
+
+    if entity_type not in ICRPG_SCHEMAS:
+        return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
+
+    world_context = _get_active_world_context()
+    system_prompt, messages = _build_icrpg_generate_prompt(entity_type, concept, count, world_context)
+
+    # Paths have nested JSON so need more tokens
+    if entity_type == 'path':
+        max_out = _get_max_tokens('ai_max_tokens_generate', 2048, 2.0)
+    else:
+        max_out = _get_max_tokens('ai_max_tokens_generate', 2048)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=max_out, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        # Normalize: model might return {"suggestions": [...]} or just [...]
+        if isinstance(result, list):
+            suggestions = result
+        elif isinstance(result, dict):
+            suggestions = result.get('suggestions', list(result.values())[0] if result else [])
+        else:
+            suggestions = []
+        return jsonify({'suggestions': suggestions})
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@ai_bp.route('/retheme-icrpg', methods=['POST'])
+@login_required
+def retheme_icrpg():
+    """Retheme an existing ICRPG homebrew entry to fit a different setting."""
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True) or {}
+    entity_type = data.get('entity_type', '').strip().lower()
+    existing_data = data.get('existing_data', {})
+    theme = data.get('theme', '').strip()
+
+    if entity_type not in ICRPG_SCHEMAS:
+        return jsonify({'error': f'Unknown entity type: {entity_type}'}), 400
+    if not theme:
+        return jsonify({'error': 'A theme is required.'}), 400
+
+    world_context = _get_active_world_context()
+    system_prompt, messages = _build_icrpg_retheme_prompt(entity_type, existing_data, theme, world_context)
+
+    if entity_type == 'path':
+        max_out = _get_max_tokens('ai_max_tokens_generate', 2048, 2.0)
+    else:
+        max_out = _get_max_tokens('ai_max_tokens_generate', 2048)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=max_out, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        if isinstance(result, list) and result:
+            result = result[0]
+        return jsonify({'suggestion': result})
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@ai_bp.route('/generate-type-content', methods=['POST'])
+@login_required
+def generate_type_content():
+    """Generate ability and starting loot ideas for an existing homebrew Type."""
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True) or {}
+    type_name = data.get('type_name', '').strip()
+    type_description = data.get('type_description', '').strip()
+
+    if not type_name:
+        return jsonify({'error': 'type_name is required.'}), 400
+
+    world_context = _get_active_world_context()
+    world_section = f'\nCampaign context:\n{world_context}\n' if world_context else ''
+
+    system_prompt = (
+        f"{ICRPG_SYSTEM_PRIMER}\n\n"
+        f"You are generating content for an ICRPG homebrew Type.\n"
+        f"{world_section}"
+        f"\nYou MUST return a JSON object with exactly two keys: \"abilities\" and \"starting_loot\".\n"
+        f"Both keys are REQUIRED — never omit either one.\n\n"
+        f"\"abilities\" — exactly 13 objects in this mix:\n"
+        f"  - 3 with ability_kind=\"starting\": Core abilities active from day one. Define the Type's identity.\n"
+        f"  - 7 with ability_kind=\"milestone\": Expand and complement the starting abilities. Natural growth.\n"
+        f"  - 3 with ability_kind=\"mastery\": Each is a dramatically powered-up version of one of the starting\n"
+        f"    abilities. Same theme and mechanic, but bigger and more impactful. They should clearly echo their\n"
+        f"    paired starting ability.\n"
+        f"  Each ability: {{\"name\": \"...\", \"description\": \"...\", \"ability_kind\": \"starting|milestone|mastery\"}}\n\n"
+        f"\"starting_loot\" — exactly 3 objects that synergize with the starting abilities.\n"
+        f"  If a starting ability references a weapon or tool, include it here.\n"
+        f"  Each item: {{\"name\": \"...\", \"description\": \"...\", "
+        f"\"loot_type\": \"Weapon|Armor|Shield|Pack|Tool|Spell|Item|Augment\", "
+        f"\"effects\": {{}} or {{\"WEAPON_EFFORT\": 1}}, \"slot_cost\": 1}}\n"
+        f"  Valid effect keys: STR DEX CON INT WIS CHA BASIC_EFFORT WEAPON_EFFORT GUN_EFFORT "
+        f"MAGIC_EFFORT ULTIMATE_EFFORT HEARTS DEFENSE EQUIPPED_SLOTS CARRIED_SLOTS\n\n"
+        f"Return ONLY the JSON object. No preamble, no markdown fences."
+    )
+
+    messages = [{'role': 'user', 'content': (
+        f'Generate the full ability set and starting loot for the ICRPG Type: {type_name}.\n'
+        f'Description: {type_description or "(none)"}\n\n'
+        f'Return a JSON object with "abilities" (13 total: 3 starting + 7 milestone + 3 mastery) '
+        f'and "starting_loot" (3 items).'
+    )}]
+    max_out = _get_max_tokens('ai_max_tokens_generate', 2048, 3.0)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=max_out, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        abilities = result.get('abilities', []) if isinstance(result, dict) else []
+        starting_loot = result.get('starting_loot', []) if isinstance(result, dict) else []
+        return jsonify({'abilities': abilities, 'starting_loot': starting_loot})
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        return jsonify({'error': str(e)}), 500

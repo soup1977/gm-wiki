@@ -21,7 +21,8 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Campaign, NPC, Location, Quest, Item, ActivityLog, AppSetting, AdventureSite
+from app.models import (Campaign, NPC, Location, Quest, Item, ActivityLog, AppSetting,
+                        AdventureSite, Faction, Session, PlayerCharacter)
 from app.ai_provider import is_ai_enabled, ai_chat, AIProviderError, get_feature_provider
 
 campaign_assistant_bp = Blueprint('campaign_assistant', __name__)
@@ -53,36 +54,136 @@ def _get_active_campaign():
 
 
 def _build_system_prompt(campaign):
-    """Build the system prompt with campaign context and entity name lists."""
+    """Build the system prompt with rich campaign context."""
     lines = [
         "You are a creative assistant helping a Game Master build and run a tabletop RPG campaign.",
         "You help brainstorm story ideas, NPCs, locations, quests, items, and world-building details.",
+        "You know the campaign's existing content in detail — use it to give grounded, specific advice.",
         "",
-        f"Campaign: {campaign.name}",
+        f"CAMPAIGN: {campaign.name}",
     ]
     if campaign.system:
         lines.append(f"System: {campaign.system}")
     if campaign.ai_world_context:
         lines.append(f"\nWorld context:\n{campaign.ai_world_context.strip()}")
 
-    # Compact entity name lists so the AI can reference existing content
-    npc_names = [r[0] for r in NPC.query
-                 .filter_by(campaign_id=campaign.id)
-                 .with_entities(NPC.name).limit(20).all()]
-    loc_names = [r[0] for r in Location.query
-                 .filter_by(campaign_id=campaign.id)
-                 .with_entities(Location.name).limit(20).all()]
-    quest_names = [r[0] for r in Quest.query
-                   .filter_by(campaign_id=campaign.id)
-                   .with_entities(Quest.name).limit(20).all()]
+    # ── Player Characters ──────────────────────────────────────────
+    pcs = PlayerCharacter.query.filter_by(campaign_id=campaign.id).order_by(PlayerCharacter.character_name).all()
+    if pcs:
+        lines.append("\nPLAYER CHARACTERS:")
+        for pc in pcs:
+            parts = [pc.character_name]
+            if pc.class_or_role:
+                parts.append(pc.class_or_role)
+            if pc.race_or_ancestry:
+                parts.append(pc.race_or_ancestry)
+            if pc.status:
+                parts.append(f"({pc.status})")
+            lines.append("  • " + " — ".join(parts))
 
-    if npc_names:
-        lines.append(f"\nKnown NPCs: {', '.join(npc_names)}")
-    if loc_names:
-        lines.append(f"Known Locations: {', '.join(loc_names)}")
-    if quest_names:
-        lines.append(f"Known Quests: {', '.join(quest_names)}")
+    # ── Factions ───────────────────────────────────────────────────
+    factions = Faction.query.filter_by(campaign_id=campaign.id).order_by(Faction.name).all()
+    if factions:
+        lines.append("\nFACTIONS:")
+        for f in factions:
+            disp = f.disposition or 'unknown'
+            desc_snippet = (f.description or '')[:80].replace('\n', ' ')
+            line = f"  • {f.name} [{disp}]"
+            if desc_snippet:
+                line += f" — {desc_snippet}"
+            lines.append(line)
 
+    # ── NPCs (name + role + status + faction) ─────────────────────
+    npcs = NPC.query.filter_by(campaign_id=campaign.id).order_by(NPC.name).limit(40).all()
+    if npcs:
+        lines.append("\nNPCs:")
+        for npc in npcs:
+            parts = [npc.name]
+            if npc.role:
+                parts.append(npc.role)
+            if npc.status and npc.status != 'alive':
+                parts.append(f"[{npc.status}]")
+            if npc.faction:
+                parts.append(f"(faction: {npc.faction})")
+            elif npc.faction_rel:
+                parts.append(f"(faction: {npc.faction_rel.name})")
+            if npc.physical_description:
+                parts.append(npc.physical_description[:60])
+            lines.append("  • " + " — ".join(parts))
+
+    # ── Locations (name + type + description snippet) ──────────────
+    locs = Location.query.filter_by(campaign_id=campaign.id).order_by(Location.name).limit(40).all()
+    if locs:
+        lines.append("\nLOCATIONS:")
+        for loc in locs:
+            parts = [loc.name]
+            if loc.type:
+                parts.append(loc.type)
+            if loc.description:
+                parts.append(loc.description[:80].replace('\n', ' '))
+            lines.append("  • " + " — ".join(parts))
+
+    # ── Quests (name + status + hook) ─────────────────────────────
+    quests = Quest.query.filter_by(campaign_id=campaign.id).order_by(Quest.name).limit(30).all()
+    if quests:
+        lines.append("\nQUESTS:")
+        for q in quests:
+            parts = [q.name]
+            if q.status:
+                parts.append(f"[{q.status}]")
+            if q.hook:
+                parts.append(q.hook[:100].replace('\n', ' '))
+            lines.append("  • " + " — ".join(parts))
+
+    # ── Items (notable — rare or better) ──────────────────────────
+    NOTABLE_RARITIES = {'rare', 'very rare', 'legendary', 'unique'}
+    items = Item.query.filter(
+        Item.campaign_id == campaign.id,
+        Item.rarity.in_(NOTABLE_RARITIES)
+    ).order_by(Item.name).limit(20).all()
+    if items:
+        lines.append("\nNOTABLE ITEMS:")
+        for it in items:
+            parts = [it.name, it.rarity or '']
+            if it.type:
+                parts.append(it.type)
+            if it.description:
+                parts.append(it.description[:60].replace('\n', ' '))
+            lines.append("  • " + " — ".join(p for p in parts if p))
+
+    # ── Active Story Arcs ──────────────────────────────────────────
+    arcs = AdventureSite.query.filter_by(campaign_id=campaign.id).filter(
+        AdventureSite.status.in_(['Active', 'Planned'])
+    ).order_by(AdventureSite.name).limit(10).all()
+    if arcs:
+        lines.append("\nACTIVE STORY ARCS:")
+        for arc in arcs:
+            parts = [arc.name]
+            if arc.subtitle:
+                parts.append(arc.subtitle)
+            if arc.status:
+                parts.append(f"[{arc.status}]")
+            lines.append("  • " + " — ".join(parts))
+            if arc.content:
+                snippet = arc.content[:200].replace('\n', ' ').strip()
+                lines.append(f"    {snippet}…")
+
+    # ── Recent Sessions ────────────────────────────────────────────
+    recent_sessions = Session.query.filter_by(campaign_id=campaign.id).order_by(
+        Session.number.desc()
+    ).limit(5).all()
+    if recent_sessions:
+        lines.append("\nRECENT SESSIONS:")
+        for s in reversed(recent_sessions):
+            title = s.title or f"Session {s.number}"
+            label = f"Session {s.number}: {title}"
+            if s.summary:
+                summary_snippet = s.summary[:150].replace('\n', ' ').strip()
+                lines.append(f"  • {label} — {summary_snippet}")
+            else:
+                lines.append(f"  • {label}")
+
+    # ── Entity creation format ─────────────────────────────────────
     lines += [
         "",
         "ENTITY CREATION FORMAT:",

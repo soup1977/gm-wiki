@@ -23,6 +23,7 @@
     var typeManageModal = null;
     var currentManageTypeId = null;
     var manageAbilityData = {};
+    var manageCurrentDescription = '';
 
     // ── URL mapping ───────────────────────────────────────────────
     var URL_KEYS = {
@@ -463,10 +464,19 @@
         .catch(function (err) { console.error(err); });
     });
 
+    var typeManageDirty = false;
+
     // ── Type Manage Modal ─────────────────────────────────────────
     window.openTypeManage = function (typeId, typeName) {
         currentManageTypeId = typeId;
-        if (!typeManageEl) typeManageEl = document.getElementById('typeManageModal');
+        if (!typeManageEl) {
+            typeManageEl = document.getElementById('typeManageModal');
+            if (typeManageEl) {
+                typeManageEl.addEventListener('hidden.bs.modal', function () {
+                    if (typeManageDirty) { typeManageDirty = false; location.reload(); }
+                });
+            }
+        }
         document.getElementById('typeManageTitle').textContent = typeName;
         loadTypeManage(typeId);
         if (!typeManageModal && typeManageEl) typeManageModal = new bootstrap.Modal(typeManageEl);
@@ -483,6 +493,7 @@
         .then(function (data) {
             manageAbilityData = {};
             (data.abilities || []).forEach(function (ab) { manageAbilityData[ab.id] = ab; });
+            manageCurrentDescription = data.type_description || '';
             body.innerHTML = renderTypeManage(data, typeId);
         })
         .catch(function (err) { console.error(err); });
@@ -491,9 +502,28 @@
     function renderTypeManage(data, typeId) {
         var html = '';
 
+        // Count abilities by kind
+        var abilities = data.abilities || [];
+        var nStart = abilities.filter(function(a){return a.ability_kind==='starting';}).length;
+        var nMile  = abilities.filter(function(a){return a.ability_kind==='milestone';}).length;
+        var nMast  = abilities.filter(function(a){return a.ability_kind==='mastery';}).length;
+        var nLoot  = (data.starting_loot || []).length;
+
+        function countBadge(n, target, label) {
+            var color = n >= target ? 'success' : 'secondary';
+            return '<span class="badge bg-' + color + ' me-1 fw-normal">' + label + ': ' + n + '/' + target + '</span>';
+        }
+
         // Abilities section
-        html += '<h6 class="text-uppercase text-muted mb-2" style="font-size:0.7em;letter-spacing:.05em;">Abilities</h6>';
-        if (!data.abilities || data.abilities.length === 0) {
+        html += '<div class="d-flex align-items-baseline gap-2 mb-2">';
+        html += '<h6 class="text-uppercase text-muted mb-0" style="font-size:0.7em;letter-spacing:.05em;">Abilities</h6>';
+        html += '<span class="small">'
+             + countBadge(nStart, 3, 'Starting')
+             + countBadge(nMile, 7, 'Milestone')
+             + countBadge(nMast, 3, 'Mastery')
+             + '</span>';
+        html += '</div>';
+        if (abilities.length === 0) {
             html += '<p class="text-muted small mb-2">No abilities yet.</p>';
         } else {
             html += '<table class="table table-dark table-sm mb-2"><tbody>';
@@ -520,7 +550,10 @@
 
         // Starting Loot section
         html += '<hr class="border-secondary">';
-        html += '<h6 class="text-uppercase text-muted mb-1" style="font-size:0.7em;letter-spacing:.05em;">Starting Loot Options</h6>';
+        html += '<div class="d-flex align-items-baseline gap-2 mb-1">';
+        html += '<h6 class="text-uppercase text-muted mb-0" style="font-size:0.7em;letter-spacing:.05em;">Starting Loot Options</h6>';
+        html += '<span class="small">' + countBadge(nLoot, 3, 'Loot') + '</span>';
+        html += '</div>';
         html += '<p class="text-muted small mb-2">Players choose one of these when creating a character of this type.</p>';
         if (!data.starting_loot || data.starting_loot.length === 0) {
             html += '<p class="text-muted small mb-2">No starting loot yet.</p>';
@@ -557,6 +590,20 @@
         html += '</select></div>';
         html += '<button class="btn btn-sm btn-outline-primary manage-add-sl" data-type-id="' + typeId + '">' +
             '<i class="bi bi-plus me-1"></i>Add</button>';
+        html += '</div>';
+
+        // AI Generate section
+        html += '<hr class="border-secondary">';
+        html += '<div id="manage-ai-section">';
+        html += '<div class="d-flex align-items-center gap-2 mb-1">';
+        html += '<span class="text-muted small">Generate AI ability &amp; loot ideas:</span>';
+        html += '<button class="btn btn-sm btn-info manage-ai-run" data-type-id="' + typeId + '">'
+             + '<i class="bi bi-stars me-1"></i>Generate</button>';
+        html += '</div>';
+        html += '<p class="text-muted small mb-2" style="font-size:0.75em;">Targets: 3 Starting · 7 Milestone · 3 Mastery · 3 Starting Loot</p>';
+        html += '<div id="manage-ai-spinner" style="display:none;" class="text-muted small">'
+             + '<span class="spinner-border spinner-border-sm me-1"></span>Generating…</div>';
+        html += '<div id="manage-ai-results"></div>';
         html += '</div>';
 
         return html;
@@ -637,6 +684,494 @@
             });
             return;
         }
+        // AI Generate run
+        var aiRunBtn = e.target.closest('.manage-ai-run');
+        if (!aiRunBtn) return;
+        var aiTypeId = aiRunBtn.dataset.typeId;
+        var spinner = document.getElementById('manage-ai-spinner');
+        var results = document.getElementById('manage-ai-results');
+        if (spinner) spinner.style.display = 'block';
+        if (results) results.innerHTML = '';
+        aiRunBtn.disabled = true;
+
+        // Get type name/description from current manage data
+        var manageTitle = document.getElementById('typeManageTitle');
+        var typeName = manageTitle ? manageTitle.textContent : '';
+        var typeDesc = manageCurrentDescription || '';
+
+        fetch('/api/ai/generate-type-content', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type_name: typeName, type_description: typeDesc})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (spinner) spinner.style.display = 'none';
+            aiRunBtn.disabled = false;
+            if (data.error) {
+                if (results) results.innerHTML = '<div class="alert alert-danger small mt-2">' + data.error + '</div>';
+                return;
+            }
+            var abilities = data.abilities || [];
+            var loot = data.starting_loot || [];
+            var html = '';
+
+            // Add All button
+            if (abilities.length || loot.length) {
+                html += '<div class="d-flex justify-content-between align-items-center mb-2 mt-2">';
+                html += '<span class="text-muted small">' + abilities.length + ' abilities · ' + loot.length + ' loot items</span>';
+                html += '<button class="btn btn-sm btn-success manage-ai-add-all" data-type-id="' + aiTypeId + '">'
+                     + '<i class="bi bi-check-all me-1"></i>Add All</button>';
+                html += '</div>';
+            }
+
+            // Abilities suggestions
+            if (abilities.length) {
+                html += '<div class="mt-1"><strong class="small text-info">Ability Ideas</strong></div>';
+                abilities.forEach(function (ab, i) {
+                    var kindColor = ab.ability_kind === 'starting' ? 'info' : ab.ability_kind === 'milestone' ? 'warning' : 'danger';
+                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2" id="manage-ai-ab-' + i + '">';
+                    html += '<div class="flex-grow-1">';
+                    html += '<span class="badge bg-' + kindColor + ' me-1">' + (ab.ability_kind || '') + '</span>';
+                    html += '<strong class="small">' + escapeHtml(ab.name || '') + '</strong> ';
+                    html += '<span class="text-muted small">' + escapeHtml((ab.description || '').substring(0, 80)) + '</span>';
+                    html += '</div>';
+                    html += '<button class="btn btn-sm btn-success py-0 flex-shrink-0 manage-ai-add-ability" '
+                         + 'data-idx="' + i + '" '
+                         + 'data-type-id="' + aiTypeId + '" '
+                         + 'data-name="' + escapeHtml(ab.name || '') + '" '
+                         + 'data-desc="' + escapeHtml(ab.description || '') + '" '
+                         + 'data-kind="' + (ab.ability_kind || 'starting') + '">'
+                         + '<i class="bi bi-plus"></i></button>';
+                    html += '</div>';
+                });
+            }
+            // Starting loot suggestions
+            if (loot.length) {
+                html += '<div class="mt-2"><strong class="small text-warning">Starting Loot Ideas</strong></div>';
+                loot.forEach(function (ld, i) {
+                    html += '<div class="card bg-secondary border-0 mb-1 p-2 d-flex flex-row align-items-start gap-2" id="manage-ai-ld-' + i + '">';
+                    html += '<div class="flex-grow-1">';
+                    html += '<span class="badge bg-secondary border border-info me-1">' + (ld.loot_type || '') + '</span>';
+                    html += '<strong class="small">' + escapeHtml(ld.name || '') + '</strong> ';
+                    html += '<span class="text-muted small">' + escapeHtml((ld.description || '').substring(0, 80)) + '</span>';
+                    html += '</div>';
+                    html += '<button class="btn btn-sm btn-success py-0 flex-shrink-0 manage-ai-add-loot" '
+                         + 'data-idx="' + i + '" '
+                         + 'data-type-id="' + aiTypeId + '" '
+                         + 'data-name="' + escapeHtml(ld.name || '') + '" '
+                         + 'data-desc="' + escapeHtml(ld.description || '') + '" '
+                         + 'data-loot-type="' + (ld.loot_type || 'Item') + '" '
+                         + 'data-effects=\'' + JSON.stringify(ld.effects || {}) + '\' '
+                         + 'data-slot-cost="' + (ld.slot_cost || 1) + '">'
+                         + '<i class="bi bi-plus"></i></button>';
+                    html += '</div>';
+                });
+            }
+            if (results) results.innerHTML = html;
+        })
+        .catch(function () {
+            if (spinner) spinner.style.display = 'none';
+            aiRunBtn.disabled = false;
+            if (results) results.innerHTML = '<div class="alert alert-danger small mt-2">Request failed.</div>';
+        });
+    });
+
+    // Delegated listener for manage-ai-add-ability and manage-ai-add-loot
+    document.addEventListener('click', function (e) {
+        var addAbBtn = e.target.closest('.manage-ai-add-ability');
+        if (addAbBtn) {
+            var payload = {
+                name: addAbBtn.dataset.name,
+                description: addAbBtn.dataset.desc,
+                ability_kind: addAbBtn.dataset.kind,
+                type_id: parseInt(addAbBtn.dataset.typeId)
+            };
+            fetch('/icrpg-catalog/abilities/create', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                if (result.error) { alert(result.error); return; }
+                addAbBtn.disabled = true;
+                addAbBtn.innerHTML = '<i class="bi bi-check"></i>';
+                addAbBtn.classList.replace('btn-success', 'btn-secondary');
+                typeManageDirty = true;
+            });
+            return;
+        }
+
+        var addLdBtn = e.target.closest('.manage-ai-add-loot');
+        if (addLdBtn) {
+            var typeId = addLdBtn.dataset.typeId;
+            var lootPayload = {
+                name: addLdBtn.dataset.name,
+                description: addLdBtn.dataset.desc,
+                loot_type: addLdBtn.dataset.lootType,
+                slot_cost: parseInt(addLdBtn.dataset.slotCost) || 1,
+                effects: JSON.parse(addLdBtn.dataset.effects || '{}')
+            };
+            // First create the loot entry, then link it as starting loot
+            fetch('/icrpg-catalog/loot/create', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify(lootPayload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                if (result.error) { alert(result.error); return; }
+                var lootId = result.id;
+                return fetch('/icrpg-catalog/types/' + typeId + '/starting-loot/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    body: JSON.stringify({loot_def_id: lootId})
+                });
+            })
+            .then(function (r) { return r ? r.json() : null; })
+            .then(function (result) {
+                if (!result) return;
+                if (result.error) { alert(result.error); return; }
+                addLdBtn.disabled = true;
+                addLdBtn.innerHTML = '<i class="bi bi-check"></i>';
+                addLdBtn.classList.replace('btn-success', 'btn-secondary');
+                typeManageDirty = true;
+            })
+            .catch(function () { alert('Request failed.'); });
+        }
+    });
+
+    // Add All handler
+    document.addEventListener('click', function (e) {
+        var addAllBtn = e.target.closest('.manage-ai-add-all');
+        if (!addAllBtn) return;
+        var typeId = addAllBtn.dataset.typeId;
+        addAllBtn.disabled = true;
+        addAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding…';
+
+        var abBtns = Array.from(document.querySelectorAll('.manage-ai-add-ability:not([disabled])'));
+        var ldBtns = Array.from(document.querySelectorAll('.manage-ai-add-loot:not([disabled])'));
+
+        function markDone(btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-check"></i>';
+            btn.classList.replace('btn-success', 'btn-secondary');
+        }
+
+        // Chain all ability POSTs then all loot POSTs sequentially
+        var chain = Promise.resolve();
+        abBtns.forEach(function (btn) {
+            chain = chain.then(function () {
+                return fetch('/icrpg-catalog/abilities/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    body: JSON.stringify({
+                        name: btn.dataset.name,
+                        description: btn.dataset.desc,
+                        ability_kind: btn.dataset.kind,
+                        type_id: parseInt(typeId)
+                    })
+                }).then(function (r) { return r.json(); })
+                  .then(function (res) { if (!res.error) markDone(btn); });
+            });
+        });
+        ldBtns.forEach(function (btn) {
+            chain = chain.then(function () {
+                return fetch('/icrpg-catalog/loot/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    body: JSON.stringify({
+                        name: btn.dataset.name,
+                        description: btn.dataset.desc,
+                        loot_type: btn.dataset.lootType,
+                        slot_cost: parseInt(btn.dataset.slotCost) || 1,
+                        effects: JSON.parse(btn.dataset.effects || '{}')
+                    })
+                }).then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (res.error) return;
+                    return fetch('/icrpg-catalog/types/' + typeId + '/starting-loot/add', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                        body: JSON.stringify({loot_def_id: res.id})
+                    }).then(function (r) { return r.json(); })
+                      .then(function () { markDone(btn); });
+                });
+            });
+        });
+        chain.then(function () {
+            addAllBtn.innerHTML = '<i class="bi bi-check-all me-1"></i>All Added!';
+            typeManageDirty = true;
+        });
+    });
+
+    // ── ICRPG AI Generator ────────────────────────────────────────
+
+    var icrpgAIModalEl = null;
+    var icrpgAIModal   = null;
+    var icrpgAIMode    = 'generate'; // 'generate' or 'retheme'
+    var icrpgAIEntity  = null;
+    var icrpgAIRethemeId = null;
+    var icrpgAIRethemeData = null;
+    var icrpgAIDirty = false;
+
+    var ICRPG_URL_KEYS = {
+        lifeform: 'life-forms', type: 'types', ability: 'abilities',
+        loot: 'loot', spell: 'spells', path: 'paths'
+    };
+    var ICRPG_EDIT_ROUTES = {
+        lifeform: 'life-forms', type: 'types', ability: 'abilities',
+        loot: 'loot', spell: 'spells', path: 'paths'
+    };
+
+    var ICRPG_WORLD_ENTITY_TYPES = ['lifeform', 'type', 'loot'];
+
+    window.openIcrpgAI = function (entityType, entityLabel) {
+        icrpgAIMode   = 'generate';
+        icrpgAIEntity = entityType;
+        _initIcrpgModal();
+        document.getElementById('icrpgAIModalTitle').textContent = 'AI Homebrew Ideas — ' + entityLabel;
+        document.getElementById('icrpgAIControls').style.display = 'block';
+        document.getElementById('icrpgAIThemeRow').style.display = 'none';
+        document.getElementById('icrpgAIWorldRow').style.display =
+            ICRPG_WORLD_ENTITY_TYPES.indexOf(entityType) >= 0 ? 'block' : 'none';
+        document.getElementById('icrpgAIGenerateBtn').style.display = '';
+        document.getElementById('icrpgAIConcept').value = '';
+        document.getElementById('icrpgAIResults').innerHTML = '';
+        document.getElementById('icrpgAISpinner').style.display = 'none';
+        icrpgAIModal.show();
+    };
+
+    window.openIcrpgRetheme = function (entityType, entityId, payloadJson) {
+        icrpgAIMode       = 'retheme';
+        icrpgAIEntity     = entityType;
+        icrpgAIRethemeId  = entityId;
+        try { icrpgAIRethemeData = JSON.parse(payloadJson); }
+        catch (e) { icrpgAIRethemeData = {}; }
+        _initIcrpgModal();
+        document.getElementById('icrpgAIModalTitle').textContent = 'Retheme: ' + (icrpgAIRethemeData.name || entityType);
+        document.getElementById('icrpgAIControls').style.display = 'block';
+        document.getElementById('icrpgAIThemeRow').style.display = 'block';
+        document.getElementById('icrpgAIWorldRow').style.display =
+            ICRPG_WORLD_ENTITY_TYPES.indexOf(entityType) >= 0 ? 'block' : 'none';
+        document.getElementById('icrpgAIGenerateBtn').style.display = 'none';
+        document.getElementById('icrpgAITheme').value = (typeof CAMPAIGN_THEME !== 'undefined' ? CAMPAIGN_THEME : '');
+        document.getElementById('icrpgAIResults').innerHTML = '';
+        document.getElementById('icrpgAISpinner').style.display = 'none';
+        icrpgAIModal.show();
+    };
+
+    function _initIcrpgModal() {
+        if (!icrpgAIModalEl) {
+            icrpgAIModalEl = document.getElementById('icrpgAIModal');
+            if (icrpgAIModalEl) {
+                icrpgAIModalEl.addEventListener('hidden.bs.modal', function () {
+                    if (icrpgAIDirty) { icrpgAIDirty = false; location.reload(); }
+                });
+            }
+        }
+        if (!icrpgAIModal && icrpgAIModalEl) icrpgAIModal = new bootstrap.Modal(icrpgAIModalEl);
+    }
+
+    window.runIcrpgGenerate = function () {
+        var concept = document.getElementById('icrpgAIConcept').value.trim();
+        var count   = parseInt(document.getElementById('icrpgAICount').value, 10) || 3;
+        _showIcrpgSpinner(true);
+        fetch('/api/ai/generate-icrpg', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({entity_type: icrpgAIEntity, concept: concept, count: count})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            _showIcrpgSpinner(false);
+            if (data.error) { _icrpgError(data.error); return; }
+            _renderIcrpgSuggestions(data.suggestions || [], false);
+        })
+        .catch(function () { _showIcrpgSpinner(false); _icrpgError('Request failed.'); });
+    };
+
+    window.runIcrpgRetheme = function () {
+        var theme = document.getElementById('icrpgAITheme').value.trim();
+        if (!theme) { alert('Please enter a theme.'); return; }
+        _showIcrpgSpinner(true);
+        fetch('/api/ai/retheme-icrpg', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({entity_type: icrpgAIEntity, existing_data: icrpgAIRethemeData, theme: theme})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            _showIcrpgSpinner(false);
+            if (data.error) { _icrpgError(data.error); return; }
+            var suggestion = data.suggestion || {};
+            _renderIcrpgSuggestions([suggestion], true);
+        })
+        .catch(function () { _showIcrpgSpinner(false); _icrpgError('Request failed.'); });
+    };
+
+    function _showIcrpgSpinner(show) {
+        document.getElementById('icrpgAISpinner').style.display = show ? 'block' : 'none';
+        document.getElementById('icrpgAIResults').innerHTML = '';
+        var genBtn = document.getElementById('icrpgAIGenerateBtn');
+        var rethBtn = document.getElementById('icrpgAIRethemeBtn');
+        if (genBtn) genBtn.disabled = show;
+        if (rethBtn) rethBtn.disabled = show;
+    }
+
+    function _icrpgError(msg) {
+        document.getElementById('icrpgAIResults').innerHTML =
+            '<div class="alert alert-danger small">' + msg + '</div>';
+    }
+
+    function _renderIcrpgSuggestions(suggestions, isRetheme) {
+        var container = document.getElementById('icrpgAIResults');
+        if (!suggestions || !suggestions.length) {
+            container.innerHTML = '<p class="text-muted small">No suggestions returned.</p>';
+            return;
+        }
+        var html = '';
+        suggestions.forEach(function (s, idx) {
+            html += '<div class="card bg-secondary border-0 mb-3" id="icrpg-card-' + idx + '">';
+            html += '<div class="card-body p-3">';
+            html += '<div class="d-flex justify-content-between align-items-start mb-2">';
+            html += '<strong class="text-light">' + (s.name || '(no name)') + '</strong>';
+            html += '<div class="d-flex gap-1">';
+            if (isRetheme) {
+                html += '<button class="btn btn-sm btn-success py-0" onclick="addIcrpgEntry(' + idx + ', false)">'
+                      + '<i class="bi bi-plus-circle me-1"></i>Save as New</button>';
+                html += '<button class="btn btn-sm btn-warning py-0" onclick="addIcrpgEntry(' + idx + ', true)">'
+                      + '<i class="bi bi-arrow-repeat me-1"></i>Overwrite</button>';
+            } else {
+                html += '<button class="btn btn-sm btn-success py-0" onclick="addIcrpgEntry(' + idx + ', false)">'
+                      + '<i class="bi bi-plus-circle me-1"></i>Add to Catalog</button>';
+            }
+            html += '</div></div>';
+            // Description
+            if (s.description) {
+                html += '<p class="small text-light mb-2">' + s.description + '</p>';
+            }
+            // Entity-specific detail display
+            html += _icrpgSuggestionDetails(s, icrpgAIEntity);
+            html += '</div></div>';
+        });
+        container.innerHTML = html;
+        // Store suggestions for later retrieval
+        container._suggestions = suggestions;
+    }
+
+    function _icrpgSuggestionDetails(s, entityType) {
+        var parts = [];
+        if (entityType === 'lifeform' && s.bonuses && Object.keys(s.bonuses).length) {
+            var bonusLabels = {STR:'STR',DEX:'DEX',CON:'CON',INT:'INT',WIS:'WIS',CHA:'CHA',
+                BASIC_EFFORT:'Basic Effort',WEAPON_EFFORT:'Weapon Effort',GUN_EFFORT:'Gun Effort',
+                MAGIC_EFFORT:'Magic Effort',ULTIMATE_EFFORT:'Ultimate Effort',
+                HEARTS:'Hearts',DEFENSE:'Defense',ABILITY:'Innate Ability'};
+            var items = [];
+            var abilityText = null;
+            Object.keys(s.bonuses).forEach(function (k) {
+                if (k === 'ABILITY') { abilityText = s.bonuses[k]; return; }
+                var label = bonusLabels[k] || k;
+                var val = s.bonuses[k];
+                items.push('<span class="badge bg-dark border border-secondary me-1">' + label + ': '
+                    + (typeof val === 'number' && val > 0 ? '+' : '') + val + '</span>');
+            });
+            if (abilityText) parts.push('<div class="text-muted small fst-italic mt-1"><strong>Innate Ability:</strong> ' + escapeHtml(abilityText) + '</div>');
+            if (items.length) parts.push('<div class="mt-1">' + items.join('') + '</div>');
+        }
+        if (entityType === 'loot') {
+            var meta = [];
+            if (s.loot_type) meta.push('<span class="badge bg-secondary border border-info">' + s.loot_type + '</span>');
+            if (s.slot_cost) meta.push('<span class="text-muted small">Slots: ' + s.slot_cost + '</span>');
+            if (s.coin_cost) meta.push('<span class="text-muted small">Cost: ' + s.coin_cost + 'gp</span>');
+            if (meta.length) parts.push('<div class="mb-1">' + meta.join(' ') + '</div>');
+            if (s.effects && Object.keys(s.effects).length) {
+                var efxLabels = {STR:'STR',DEX:'DEX',CON:'CON',INT:'INT',WIS:'WIS',CHA:'CHA',
+                    BASIC_EFFORT:'Basic Effort',WEAPON_EFFORT:'Weapon Effort',GUN_EFFORT:'Gun Effort',
+                    MAGIC_EFFORT:'Magic Effort',ULTIMATE_EFFORT:'Ultimate Effort',
+                    HEARTS:'Hearts',DEFENSE:'Defense',EQUIPPED_SLOTS:'Equip Slots',CARRIED_SLOTS:'Carry Slots'};
+                var efxItems = [];
+                Object.keys(s.effects).forEach(function (k) {
+                    var val = s.effects[k];
+                    efxItems.push('<span class="badge bg-dark border border-warning me-1">' + (efxLabels[k]||k) + ': '
+                        + (typeof val === 'number' && val > 0 ? '+' : '') + val + '</span>');
+                });
+                if (efxItems.length) parts.push('<div>' + efxItems.join('') + '</div>');
+            }
+        }
+        if (entityType === 'spell') {
+            var smeta = [];
+            if (s.spell_type) smeta.push(s.spell_type);
+            if (s.casting_stat) smeta.push('Cast: ' + s.casting_stat);
+            if (s.level) smeta.push('Lvl ' + s.level);
+            if (s.target) smeta.push('Target: ' + s.target);
+            if (s.duration) smeta.push('Duration: ' + s.duration);
+            if (smeta.length) parts.push('<div class="text-muted small">' + smeta.join(' · ') + '</div>');
+        }
+        if (entityType === 'ability' && s.ability_kind) {
+            var kindColor = s.ability_kind === 'starting' ? 'info' : s.ability_kind === 'milestone' ? 'warning' : 'danger';
+            parts.push('<span class="badge bg-' + kindColor + '">' + s.ability_kind + '</span>');
+        }
+        if (entityType === 'path' && s.tiers) {
+            var tierCount = Object.keys(s.tiers).length;
+            parts.push('<div class="text-muted small">Tiers: ' + tierCount
+                + (tierCount === 4 ? ' ✓' : '') + '</div>');
+        }
+        return parts.join('');
+    }
+
+    window.addIcrpgEntry = function (idx, overwrite) {
+        var container = document.getElementById('icrpgAIResults');
+        var suggestions = container._suggestions || [];
+        var s = suggestions[idx];
+        if (!s) return;
+
+        var urlKey = ICRPG_URL_KEYS[icrpgAIEntity];
+        var url = overwrite
+            ? '/icrpg-catalog/' + urlKey + '/' + icrpgAIRethemeId + '/edit'
+            : '/icrpg-catalog/' + urlKey + '/create';
+
+        var payload = Object.assign({}, s);
+        if (ICRPG_WORLD_ENTITY_TYPES.indexOf(icrpgAIEntity) >= 0) {
+            var worldSel = document.getElementById('icrpgAIWorldSelect');
+            if (worldSel && worldSel.value) payload.world_id = parseInt(worldSel.value, 10);
+        }
+
+        fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            body: JSON.stringify(payload)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var card = document.getElementById('icrpg-card-' + idx);
+            if (data.ok) {
+                if (card) card.style.opacity = '0.6';
+                var btns = card ? card.querySelectorAll('button') : [];
+                btns.forEach(function (b) { b.disabled = true; });
+                if (card) {
+                    var ck = document.createElement('span');
+                    ck.className = 'badge bg-success ms-2';
+                    ck.textContent = overwrite ? 'Updated!' : 'Added!';
+                    card.querySelector('.card-body').appendChild(ck);
+                }
+                icrpgAIDirty = true;
+            } else {
+                alert(data.error || 'Unknown error');
+            }
+        })
+        .catch(function () { alert('Request failed. Check the browser console for details.'); });
+    };
+
+    // Delegated listener for Retheme buttons
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.icrpg-retheme-btn');
+        if (!btn) return;
+        var entityType = btn.dataset.entity;
+        var entityId   = btn.dataset.id;
+        var payload    = btn.dataset.payload;
+        window.openIcrpgRetheme(entityType, entityId, payload);
     });
 
     // ── Tab persistence via URL hash ──────────────────────────────

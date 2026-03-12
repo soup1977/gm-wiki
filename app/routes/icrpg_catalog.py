@@ -188,8 +188,16 @@ def create_life_form():
             bonuses = json.loads(bonuses)
         except (json.JSONDecodeError, ValueError):
             return jsonify({'error': 'Invalid bonuses JSON.'}), 400
+    world_id = data.get('world_id')
+    if not world_id:
+        fallback = ICRPGWorld.query.filter_by(campaign_id=cid, is_builtin=False).first() \
+                   or ICRPGWorld.query.filter_by(is_builtin=True).first()
+        if fallback:
+            world_id = fallback.id
+        else:
+            return jsonify({'error': 'No world found. Please create a Homebrew World in the Worlds tab before adding Life Forms.'}), 400
     lf = ICRPGLifeForm(
-        world_id=data.get('world_id'), name=name,
+        world_id=world_id, name=name,
         description=(data.get('description') or '').strip(),
         bonuses=bonuses, is_builtin=False, campaign_id=cid)
     db.session.add(lf)
@@ -257,7 +265,15 @@ def create_type():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Name is required.'}), 400
-    t = ICRPGType(world_id=data.get('world_id'), name=name,
+    world_id = data.get('world_id')
+    if not world_id:
+        fallback = ICRPGWorld.query.filter_by(campaign_id=cid, is_builtin=False).first() \
+                   or ICRPGWorld.query.filter_by(is_builtin=True).first()
+        if fallback:
+            world_id = fallback.id
+        else:
+            return jsonify({'error': 'No world found. Please create a Homebrew World in the Worlds tab before adding Types.'}), 400
+    t = ICRPGType(world_id=world_id, name=name,
                   description=(data.get('description') or '').strip(),
                   is_builtin=False, campaign_id=cid)
     db.session.add(t)
@@ -817,6 +833,7 @@ def manage_type(type_id):
 
     return jsonify({
         'type_name': t.name,
+        'type_description': t.description or '',
         'abilities': abilities,
         'starting_loot': starting_loot,
         'all_loot': all_loot,

@@ -34,20 +34,20 @@
     </div>
     {% if hw %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Description</th><th class="text-center">Loot Picks</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Description</th><th class="text-center">Loot Picks</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for w in hw %}
         <tr>
             <td>{{ w.name }}</td>
             <td class="text-muted small">{{ w.description[:80] if w.description else '' }}{% if w.description and w.description|length > 80 %}...{% endif %}</td>
             <td class="text-muted small text-center">{{ w.basic_loot_count or 4 }}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="world" data-id="{{ w.id }}"
                         data-payload="{{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4,'include_world_loot':w.include_world_loot or []} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, '{{ w.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, {{ w.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -66,9 +66,9 @@
             <tr>
                 <td>{{ w.name }}</td>
                 <td class="text-muted small">{{ w.description[:80] if w.description else '' }}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('world', {{ w.id }}, '{{ w.name | e }}')">
+                            onclick="importBuiltin('world', {{ w.id }}, {{ w.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -86,13 +86,18 @@
 <div class="tab-pane fade {% if tab == 'lifeforms' %}show active{% endif %}" id="pane-lifeforms" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Homebrew Life Forms</h5>
-        <button class="btn btn-sm btn-success" onclick="catalogModal('lifeform', 'create')">
-            <i class="bi bi-plus-circle"></i> New Life Form
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openIcrpgAI('lifeform', 'Life Forms')">
+                <i class="bi bi-stars"></i> AI Ideas
+            </button>
+            <button class="btn btn-sm btn-success" onclick="catalogModal('lifeform', 'create')">
+                <i class="bi bi-plus-circle"></i> New Life Form
+            </button>
+        </div>
     </div>
     {% if hlf %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>World</th><th>Bonuses</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>World</th><th>Bonuses</th><th>Description</th><th style="width:130px"></th></tr></thead>
         <tbody>
         {% for lf in hlf %}
         <tr>
@@ -100,13 +105,18 @@
             <td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td>
             <td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td>
             <td class="text-muted small" title="{{ lf.description or '' }}">{{ lf.description[:60] if lf.description else '' }}{% if lf.description and lf.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
+                        data-entity="lifeform" data-id="{{ lf.id }}"
+                        data-payload="{{ {'name':lf.name,'description':lf.description or '','world_id':lf.world_id,'bonuses':lf.bonuses or {}} | tojson | forceescape }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="lifeform" data-id="{{ lf.id }}"
                         data-payload="{{ {'name':lf.name,'description':lf.description or '','world_id':lf.world_id,'bonuses':lf.bonuses or {}} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('life-forms', {{ lf.id }}, '{{ lf.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('life-forms', {{ lf.id }}, {{ lf.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -128,9 +138,9 @@
                 <td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td>
                 <td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td>
                 <td class="text-muted small" title="{{ lf.description or '' }}">{{ lf.description[:60] if lf.description else '' }}{% if lf.description and lf.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('lifeform', {{ lf.id }}, '{{ lf.name | e }}')">
+                            onclick="importBuiltin('lifeform', {{ lf.id }}, {{ lf.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -148,9 +158,14 @@
 <div class="tab-pane fade {% if tab == 'types' %}show active{% endif %}" id="pane-types" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Homebrew Types</h5>
-        <button class="btn btn-sm btn-success" onclick="catalogModal('type', 'create')">
-            <i class="bi bi-plus-circle"></i> New Type
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openIcrpgAI('type', 'Types')">
+                <i class="bi bi-stars"></i> AI Ideas
+            </button>
+            <button class="btn btn-sm btn-success" onclick="catalogModal('type', 'create')">
+                <i class="bi bi-plus-circle"></i> New Type
+            </button>
+        </div>
     </div>
     {% if ht %}
     <table class="table table-dark table-sm">
@@ -161,9 +176,14 @@
             <td>{{ t.name }}</td>
             <td class="text-muted small">{{ t.world.name if t.world else '—' }}</td>
             <td class="text-muted small" title="{{ t.description or '' }}">{{ t.description[:60] if t.description else '' }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
+                        data-entity="type" data-id="{{ t.id }}"
+                        data-payload="{{ {'name':t.name,'description':t.description or ''} | tojson | forceescape }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-info py-0"
-                        onclick="openTypeManage({{ t.id }}, '{{ t.name | e }}')">
+                        onclick="openTypeManage({{ t.id }}, {{ t.name | tojson | forceescape }})">
                     <i class="bi bi-gear"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
@@ -171,7 +191,7 @@
                         data-payload="{{ {'name':t.name,'description':t.description or '','world_id':t.world_id} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('types', {{ t.id }}, '{{ t.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('types', {{ t.id }}, {{ t.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -192,9 +212,9 @@
                 <td>{{ t.name }}</td>
                 <td class="text-muted small">{{ t.world.name if t.world else '—' }}</td>
                 <td class="text-muted small" title="{{ t.description or '' }}">{{ t.description[:60] if t.description else '' }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('type', {{ t.id }}, '{{ t.name | e }}')">
+                            onclick="importBuiltin('type', {{ t.id }}, {{ t.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -212,13 +232,18 @@
 <div class="tab-pane fade {% if tab == 'abilities' %}show active{% endif %}" id="pane-abilities" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Homebrew Abilities</h5>
-        <button class="btn btn-sm btn-success" onclick="catalogModal('ability', 'create')">
-            <i class="bi bi-plus-circle"></i> New Ability
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openIcrpgAI('ability', 'Abilities')">
+                <i class="bi bi-stars"></i> AI Ideas
+            </button>
+            <button class="btn btn-sm btn-success" onclick="catalogModal('ability', 'create')">
+                <i class="bi bi-plus-circle"></i> New Ability
+            </button>
+        </div>
     </div>
     {% if hab %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for ab in hab %}
         <tr>
@@ -226,13 +251,18 @@
             <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
             <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
             <td class="text-muted small" title="{{ ab.description or '' }}">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
+                        data-entity="ability" data-id="{{ ab.id }}"
+                        data-payload="{{ {'name':ab.name,'description':ab.description or '','ability_kind':ab.ability_kind} | tojson | forceescape }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="ability" data-id="{{ ab.id }}"
                         data-payload="{{ {'name':ab.name,'description':ab.description or '','type_id':ab.type_id,'ability_kind':ab.ability_kind} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('abilities', {{ ab.id }}, '{{ ab.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('abilities', {{ ab.id }}, {{ ab.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -254,9 +284,9 @@
                 <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
                 <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
                 <td class="text-muted small" title="{{ ab.description or '' }}">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('ability', {{ ab.id }}, '{{ ab.name | e }}')">
+                            onclick="importBuiltin('ability', {{ ab.id }}, {{ ab.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -274,13 +304,18 @@
 <div class="tab-pane fade {% if tab == 'loot' %}show active{% endif %}" id="pane-loot" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Homebrew Loot</h5>
-        <button class="btn btn-sm btn-success" onclick="catalogModal('loot', 'create')">
-            <i class="bi bi-plus-circle"></i> New Loot
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openIcrpgAI('loot', 'Loot')">
+                <i class="bi bi-stars"></i> AI Ideas
+            </button>
+            <button class="btn btn-sm btn-success" onclick="catalogModal('loot', 'create')">
+                <i class="bi bi-plus-circle"></i> New Loot
+            </button>
+        </div>
     </div>
     {% if hld %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for ld in hld %}
         <tr>
@@ -288,13 +323,18 @@
             <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
             <td class="text-muted small">{{ ld.slot_cost }}</td>
             <td class="text-muted small" title="{{ ld.description or '' }}">{{ ld.description[:60] if ld.description else '' }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
+                        data-entity="loot" data-id="{{ ld.id }}"
+                        data-payload="{{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost} | tojson | forceescape }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="loot" data-id="{{ ld.id }}"
                         data-payload="{{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','world_id':ld.world_id,'effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost or 0,'is_starter':ld.is_starter} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, '{{ ld.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, {{ ld.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -316,9 +356,9 @@
                 <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
                 <td class="text-muted small">{{ ld.slot_cost }}</td>
                 <td class="text-muted small">{{ ld.description[:60] if ld.description else '' }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('loot', {{ ld.id }}, '{{ ld.name | e }}')">
+                            onclick="importBuiltin('loot', {{ ld.id }}, {{ ld.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -336,13 +376,18 @@
 <div class="tab-pane fade {% if tab == 'spells' %}show active{% endif %}" id="pane-spells" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Homebrew Spells</h5>
-        <button class="btn btn-sm btn-success" onclick="catalogModal('spell', 'create')">
-            <i class="bi bi-plus-circle"></i> New Spell
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openIcrpgAI('spell', 'Spells')">
+                <i class="bi bi-stars"></i> AI Ideas
+            </button>
+            <button class="btn btn-sm btn-success" onclick="catalogModal('spell', 'create')">
+                <i class="bi bi-plus-circle"></i> New Spell
+            </button>
+        </div>
     </div>
     {% if hsp %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for sp in hsp %}
         <tr>
@@ -351,13 +396,18 @@
             <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
             <td class="text-muted small">{{ sp.level }}</td>
             <td class="text-muted small" title="{{ sp.description or '' }}">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
+                        data-entity="spell" data-id="{{ sp.id }}"
+                        data-payload="{{ {'name':sp.name,'description':sp.description or '','spell_type':sp.spell_type or '','casting_stat':sp.casting_stat or '','level':sp.level,'target':sp.target or '','duration':sp.duration or ''} | tojson | forceescape }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="spell" data-id="{{ sp.id }}"
                         data-payload="{{ {'name':sp.name,'description':sp.description or '','spell_type':sp.spell_type or '','casting_stat':sp.casting_stat or '','level':sp.level,'target':sp.target or '','duration':sp.duration or ''} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('spells', {{ sp.id }}, '{{ sp.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('spells', {{ sp.id }}, {{ sp.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -380,9 +430,9 @@
                 <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
                 <td class="text-muted small">{{ sp.level }}</td>
                 <td class="text-muted small" title="{{ sp.description or '' }}">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('spell', {{ sp.id }}, '{{ sp.name | e }}')">
+                            onclick="importBuiltin('spell', {{ sp.id }}, {{ sp.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -400,26 +450,36 @@
 <div class="tab-pane fade {% if tab == 'paths' %}show active{% endif %}" id="pane-paths" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Homebrew Milestone Paths</h5>
-        <button class="btn btn-sm btn-success" onclick="catalogModal('path', 'create')">
-            <i class="bi bi-plus-circle"></i> New Path
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openIcrpgAI('path', 'Milestone Paths')">
+                <i class="bi bi-stars"></i> AI Ideas
+            </button>
+            <button class="btn btn-sm btn-success" onclick="catalogModal('path', 'create')">
+                <i class="bi bi-plus-circle"></i> New Path
+            </button>
+        </div>
     </div>
     {% if hmp %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Description</th><th>Tiers</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Description</th><th>Tiers</th><th style="width:130px"></th></tr></thead>
         <tbody>
         {% for mp in hmp %}
         <tr>
             <td>{{ mp.name }}</td>
             <td class="text-muted small">{{ mp.description[:60] if mp.description else '' }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
             <td class="text-muted small">{{ mp.tiers | length if mp.tiers else 0 }} tiers</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
+                        data-entity="path" data-id="{{ mp.id }}"
+                        data-payload="{{ {'name':mp.name,'description':mp.description or '','tiers':mp.tiers or {}} | tojson | forceescape }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="path" data-id="{{ mp.id }}"
                         data-payload="{{ {'name':mp.name,'description':mp.description or '','tiers':mp.tiers or []} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('paths', {{ mp.id }}, '{{ mp.name | e }}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('paths', {{ mp.id }}, {{ mp.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -472,6 +532,70 @@
 </div>
 
 {# ═══════════════════════════════════════════════════════════════ #}
+{# ICRPG AI GENERATOR MODAL                                        #}
+{# ═══════════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="icrpgAIModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark border-info">
+            <div class="modal-header border-info">
+                <h5 class="modal-title text-info"><i class="bi bi-stars me-2"></i><span id="icrpgAIModalTitle">AI Homebrew Ideas</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="icrpgAIControls">
+                    <div id="icrpgAIWorldRow" class="mb-3" style="display:none;">
+                        <label class="form-label small text-muted">Add to World:</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary" id="icrpgAIWorldSelect">
+                            {% for w in all_worlds if not w.is_builtin %}
+                            <option value="{{ w.id }}">{{ w.name }} (homebrew)</option>
+                            {% endfor %}
+                            {% for w in all_worlds if w.is_builtin %}
+                            <option value="{{ w.id }}">{{ w.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col">
+                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="icrpgAIConcept" placeholder="Optional concept or theme hint (e.g. 'undead creature', 'fire magic')">
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select form-select-sm bg-dark text-light border-secondary" id="icrpgAICount">
+                                <option value="3">3 ideas</option>
+                                <option value="5">5 ideas</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-sm btn-info" id="icrpgAIGenerateBtn" onclick="runIcrpgGenerate()">
+                                <i class="bi bi-stars"></i> Generate
+                            </button>
+                        </div>
+                    </div>
+                    <div id="icrpgAIThemeRow" style="display:none;" class="mb-3">
+                        <label class="form-label small text-warning">Theme or setting <span class="text-muted">(defaults to campaign theme — override to change)</span>:</label>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                                   id="icrpgAITheme" placeholder="e.g. 'science fiction space opera', 'gothic horror'">
+                            <button class="btn btn-sm btn-warning" id="icrpgAIRethemeBtn" onclick="runIcrpgRetheme()">
+                                <i class="bi bi-magic"></i> Retheme
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="icrpgAISpinner" class="text-center py-4" style="display:none;">
+                    <div class="spinner-border text-info"></div>
+                    <div class="text-muted small mt-2">Generating ideas…</div>
+                </div>
+                <div id="icrpgAIResults"></div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════ #}
 {# TYPE MANAGE MODAL                                               #}
 {# ═══════════════════════════════════════════════════════════════ #}
 <div class="modal fade" id="typeManageModal" tabindex="-1">
@@ -517,6 +641,7 @@
 
 {# Pass dropdown options to JS #}
 <script>
+var CAMPAIGN_THEME = {{ (campaign.ai_world_context or campaign.name) | tojson }};
 var CATALOG_WORLDS = {{ all_worlds | map(attribute='id') | list | tojson }};
 var CATALOG_WORLD_NAMES = {};
 {% for w in all_worlds %}CATALOG_WORLD_NAMES[{{ w.id }}] = {{ w.name | tojson }};{% endfor %}
