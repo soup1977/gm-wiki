@@ -244,6 +244,23 @@ def save():
                     )
                     db.session.add(enc)
 
+                # Items — one campaign Item per unique loot name in this scene
+                seen_loot = set()
+                for room in scene.rooms:
+                    for loot in room.loot:
+                        loot_name = loot.name.strip()
+                        if not loot_name or loot_name in seen_loot:
+                            continue
+                        seen_loot.add(loot_name)
+                        item = Item(
+                            campaign_id=campaign.id,
+                            name=loot_name,
+                            description=loot.description or '',
+                            adventure_id=adventure.id,
+                            origin_location_id=loc.id,
+                        )
+                        db.session.add(item)
+
         db.session.commit()
         return jsonify({'success': True, 'adventure_id': adventure.id,
                         'redirect': url_for('adventures.detail', adventure_id=adventure.id) + '#tab-structure'})
