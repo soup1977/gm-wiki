@@ -819,6 +819,7 @@
     var icrpgAIEntity  = null;
     var icrpgAIRethemeId = null;
     var icrpgAIRethemeData = null;
+    var icrpgAIDirty = false;
 
     var ICRPG_URL_KEYS = {
         lifeform: 'life-forms', type: 'types', ability: 'abilities',
@@ -867,7 +868,14 @@
     };
 
     function _initIcrpgModal() {
-        if (!icrpgAIModalEl) icrpgAIModalEl = document.getElementById('icrpgAIModal');
+        if (!icrpgAIModalEl) {
+            icrpgAIModalEl = document.getElementById('icrpgAIModal');
+            if (icrpgAIModalEl) {
+                icrpgAIModalEl.addEventListener('hidden.bs.modal', function () {
+                    if (icrpgAIDirty) { icrpgAIDirty = false; location.reload(); }
+                });
+            }
+        }
         if (!icrpgAIModal && icrpgAIModalEl) icrpgAIModal = new bootstrap.Modal(icrpgAIModalEl);
     }
 
@@ -1053,7 +1061,7 @@
                     ck.textContent = overwrite ? 'Updated!' : 'Added!';
                     card.querySelector('.card-body').appendChild(ck);
                 }
-                setTimeout(function () { location.reload(); }, 800);
+                icrpgAIDirty = true;
             } else {
                 alert(data.error || 'Unknown error');
             }
