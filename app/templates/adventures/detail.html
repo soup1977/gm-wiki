@@ -290,7 +290,25 @@
                 </div>
                 {% endfor %}
 
-                <div class="d-flex gap-1 mt-1">
+                {# Encounters linked to this scene #}
+                {% if scene.encounters %}
+                <div class="mt-2 mb-1">
+                    <div class="small text-muted text-uppercase mb-1" style="letter-spacing:.05em;">
+                        <i class="bi bi-crosshair me-1"></i>Encounters
+                    </div>
+                    {% for enc in scene.encounters %}
+                    <div class="d-flex align-items-center gap-2 mb-1 ps-1">
+                        <a href="{{ url_for('encounters.encounter_detail', encounter_id=enc.id) }}"
+                           class="text-decoration-none text-light small">{{ enc.name }}</a>
+                        <span class="badge bg-secondary small">{{ enc.encounter_type }}</span>
+                        <span class="badge small {% if enc.status == 'planned' %}bg-secondary{% elif enc.status == 'used' %}bg-success{% else %}bg-dark border border-secondary{% endif %}">
+                            {{ enc.status }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="d-flex gap-1 mt-2 flex-wrap">
                     <form method="POST" action="{{ url_for('adventures.add_room', scene_id=scene.id) }}" class="flex-grow-1">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
@@ -301,6 +319,10 @@
                             onclick="aiGenerateRooms({{ scene.id }})">
                         <i class="bi bi-stars me-1"></i>AI Locations
                     </button>
+                    <a href="{{ url_for('encounters.create_encounter', adventure_id=adventure.id, scene_id=scene.id) }}"
+                       class="btn btn-sm btn-outline-danger" title="Add Encounter to this Scene">
+                        <i class="bi bi-crosshair me-1"></i>Add Encounter
+                    </a>
                 </div>
             </div>
             {% endfor %}
