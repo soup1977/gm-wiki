@@ -49,6 +49,15 @@
                                 Anthropic <span class="badge bg-secondary ms-1">Cloud</span>
                             </label>
                         </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider"
+                                   id="provGrok" value="grok"
+                                   {{ 'checked' if ai_config.provider == 'grok' }}
+                                   onchange="toggleProviderSections()">
+                            <label class="form-check-label" for="provGrok">
+                                Grok <span class="badge bg-secondary ms-1">Cloud</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -82,7 +91,11 @@
                                 </option>
                                 <option value="anthropic"
                                     {{ 'selected' if feature_providers[key] == 'anthropic' }}>
-                                    <i class="bi bi-lightning"></i> Anthropic — Cloud
+                                    Anthropic — Cloud
+                                </option>
+                                <option value="grok"
+                                    {{ 'selected' if feature_providers[key] == 'grok' }}>
+                                    Grok — Cloud
                                 </option>
                             </select>
                         </div>
@@ -146,6 +159,35 @@
                         <i class="bi bi-wifi"></i> Test Connection
                     </button>
                     <div id="test-anthropic-result" class="small mt-2"></div>
+                </div>
+
+                <!-- Grok settings -->
+                <div id="grok-section" class="border border-secondary rounded p-3 mb-3" style="display:none;">
+                    <h6 class="mb-3"><i class="bi bi-cloud me-1"></i> Grok (xAI) Settings</h6>
+                    <div class="mb-3">
+                        <label for="grok_api_key" class="form-label small">API Key</label>
+                        <input type="password" class="form-control form-control-sm bg-dark text-light border-secondary"
+                               id="grok_api_key" name="grok_api_key"
+                               value="{{ ai_config.grok_api_key }}"
+                               placeholder="xai-...">
+                        <div class="form-text">
+                            Get a key at <a href="https://console.x.ai" target="_blank" rel="noopener">console.x.ai</a>.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="grok_model" class="form-label small">Model</label>
+                        <select class="form-select form-select-sm bg-dark text-light border-secondary"
+                                name="grok_model" id="grok_model">
+                            <option value="grok-3-mini" {% if ai_config.grok_model == 'grok-3-mini' %}selected{% endif %}>grok-3-mini — Fast &amp; affordable</option>
+                            <option value="grok-3"      {% if ai_config.grok_model == 'grok-3'      %}selected{% endif %}>grok-3 — Most capable</option>
+                            <option value="grok-2-mini" {% if ai_config.grok_model == 'grok-2-mini' %}selected{% endif %}>grok-2-mini</option>
+                            <option value="grok-2"      {% if ai_config.grok_model == 'grok-2'      %}selected{% endif %}>grok-2</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConnection('grok')">
+                        <i class="bi bi-wifi"></i> Test Connection
+                    </button>
+                    <div id="test-grok-result" class="small mt-2"></div>
                 </div>
 
                 <!-- Image Generation -->
@@ -496,6 +538,8 @@ function toggleProviderSections() {
         provider === 'ollama' ? 'block' : 'none';
     document.getElementById('anthropic-section').style.display =
         provider === 'anthropic' ? 'block' : 'none';
+    document.getElementById('grok-section').style.display =
+        provider === 'grok' ? 'block' : 'none';
     if (provider === 'anthropic' && !_anthropicModelsLoaded) {
         loadAnthropicModels();
     }
