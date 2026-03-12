@@ -47,7 +47,7 @@
                         data-payload="{{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4,'include_world_loot':w.include_world_loot or []} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, {{ w.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('worlds', {{ w.id }}, {{ w.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -68,7 +68,7 @@
                 <td class="text-muted small">{{ w.description[:80] if w.description else '' }}</td>
                 <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('world', {{ w.id }}, {{ w.name | tojson }})">
+                            onclick="importBuiltin('world', {{ w.id }}, {{ w.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -116,7 +116,7 @@
                         data-payload="{{ {'name':lf.name,'description':lf.description or '','world_id':lf.world_id,'bonuses':lf.bonuses or {}} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('life-forms', {{ lf.id }}, {{ lf.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('life-forms', {{ lf.id }}, {{ lf.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -140,7 +140,7 @@
                 <td class="text-muted small" title="{{ lf.description or '' }}">{{ lf.description[:60] if lf.description else '' }}{% if lf.description and lf.description|length > 60 %}...{% endif %}</td>
                 <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('lifeform', {{ lf.id }}, {{ lf.name | tojson }})">
+                            onclick="importBuiltin('lifeform', {{ lf.id }}, {{ lf.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -183,7 +183,7 @@
                     <i class="bi bi-magic"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-info py-0"
-                        onclick="openTypeManage({{ t.id }}, {{ t.name | tojson }})">
+                        onclick="openTypeManage({{ t.id }}, {{ t.name | tojson | forceescape }})">
                     <i class="bi bi-gear"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
@@ -191,7 +191,7 @@
                         data-payload="{{ {'name':t.name,'description':t.description or '','world_id':t.world_id} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('types', {{ t.id }}, {{ t.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('types', {{ t.id }}, {{ t.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -214,7 +214,7 @@
                 <td class="text-muted small" title="{{ t.description or '' }}">{{ t.description[:60] if t.description else '' }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
                 <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('type', {{ t.id }}, {{ t.name | tojson }})">
+                            onclick="importBuiltin('type', {{ t.id }}, {{ t.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -262,7 +262,7 @@
                         data-payload="{{ {'name':ab.name,'description':ab.description or '','type_id':ab.type_id,'ability_kind':ab.ability_kind} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('abilities', {{ ab.id }}, {{ ab.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('abilities', {{ ab.id }}, {{ ab.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -286,7 +286,7 @@
                 <td class="text-muted small" title="{{ ab.description or '' }}">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
                 <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('ability', {{ ab.id }}, {{ ab.name | tojson }})">
+                            onclick="importBuiltin('ability', {{ ab.id }}, {{ ab.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -334,7 +334,7 @@
                         data-payload="{{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','world_id':ld.world_id,'effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost or 0,'is_starter':ld.is_starter} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, {{ ld.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('loot', {{ ld.id }}, {{ ld.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -358,7 +358,7 @@
                 <td class="text-muted small">{{ ld.description[:60] if ld.description else '' }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
                 <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('loot', {{ ld.id }}, {{ ld.name | tojson }})">
+                            onclick="importBuiltin('loot', {{ ld.id }}, {{ ld.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -407,7 +407,7 @@
                         data-payload="{{ {'name':sp.name,'description':sp.description or '','spell_type':sp.spell_type or '','casting_stat':sp.casting_stat or '','level':sp.level,'target':sp.target or '','duration':sp.duration or ''} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('spells', {{ sp.id }}, {{ sp.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('spells', {{ sp.id }}, {{ sp.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -432,7 +432,7 @@
                 <td class="text-muted small" title="{{ sp.description or '' }}">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
                 <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
-                            onclick="importBuiltin('spell', {{ sp.id }}, {{ sp.name | tojson }})">
+                            onclick="importBuiltin('spell', {{ sp.id }}, {{ sp.name | tojson | forceescape }})">
                         <i class="bi bi-download me-1"></i>Import
                     </button>
                 </td>
@@ -479,7 +479,7 @@
                         data-payload="{{ {'name':mp.name,'description':mp.description or '','tiers':mp.tiers or []} | tojson | forceescape }}">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('paths', {{ mp.id }}, {{ mp.name | tojson }})"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="catalogDelete('paths', {{ mp.id }}, {{ mp.name | tojson | forceescape }})"><i class="bi bi-trash"></i></button>
             </td>
         </tr>
         {% endfor %}
@@ -641,17 +641,17 @@
 
 {# Pass dropdown options to JS #}
 <script>
-var CAMPAIGN_THEME = {{ (campaign.ai_world_context or campaign.name) | tojson }};
-var CATALOG_WORLDS = {{ all_worlds | map(attribute='id') | list | tojson }};
+var CAMPAIGN_THEME = {{ (campaign.ai_world_context or campaign.name) | tojson | forceescape }};
+var CATALOG_WORLDS = {{ all_worlds | map(attribute='id') | list | tojson | forceescape }};
 var CATALOG_WORLD_NAMES = {};
-{% for w in all_worlds %}CATALOG_WORLD_NAMES[{{ w.id }}] = {{ w.name | tojson }};{% endfor %}
-var CATALOG_TYPES = {{ all_types | map(attribute='id') | list | tojson }};
+{% for w in all_worlds %}CATALOG_WORLD_NAMES[{{ w.id }}] = {{ w.name | tojson | forceescape }};{% endfor %}
+var CATALOG_TYPES = {{ all_types | map(attribute='id') | list | tojson | forceescape }};
 var CATALOG_TYPE_NAMES = {};
-{% for t in all_types %}CATALOG_TYPE_NAMES[{{ t.id }}] = {{ t.name | tojson }};{% endfor %}
+{% for t in all_types %}CATALOG_TYPE_NAMES[{{ t.id }}] = {{ t.name | tojson | forceescape }};{% endfor %}
 
 {# Homebrew-only worlds/types for import picker #}
-var IMPORT_HOMEBREW_WORLDS = [{% for w in hw %}{id:{{ w.id }},name:{{ w.name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
-var IMPORT_HOMEBREW_TYPES = [{% for t in ht %}{id:{{ t.id }},name:{{ t.name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var IMPORT_HOMEBREW_WORLDS = [{% for w in hw %}{id:{{ w.id }},name:{{ w.name | tojson | forceescape }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var IMPORT_HOMEBREW_TYPES = [{% for t in ht %}{id:{{ t.id }},name:{{ t.name | tojson | forceescape }}}{% if not loop.last %},{% endif %}{% endfor %}];
 </script>
 {% endblock %}
 
