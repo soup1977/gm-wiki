@@ -861,7 +861,7 @@
         document.getElementById('icrpgAIWorldRow').style.display =
             ICRPG_WORLD_ENTITY_TYPES.indexOf(entityType) >= 0 ? 'block' : 'none';
         document.getElementById('icrpgAIGenerateBtn').style.display = 'none';
-        document.getElementById('icrpgAITheme').value = '';
+        document.getElementById('icrpgAITheme').value = (typeof CAMPAIGN_THEME !== 'undefined' ? CAMPAIGN_THEME : '');
         document.getElementById('icrpgAIResults').innerHTML = '';
         document.getElementById('icrpgAISpinner').style.display = 'none';
         icrpgAIModal.show();
