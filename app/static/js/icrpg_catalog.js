@@ -1028,14 +1028,7 @@
             headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
             body: JSON.stringify(s)
         })
-        .then(function (r) {
-            if (!r.ok) {
-                return r.text().then(function (t) {
-                    throw new Error('HTTP ' + r.status + ' — ' + t.substring(0, 300));
-                });
-            }
-            return r.json();
-        })
+        .then(function (r) { return r.json(); })
         .then(function (data) {
             var card = document.getElementById('icrpg-card-' + idx);
             if (data.ok) {
@@ -1049,10 +1042,10 @@
                     card.querySelector('.card-body').appendChild(ck);
                 }
             } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
+                alert(data.error || 'Unknown error');
             }
         })
-        .catch(function (err) { alert('Request failed: ' + err.message); });
+        .catch(function () { alert('Request failed. Check the browser console for details.'); });
     };
 
     // Delegated listener for Retheme buttons

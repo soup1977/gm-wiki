@@ -194,6 +194,8 @@ def create_life_form():
                    or ICRPGWorld.query.filter_by(is_builtin=True).first()
         if fallback:
             world_id = fallback.id
+        else:
+            return jsonify({'error': 'No world found. Please create a Homebrew World in the Worlds tab before adding Life Forms.'}), 400
     lf = ICRPGLifeForm(
         world_id=world_id, name=name,
         description=(data.get('description') or '').strip(),
@@ -269,6 +271,8 @@ def create_type():
                    or ICRPGWorld.query.filter_by(is_builtin=True).first()
         if fallback:
             world_id = fallback.id
+        else:
+            return jsonify({'error': 'No world found. Please create a Homebrew World in the Worlds tab before adding Types.'}), 400
     t = ICRPGType(world_id=world_id, name=name,
                   description=(data.get('description') or '').strip(),
                   is_builtin=False, campaign_id=cid)
