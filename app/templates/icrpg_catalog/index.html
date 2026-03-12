@@ -641,17 +641,17 @@
 
 {# Pass dropdown options to JS #}
 <script>
-var CAMPAIGN_THEME = {{ (campaign.ai_world_context or campaign.name) | tojson | forceescape }};
-var CATALOG_WORLDS = {{ all_worlds | map(attribute='id') | list | tojson | forceescape }};
+var CAMPAIGN_THEME = {{ (campaign.ai_world_context or campaign.name) | tojson }};
+var CATALOG_WORLDS = {{ all_worlds | map(attribute='id') | list | tojson }};
 var CATALOG_WORLD_NAMES = {};
-{% for w in all_worlds %}CATALOG_WORLD_NAMES[{{ w.id }}] = {{ w.name | tojson | forceescape }};{% endfor %}
-var CATALOG_TYPES = {{ all_types | map(attribute='id') | list | tojson | forceescape }};
+{% for w in all_worlds %}CATALOG_WORLD_NAMES[{{ w.id }}] = {{ w.name | tojson }};{% endfor %}
+var CATALOG_TYPES = {{ all_types | map(attribute='id') | list | tojson }};
 var CATALOG_TYPE_NAMES = {};
-{% for t in all_types %}CATALOG_TYPE_NAMES[{{ t.id }}] = {{ t.name | tojson | forceescape }};{% endfor %}
+{% for t in all_types %}CATALOG_TYPE_NAMES[{{ t.id }}] = {{ t.name | tojson }};{% endfor %}
 
 {# Homebrew-only worlds/types for import picker #}
-var IMPORT_HOMEBREW_WORLDS = [{% for w in hw %}{id:{{ w.id }},name:{{ w.name | tojson | forceescape }}}{% if not loop.last %},{% endif %}{% endfor %}];
-var IMPORT_HOMEBREW_TYPES = [{% for t in ht %}{id:{{ t.id }},name:{{ t.name | tojson | forceescape }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var IMPORT_HOMEBREW_WORLDS = [{% for w in hw %}{id:{{ w.id }},name:{{ w.name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+var IMPORT_HOMEBREW_TYPES = [{% for t in ht %}{id:{{ t.id }},name:{{ t.name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
 </script>
 {% endblock %}
 
