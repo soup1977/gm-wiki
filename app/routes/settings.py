@@ -36,7 +36,12 @@ def index():
         AppSetting.set('allow_signup', 'true' if request.form.get('allow_signup') else 'false')
         # Editable AI prompts (empty string means "use hardcoded default")
         for key in ('ai_prompt_smart_fill', 'ai_prompt_generate', 'ai_prompt_brainstorm_arcs',
-                    'ai_prompt_session_prep', 'ai_prompt_generate_adventure'):
+                    'ai_prompt_session_prep', 'ai_prompt_generate_adventure',
+                    'ai_prompt_flesh_out_room', 'ai_prompt_generate_scene_rooms',
+                    'ai_prompt_generate_room_creatures', 'ai_prompt_generate_room_loot',
+                    'ai_prompt_brainstorm_adventure', 'ai_prompt_npc_chat',
+                    'ai_prompt_hazard_flavor', 'ai_prompt_suggest_consequences',
+                    'ai_prompt_suggest_milestones', 'ai_prompt_import_table'):
             AppSetting.set(key, request.form.get(key, '').strip())
         # AI token limits
         AppSetting.set('ai_max_tokens_standard',
@@ -90,7 +95,12 @@ def index():
     ai_prompts = {
         key: AppSetting.get(f'ai_prompt_{key}') or DEFAULT_PROMPTS[key]
         for key in ('smart_fill', 'generate', 'brainstorm_arcs',
-                    'session_prep', 'generate_adventure')
+                    'session_prep', 'generate_adventure',
+                    'flesh_out_room', 'generate_scene_rooms',
+                    'generate_room_creatures', 'generate_room_loot',
+                    'brainstorm_adventure', 'npc_chat',
+                    'hazard_flavor', 'suggest_consequences',
+                    'suggest_milestones', 'import_table')
     }
 
     return render_template('settings/index.html', ai_config=config, stats=stats,
