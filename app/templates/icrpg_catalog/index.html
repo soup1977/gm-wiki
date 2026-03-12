@@ -34,14 +34,14 @@
     </div>
     {% if hw %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Description</th><th class="text-center">Loot Picks</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Description</th><th class="text-center">Loot Picks</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for w in hw %}
         <tr>
             <td>{{ w.name }}</td>
             <td class="text-muted small">{{ w.description[:80] if w.description else '' }}{% if w.description and w.description|length > 80 %}...{% endif %}</td>
             <td class="text-muted small text-center">{{ w.basic_loot_count or 4 }}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-secondary catalog-edit-btn"
                         data-entity="world" data-id="{{ w.id }}"
                         data-payload="{{ {'name':w.name,'description':w.description or '','basic_loot_count':w.basic_loot_count or 4,'include_world_loot':w.include_world_loot or []} | tojson | forceescape }}">
@@ -66,7 +66,7 @@
             <tr>
                 <td>{{ w.name }}</td>
                 <td class="text-muted small">{{ w.description[:80] if w.description else '' }}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
                             onclick="importBuiltin('world', {{ w.id }}, '{{ w.name | e }}')">
                         <i class="bi bi-download me-1"></i>Import
@@ -105,7 +105,7 @@
             <td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td>
             <td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td>
             <td class="text-muted small" title="{{ lf.description or '' }}">{{ lf.description[:60] if lf.description else '' }}{% if lf.description and lf.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
                         data-entity="lifeform" data-id="{{ lf.id }}"
                         data-payload="{{ {'name':lf.name,'description':lf.description or '','world_id':lf.world_id,'bonuses':lf.bonuses or {}} | tojson | forceescape }}">
@@ -138,7 +138,7 @@
                 <td class="text-muted small">{{ lf.world.name if lf.world else '—' }}</td>
                 <td class="text-muted small">{{ lf.bonuses | tojson if lf.bonuses else '—' }}</td>
                 <td class="text-muted small" title="{{ lf.description or '' }}">{{ lf.description[:60] if lf.description else '' }}{% if lf.description and lf.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
                             onclick="importBuiltin('lifeform', {{ lf.id }}, '{{ lf.name | e }}')">
                         <i class="bi bi-download me-1"></i>Import
@@ -176,7 +176,7 @@
             <td>{{ t.name }}</td>
             <td class="text-muted small">{{ t.world.name if t.world else '—' }}</td>
             <td class="text-muted small" title="{{ t.description or '' }}">{{ t.description[:60] if t.description else '' }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
                         data-entity="type" data-id="{{ t.id }}"
                         data-payload="{{ {'name':t.name,'description':t.description or ''} | tojson | forceescape }}">
@@ -212,7 +212,7 @@
                 <td>{{ t.name }}</td>
                 <td class="text-muted small">{{ t.world.name if t.world else '—' }}</td>
                 <td class="text-muted small" title="{{ t.description or '' }}">{{ t.description[:60] if t.description else '' }}{% if t.description and t.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
                             onclick="importBuiltin('type', {{ t.id }}, '{{ t.name | e }}')">
                         <i class="bi bi-download me-1"></i>Import
@@ -243,7 +243,7 @@
     </div>
     {% if hab %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Type</th><th>Kind</th><th>Description</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for ab in hab %}
         <tr>
@@ -251,7 +251,7 @@
             <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
             <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
             <td class="text-muted small" title="{{ ab.description or '' }}">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
                         data-entity="ability" data-id="{{ ab.id }}"
                         data-payload="{{ {'name':ab.name,'description':ab.description or '','ability_kind':ab.ability_kind} | tojson | forceescape }}">
@@ -284,7 +284,7 @@
                 <td class="text-muted small">{{ ab.type_ref.name if ab.type_ref else '—' }}</td>
                 <td><span class="badge bg-{% if ab.ability_kind == 'starting' %}info{% elif ab.ability_kind == 'milestone' %}warning{% else %}danger{% endif %}">{{ ab.ability_kind }}</span></td>
                 <td class="text-muted small" title="{{ ab.description or '' }}">{{ ab.description[:60] if ab.description else '' }}{% if ab.description and ab.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
                             onclick="importBuiltin('ability', {{ ab.id }}, '{{ ab.name | e }}')">
                         <i class="bi bi-download me-1"></i>Import
@@ -315,7 +315,7 @@
     </div>
     {% if hld %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Type</th><th>Slots</th><th>Description</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for ld in hld %}
         <tr>
@@ -323,7 +323,7 @@
             <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
             <td class="text-muted small">{{ ld.slot_cost }}</td>
             <td class="text-muted small" title="{{ ld.description or '' }}">{{ ld.description[:60] if ld.description else '' }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
                         data-entity="loot" data-id="{{ ld.id }}"
                         data-payload="{{ {'name':ld.name,'description':ld.description or '','loot_type':ld.loot_type or '','effects':ld.effects or {},'slot_cost':ld.slot_cost,'coin_cost':ld.coin_cost} | tojson | forceescape }}">
@@ -356,7 +356,7 @@
                 <td class="text-muted small">{{ ld.loot_type or '—' }}</td>
                 <td class="text-muted small">{{ ld.slot_cost }}</td>
                 <td class="text-muted small">{{ ld.description[:60] if ld.description else '' }}{% if ld.description and ld.description|length > 60 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
                             onclick="importBuiltin('loot', {{ ld.id }}, '{{ ld.name | e }}')">
                         <i class="bi bi-download me-1"></i>Import
@@ -387,7 +387,7 @@
     </div>
     {% if hsp %}
     <table class="table table-dark table-sm">
-        <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th><th style="width:100px"></th></tr></thead>
+        <thead><tr><th>Name</th><th>Type</th><th>Stat</th><th>Lvl</th><th>Description</th><th style="width:120px" class="text-nowrap"></th></tr></thead>
         <tbody>
         {% for sp in hsp %}
         <tr>
@@ -396,7 +396,7 @@
             <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
             <td class="text-muted small">{{ sp.level }}</td>
             <td class="text-muted small" title="{{ sp.description or '' }}">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
                         data-entity="spell" data-id="{{ sp.id }}"
                         data-payload="{{ {'name':sp.name,'description':sp.description or '','spell_type':sp.spell_type or '','casting_stat':sp.casting_stat or '','level':sp.level,'target':sp.target or '','duration':sp.duration or ''} | tojson | forceescape }}">
@@ -430,7 +430,7 @@
                 <td class="text-muted small">{{ sp.casting_stat or '—' }}</td>
                 <td class="text-muted small">{{ sp.level }}</td>
                 <td class="text-muted small" title="{{ sp.description or '' }}">{{ sp.description[:50] if sp.description else '' }}{% if sp.description and sp.description|length > 50 %}...{% endif %}</td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                     <button class="btn btn-sm btn-outline-info py-0"
                             onclick="importBuiltin('spell', {{ sp.id }}, '{{ sp.name | e }}')">
                         <i class="bi bi-download me-1"></i>Import
@@ -468,7 +468,7 @@
             <td>{{ mp.name }}</td>
             <td class="text-muted small">{{ mp.description[:60] if mp.description else '' }}{% if mp.description and mp.description|length > 60 %}...{% endif %}</td>
             <td class="text-muted small">{{ mp.tiers | length if mp.tiers else 0 }} tiers</td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-outline-warning py-0 icrpg-retheme-btn" title="Retheme with AI"
                         data-entity="path" data-id="{{ mp.id }}"
                         data-payload="{{ {'name':mp.name,'description':mp.description or '','tiers':mp.tiers or {}} | tojson | forceescape }}">
