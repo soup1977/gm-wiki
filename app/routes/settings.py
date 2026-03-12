@@ -20,6 +20,7 @@ def index():
         AppSetting.set('ollama_url', request.form.get('ollama_url', 'http://localhost:11434').strip())
         AppSetting.set('ollama_model', request.form.get('ollama_model', 'llama3.1').strip())
         AppSetting.set('anthropic_api_key', request.form.get('anthropic_api_key', '').strip())
+        AppSetting.set('anthropic_model', request.form.get('anthropic_model', 'claude-haiku-4-5-20251001'))
         AppSetting.set('sd_url', request.form.get('sd_url', '').strip())
         AppSetting.set('sd_model', request.form.get('sd_model', '').strip())
         AppSetting.set('sd_sampler', request.form.get('sd_sampler', 'DPM++ SDE').strip())
