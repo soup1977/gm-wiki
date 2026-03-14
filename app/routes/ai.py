@@ -166,6 +166,26 @@ Rules:
 - The result should be immediately usable in a game session with no editing needed.
 """,
 
+    'flesh_out_npc': """\
+You are a creative assistant for a tabletop RPG Game Master.
+An NPC was created as part of an adventure framework and may have sparse or placeholder details.
+Your job is to take the existing NPC fields and expand every one into something richer, more specific, and immediately usable at the game table.
+{world_section}
+Existing NPC fields:
+{existing_fields}
+
+Rules:
+- Return ONLY a valid JSON object. No explanation, no markdown, no code fences.
+- Keep the same name, role, and status — do not change the core concept.
+- Make physical_description vivid and specific: 2-4 sentences with distinctive visual details, mannerisms, and memorable features.
+- Make personality rich: include speech patterns, quirks, motivations, and how they treat strangers vs. allies.
+- Add depth to secrets: hidden agendas, backstory revelations, or plot hooks the GM can use.
+- Expand notes with GM-usable details: what they want, what they fear, how they can help or hinder the party.
+- Keep the tone consistent with the campaign world context, or dark fantasy if none is provided.
+- Only use null for a field that has no content and nothing logical can be inferred.
+- The output JSON must include all of these keys: name, role, status, faction, physical_description, personality, secrets, notes.
+""",
+
     'brainstorm_arcs': """\
 You are a creative assistant for a tabletop RPG Game Master.
 Your job is to brainstorm 3-5 story arc ideas based on the campaign context provided.
@@ -908,6 +928,91 @@ def generate_entry():
         return jsonify({'error': f'AI parse error: {e.msg}'}), 500
     except AIProviderError as e:
         ActivityLog.log_event('error', 'ai_generate', 'Generate Entry failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
+        return jsonify({'error': str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Flesh Out NPC — expand sparse framework-generated NPC fields
+# ---------------------------------------------------------------------------
+
+@ai_bp.route('/flesh-out-npc', methods=['POST'])
+@login_required
+def flesh_out_npc():
+    """
+    Accepts JSON body with existing NPC field values.
+    Returns JSON with the same fields expanded and enriched by AI.
+    """
+    if not is_ai_enabled():
+        return jsonify({'error': 'AI features are not configured. Go to Settings to set up a provider.'}), 403
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Request must be JSON.'}), 400
+
+    # Collect the current field values sent from the form
+    fields = {
+        'name':                 (data.get('name') or '').strip(),
+        'role':                 (data.get('role') or '').strip(),
+        'status':               (data.get('status') or '').strip(),
+        'faction':              (data.get('faction') or '').strip(),
+        'physical_description': (data.get('physical_description') or '').strip(),
+        'personality':          (data.get('personality') or '').strip(),
+        'secrets':              (data.get('secrets') or '').strip(),
+        'notes':                (data.get('notes') or '').strip(),
+    }
+
+    if not fields['name']:
+        return jsonify({'error': 'NPC must have a name before it can be fleshed out.'}), 400
+
+    # Format existing fields as readable lines for the prompt
+    existing_lines = '\n'.join(
+        f'  {k}: {v if v else "(empty)"}' for k, v in fields.items()
+    )
+
+    world_context = _get_active_world_context()
+    world_section = ''
+    if world_context:
+        world_section = f"\nCampaign world context (use this to inform tone, setting, and details):\n{world_context}\n"
+
+    # Optional: inject adventure context if caller provides it
+    story_arc_id = data.get('story_arc_id')
+    if story_arc_id:
+        from app.models import AdventureSite
+        campaign = _get_active_campaign()
+        if campaign:
+            arc = AdventureSite.query.filter_by(id=int(story_arc_id), campaign_id=campaign.id).first()
+            if arc:
+                arc_parts = [f"Story Arc: {arc.name}"]
+                if arc.subtitle:
+                    arc_parts.append(f"Tagline: {arc.subtitle}")
+                if arc.content:
+                    arc_parts.append(f"Arc overview:\n{arc.content[:500]}")
+                world_section += f"\nStory Arc context (this NPC belongs to this arc):\n{chr(10).join(arc_parts)}\n"
+
+    system_prompt = _get_system_prompt('flesh_out_npc',
+        world_section=world_section,
+        existing_fields=existing_lines,
+    )
+
+    messages = [
+        {'role': 'user', 'content': f"Flesh out this NPC:\n\n{existing_lines}"}
+    ]
+
+    max_out_tokens = _get_max_tokens('ai_max_tokens_generate', 2048)
+
+    try:
+        raw = ai_chat(system_prompt, messages, max_tokens=max_out_tokens, json_mode=True,
+                      provider=get_feature_provider('generate'))
+        result = _extract_json(raw)
+        return jsonify(result)
+
+    except json.JSONDecodeError as e:
+        ActivityLog.log_event('error', 'ai_flesh_out_npc', 'Flesh Out NPC failed',
+                              details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
+        return jsonify({'error': f'AI parse error: {e.msg}'}), 500
+    except AIProviderError as e:
+        ActivityLog.log_event('error', 'ai_flesh_out_npc', 'Flesh Out NPC failed',
                               details=str(e)[:200], campaign_id=flask_session.get('active_campaign_id'), immediate=True)
         return jsonify({'error': str(e)}), 500
 
