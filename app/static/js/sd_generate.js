@@ -20,13 +20,15 @@ const SD_STATUS_MESSAGES = [
     { after: 60, text: 'Still processing — high-res images take longer...' },
 ];
 
-// Prompt builders per entity type — reads form fields and returns a prompt string
+// Prompt builders per entity type — reads form fields and returns a prompt string.
+// Note: genre/style prefix (e.g. "dark fantasy", "sci-fi") is added server-side
+// from campaign.image_style_prompt. Only composition type hints go here.
 const SD_PROMPT_BUILDERS = {
     npc: function() {
         const name = document.getElementById('name')?.value || '';
         const role = document.getElementById('role')?.value || '';
         const desc = document.getElementById('physical_description')?.value || '';
-        const parts = ['fantasy portrait', 'detailed face'];
+        const parts = ['portrait', 'detailed face'];
         if (name) parts.push(name);
         if (role) parts.push(role);
         if (desc) parts.push(desc);
@@ -36,7 +38,7 @@ const SD_PROMPT_BUILDERS = {
         const name = document.getElementById('name')?.value || '';
         const type = document.getElementById('type')?.value || '';
         const desc = document.getElementById('description')?.value || '';
-        const parts = ['fantasy landscape', 'detailed environment'];
+        const parts = ['landscape', 'detailed environment'];
         if (name) parts.push(name);
         if (type) parts.push(type);
         if (desc) parts.push(desc);
@@ -45,7 +47,7 @@ const SD_PROMPT_BUILDERS = {
     bestiary: function() {
         const name = document.getElementById('name')?.value || '';
         const system = document.getElementById('system')?.value || '';
-        const parts = ['fantasy creature', 'detailed illustration'];
+        const parts = ['creature illustration', 'detailed'];
         if (name) parts.push(name);
         if (system) parts.push(system + ' style');
         return parts.join(', ');
@@ -54,7 +56,7 @@ const SD_PROMPT_BUILDERS = {
         const name = document.getElementById('name')?.value || '';
         const type = document.getElementById('type')?.value || '';
         const desc = document.getElementById('description')?.value || '';
-        const parts = ['fantasy item illustration', 'detailed object'];
+        const parts = ['item illustration', 'detailed object'];
         if (name) parts.push(name);
         if (type) parts.push(type);
         if (desc) parts.push(desc);
@@ -65,7 +67,7 @@ const SD_PROMPT_BUILDERS = {
         const cls = document.getElementById('class_or_role')?.value || '';
         const name = document.getElementById('character_name')?.value || '';
         const desc = document.getElementById('description')?.value || '';
-        const parts = ['fantasy character portrait', 'detailed face'];
+        const parts = ['character portrait', 'detailed face'];
         if (race) parts.push(race);
         if (cls) parts.push(cls);
         if (name) parts.push(name);
