@@ -2169,6 +2169,40 @@ def anthropic_models():
         return jsonify({'models': FALLBACK, 'source': 'fallback'})
 
 
+@ai_bp.route('/grok-models')
+@login_required
+def grok_models():
+    """Fetch available models from the xAI Grok API.
+    Returns a list of model IDs. Falls back gracefully if the call fails."""
+    from app.ai_provider import get_ai_config
+    config = get_ai_config()
+    api_key = config.get('grok_api_key', '')
+
+    if not api_key:
+        return jsonify({'models': [], 'source': 'no_key'})
+
+    try:
+        import requests as req
+        r = req.get(
+            'https://api.x.ai/v1/models',
+            headers={'Authorization': f'Bearer {api_key}'},
+            timeout=5,
+        )
+        r.raise_for_status()
+        data = r.json()
+        models = []
+        for m in data.get('data', []):
+            mid = m.get('id', '')
+            if mid:
+                models.append({'id': mid, 'display_name': mid})
+        models.sort(key=lambda m: m['id'])
+        if not models:
+            return jsonify({'models': [], 'source': 'empty'})
+        return jsonify({'models': models, 'source': 'api'})
+    except Exception:
+        return jsonify({'models': [], 'source': 'error'})
+
+
 # ---------------------------------------------------------------------------
 # ICRPG Homebrew — AI Generator
 # ---------------------------------------------------------------------------
